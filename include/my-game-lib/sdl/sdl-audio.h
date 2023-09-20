@@ -21,7 +21,6 @@ namespace MyGlib
 class SDL_AudioDriver: public AudioManager
 {
 private:
-	SDL_AudioDriver ();
 	SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_);
 	~SDL_AudioDriver ();
 	void init ();

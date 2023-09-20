@@ -41,12 +41,6 @@ static std::vector<SDL_AudioDescriptor> channels;
 
 // ---------------------------------------------------
 
-SDL_AudioDriver ()
-	: AudioManager()
-{
-	this->init();
-}
-
 SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_)
 	: AudioManager(memory_manager_)
 {

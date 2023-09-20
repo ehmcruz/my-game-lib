@@ -51,21 +51,17 @@ public:
 
 private:
 	static AudioManager *instance;
-	Mylib::Memory::DefaultManager default_memory_manager;
 
 protected:
 	Mylib::Memory::Manager& memory_manager;
 
 private:
-	AudioManager ()
-		: memory_manager(this->default_memory_manager)
-	{
-	}
-
 	AudioManager (Mylib::Memory::Manager& memory_manager_)
 		: memory_manager(memory_manager_)
 	{
 	}
+
+	virtual ~AudioManager ();
 
 public:
 	AudioManager& init ();
