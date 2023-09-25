@@ -11,7 +11,7 @@
 #include <my-lib/trigger.h>
 #include <my-lib/any.h>
 
-#include <my-game-lib/sound.h>
+#include <my-game-lib/audio.h>
 
 namespace MyGlib
 {
@@ -20,15 +20,14 @@ namespace MyGlib
 
 class SDL_AudioDriver: public AudioManager
 {
-private:
+public:
 	SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_);
 	~SDL_AudioDriver ();
-	void init ();
-
+	
 public:
-	AudioDescriptor load_sound (const std::string_view fname, const SoundFormat format) override;
-	void unload_audio (const AudioDescriptor& audio) override;
-	void play_audio (const AudioDescriptor& audio, Callback *callback, const size_t callback_size) override;
+	AudioDescriptor load_sound (const std::string_view fname, const AudioFormat format) override;
+	void unload_audio (AudioDescriptor& audio) override;
+	void play_audio (AudioDescriptor& audio, Callback *callback, const size_t callback_size) override;
 };
 
 // ---------------------------------------------------

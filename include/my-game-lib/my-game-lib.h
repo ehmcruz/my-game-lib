@@ -3,6 +3,7 @@
 
 #include <my-lib/memory.h>
 
+#include <my-game-lib/events.h>
 #include <my-game-lib/audio.h>
 
 namespace MyGlib
@@ -19,6 +20,7 @@ private:
 	Mylib::Memory::Manager& memory_manager;
 
 	AudioManager *audio_manager = nullptr;
+	EventManager *event_manager = nullptr;
 
 private:
 	Lib ();
@@ -26,7 +28,17 @@ private:
 	void lib_init ();
 
 public:
-	Lib& init ();
+	static Lib& init ();
+
+	AudioManager& get_audio_manager ()
+	{
+		return *this->audio_manager;
+	}
+
+	EventManager& get_event_manager ()
+	{
+		return *this->event_manager;
+	}
 };
 
 // ---------------------------------------------------

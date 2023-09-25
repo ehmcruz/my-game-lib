@@ -1,8 +1,10 @@
 //#include <variant>
 
-#include <my-game-lib/sound.h>
-#include <my-game-lib/sdl/sdl-sound.h>
+#include <my-game-lib/audio.h>
+#include <my-game-lib/sdl/sdl-audio.h>
+
 #include <my-lib/macros.h>
+#include <my-lib/trigger.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
@@ -28,7 +30,7 @@ struct SDL_AudioDescriptor {
 struct ChannelDescriptor {
 	int channel;
 	SDL_AudioDescriptor *desc; // (desc == nulptr) means free channel
-	Callback *callback;
+	AudioManager::Callback *callback;
 	size_t callback_size;
 };
 
@@ -37,24 +39,43 @@ struct ChannelDescriptor {
 // we save here because saving in the object would require including the SDL headers in sdl-audio.h
 // I want to avoid that
 
-static std::vector<SDL_AudioDescriptor> channels;
+static std::vector<ChannelDescriptor> channels;
 
 // ---------------------------------------------------
 
-SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_)
+inline constexpr Uint16 default_audio_format = MIX_DEFAULT_FORMAT;
+inline constexpr int default_audio_channels = 2;
+inline constexpr int default_audio_buffers = 4096;
+inline constexpr int default_audio_volume = MIX_MAX_VOLUME;
+inline constexpr int default_audio_rate = 44100;
+
+// ---------------------------------------------------
+
+static SDL_AudioDriver *driver = nullptr;
+
+// ---------------------------------------------------
+
+SDL_AudioDriver::SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_)
 	: AudioManager(memory_manager_)
 {
-	this->init();
-}
-
-SDL_AudioDriver::~SDL_AudioDriver ()
-{
-	channels.clear();
-}
-
-void SDL_AudioDriver::init ()
-{
 	dprintln("Loading SDL Audio Driver");
+
+	driver = this;
+
+	Uint16 audio_format = default_audio_format;
+	int audio_channels = default_audio_channels;
+	int audio_buffers = default_audio_buffers;
+	int audio_volume = default_audio_volume;
+	int audio_rate = default_audio_rate;
+
+	if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers) < 0) {
+		dprintln("Couldn't open audio: " << SDL_GetError());
+		exit(1);
+	}
+	else {
+		Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);
+		dprintln("Opened audio at " << audio_rate << " Hz " << (audio_format&0xFF) << " bit " << audio_channels << " channels " << audio_buffers <<  " bytes audio buffer\n");
+	}
 
 	const int nchannels = Mix_AllocateChannels(-1);
 	
@@ -62,16 +83,25 @@ void SDL_AudioDriver::init ()
 	
 	channels.reserve(nchannels);
 
-	for (uint32_t i = 0; i < nchannels; i++)
+	for (int32_t i = 0; i < nchannels; i++)
 		channels.push_back( ChannelDescriptor {
 			.channel = i,
-			.desc = nullptr
+			.desc = nullptr,
+			.callback = nullptr,
+			.callback_size = 0
 			} );
+
+	dprintln("SDL Audio Driver Loaded");
+}
+
+SDL_AudioDriver::~SDL_AudioDriver ()
+{
+	channels.clear();
 }
 
 // ---------------------------------------------------
 
-AudioDescriptor SDL_AudioDriver::load_sound (const std::string_view fname, const SoundFormat format)
+AudioDescriptor SDL_AudioDriver::load_sound (const std::string_view fname, const AudioFormat format)
 {
 	SDL_AudioDescriptor *desc = this->memory_manager.allocate_type<SDL_AudioDescriptor>(1);
 
@@ -83,7 +113,7 @@ AudioDescriptor SDL_AudioDriver::load_sound (const std::string_view fname, const
 		case Wav:
 			desc->type = SDL_AudioDescriptor::Type::Chunk;
 			desc->format = Wav;
-			desc->chunk = Mix_LoadWAV(fname_explosion);
+			desc->chunk = Mix_LoadWAV(fname.data());
 		break;
 
 /*		case MP3:
@@ -101,7 +131,7 @@ AudioDescriptor SDL_AudioDriver::load_sound (const std::string_view fname, const
 
 // ---------------------------------------------------
 
-void SDL_AudioDriver::unload_audio (const AudioDescriptor& audio)
+void SDL_AudioDriver::unload_audio (AudioDescriptor& audio)
 {
 	SDL_AudioDescriptor *desc = audio.data.get_value<SDL_AudioDescriptor*>();
 
@@ -123,9 +153,9 @@ static void sdl_channel_finished_callback (int id)
 
 	auto& c = *(channel.callback);
 	
-	Event event {
-		.type = Event::Type::AudioFinished,
-		.audio_descriptor = ,
+	AudioManager::Event event {
+		.type = AudioManager::Event::Type::AudioFinished,
+		.audio_descriptor = desc,
 		.repeat = false
 	};
 
@@ -135,14 +165,14 @@ static void sdl_channel_finished_callback (int id)
 
 	if (!event.repeat) {
 		channel.desc = nullptr;
-		this->memory_manager.deallocate(channel.callback, channel.callback_size);
+		driver->get_memory_manager().deallocate(channel.callback, channel.callback_size, 1);
 		channel.callback = nullptr;
 	}
 }
 
 // ---------------------------------------------------
 
-void SDL_AudioDriver::play_audio (const AudioDescriptor& audio, Callback *callback, const size_t callback_size)
+void SDL_AudioDriver::play_audio (AudioDescriptor& audio, Callback *callback, const size_t callback_size)
 {
 	SDL_AudioDescriptor *desc = audio.data.get_value<SDL_AudioDescriptor*>();
 
