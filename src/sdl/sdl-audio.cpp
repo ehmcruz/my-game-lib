@@ -103,7 +103,7 @@ SDL_AudioDriver::~SDL_AudioDriver ()
 
 AudioDescriptor SDL_AudioDriver::load_sound (const std::string_view fname, const AudioFormat format)
 {
-	SDL_AudioDescriptor *desc = this->memory_manager.allocate_type<SDL_AudioDescriptor>(1);
+	SDL_AudioDescriptor *desc = new(this->memory_manager.allocate_type<SDL_AudioDescriptor>(1)) SDL_AudioDescriptor;
 
 	desc->fname = fname;
 
@@ -125,6 +125,8 @@ AudioDescriptor SDL_AudioDriver::load_sound (const std::string_view fname, const
 		default:
 			throw Mylib::Exception("SDL Audio Driver requires sound effects in Wav file format!");
 	}
+
+	dprintln("loaded sound " << fname);
 
 	return AudioDescriptor { .data = desc };
 }
