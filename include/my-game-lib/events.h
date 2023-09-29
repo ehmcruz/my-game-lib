@@ -17,10 +17,58 @@ namespace MyGlib
 
 // ---------------------------------------------------
 
+enum class Key
+{
+	A,
+	B,
+	C,
+	D,
+	E,
+	F,
+	G,
+	H,
+	I,
+	J,
+	K,
+	L,
+	M,
+	N,
+	O,
+	P,
+	Q,
+	R,
+	S,
+	T,
+	U,
+	V,
+	W,
+	X,
+	Y,
+	Z,
+	Space,
+	Return,
+	Unknown
+};
+
+// ---------------------------------------------------
+
+struct EventKeyDown {
+	Key key;
+};
+
+// ---------------------------------------------------
+
+struct EventQuit {
+};
+
+// ---------------------------------------------------
+
 class EventManager
 {
 protected:
 	Mylib::Memory::Manager& memory_manager;
+	Mylib::Trigger::EventHandler<EventKeyDown> event_key_down;
+	Mylib::Trigger::EventHandler<EventQuit> event_quit;
 	
 public:
 	EventManager (Mylib::Memory::Manager& memory_manager_)
@@ -28,7 +76,17 @@ public:
 	{
 	}
 
-	virtual void check_events () = 0;
+	virtual void process_events () = 0;
+
+	Mylib::Trigger::EventHandler<EventKeyDown>& key_down ()
+	{
+		return this->event_key_down;
+	}
+
+	Mylib::Trigger::EventHandler<EventQuit>& quit ()
+	{
+		return this->event_quit;
+	}
 };
 
 // ---------------------------------------------------

@@ -51,17 +51,38 @@ SDL_EventDriver::SDL_EventDriver (Mylib::Memory::Manager& memory_manager_)
 
 // ---------------------------------------------------
 
-void SDL_EventDriver::check_events ()
+inline Key sdl_key_to_key (const SDL_Keycode sdl_key)
 {
-	SDL_Event event;
+	switch (sdl_key) {
+		case SDLK_a: return Key::A;
+		case SDLK_b: return Key::B;
+		case SDLK_c: return Key::C;
+		case SDLK_d: return Key::D;
+		case SDLK_e: return Key::E;
+		case SDLK_f: return Key::F;
+		case SDLK_g: return Key::G;
+		case SDLK_SPACE: return Key::Space;
+		case SDLK_RETURN: return Key::Return;
+		default: return Key::Unknown;
+	}
+}
 
-	while (SDL_PollEvent(&event)) {
-		switch (event.type) {
+// ---------------------------------------------------
+
+void SDL_EventDriver::process_events ()
+{
+	SDL_Event sdl_event;
+
+	while (SDL_PollEvent(&sdl_event)) {
+		switch (sdl_event.type) {
 			case SDL_QUIT:
-				exit(0);
+				this->event_quit.publish( EventQuit { } );
 			break;
 
 			case SDL_KEYDOWN:
+				this->event_key_down.publish( EventKeyDown {
+					.key = sdl_key_to_key(sdl_event.key.keysym.sym)
+				} );
 			break;
 		}
 	}

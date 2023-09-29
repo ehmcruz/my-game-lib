@@ -29,7 +29,8 @@ struct SDL_AudioDescriptor {
 
 struct ChannelDescriptor {
 	int channel;
-	SDL_AudioDescriptor *desc; // (desc == nulptr) means free channel
+	bool busy;
+	AudioDescriptor audio_descriptor;
 	AudioManager::Callback *callback;
 	size_t callback_size;
 };
@@ -52,6 +53,7 @@ inline constexpr int default_audio_rate = 44100;
 // ---------------------------------------------------
 
 static SDL_AudioDriver *driver = nullptr;
+static uint32_t next_audio_id = 0;
 
 // ---------------------------------------------------
 
@@ -86,7 +88,8 @@ SDL_AudioDriver::SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_)
 	for (int32_t i = 0; i < nchannels; i++)
 		channels.push_back( ChannelDescriptor {
 			.channel = i,
-			.desc = nullptr,
+			.busy = false,
+			.audio_descriptor = { .id = 0, .data = nullptr},
 			.callback = nullptr,
 			.callback_size = 0
 			} );
@@ -128,7 +131,10 @@ AudioDescriptor SDL_AudioDriver::load_sound (const std::string_view fname, const
 
 	dprintln("loaded sound " << fname);
 
-	return AudioDescriptor { .data = desc };
+	return AudioDescriptor {
+		.id = next_audio_id++,
+		.data = desc
+		};
 }
 
 // ---------------------------------------------------
@@ -149,7 +155,9 @@ void SDL_AudioDriver::unload_audio (AudioDescriptor& audio)
 static void sdl_channel_finished_callback (int id)
 {
 	auto& channel = channels[id];
-	SDL_AudioDescriptor *desc = channel.desc;
+	AudioDescriptor audio_descriptor = channel.audio_descriptor;
+
+	SDL_AudioDescriptor *desc = audio_descriptor.data.get_value<SDL_AudioDescriptor*>();
 
 	dprintln("channel " << id << " finished playing " << desc->fname << ", calling callback");
 
@@ -157,7 +165,7 @@ static void sdl_channel_finished_callback (int id)
 	
 	AudioManager::Event event {
 		.type = AudioManager::Event::Type::AudioFinished,
-		.audio_descriptor = desc,
+		.audio_descriptor = audio_descriptor,
 		.repeat = false
 	};
 
@@ -166,7 +174,7 @@ static void sdl_channel_finished_callback (int id)
 	mylib_assert_exception(event.repeat == false)
 
 	if (!event.repeat) {
-		channel.desc = nullptr;
+		channel.busy = false;
 		driver->get_memory_manager().deallocate(channel.callback, channel.callback_size, 1);
 		channel.callback = nullptr;
 	}
@@ -185,7 +193,8 @@ void SDL_AudioDriver::play_audio (AudioDescriptor& audio, Callback *callback, co
 
 		auto& channel = channels[id];
 
-		channel.desc = desc;
+		channel.busy = true;
+		channel.audio_descriptor = audio;
 		channel.callback = callback;
 		channel.callback_size = callback_size;
 

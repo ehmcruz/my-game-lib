@@ -19,7 +19,7 @@ class SDL_EventDriver : public EventManager
 public:
 	SDL_EventDriver (Mylib::Memory::Manager& memory_manager_);
 
-	void check_events () override;
+	void process_events () override;
 };
 
 // ---------------------------------------------------

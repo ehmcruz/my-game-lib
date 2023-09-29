@@ -30,6 +30,7 @@ enum class AudioType {
 struct AudioDescriptor {
 //	AudioFormat format;
 //	AudioType type;
+	uint32_t id;
 	Mylib::Any<sizeof(void*), sizeof(void*)> data;
 };
 
@@ -98,7 +99,7 @@ void AudioManager::play_audio (AudioDescriptor& audio, const Tcallback& callback
 
 	Tc *persistent_callback = new (this->memory_manager.allocate( sizeof(Tc), 1 )) Tc(callback);
 
-	this->play_audio(audio, persistent_callback);
+	this->play_audio(audio, persistent_callback, sizeof(Tc));
 }
 
 // ---------------------------------------------------
