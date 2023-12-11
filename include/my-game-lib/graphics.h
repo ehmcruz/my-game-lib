@@ -209,8 +209,15 @@ class GraphicsManager
 {
 public:
 	enum class Type { // any change here will need a change in get_type_str
+	#ifdef MYGLIB_SUPPORT_SDL
+		SDL,
+	#endif
+	#ifdef MYGLIB_SUPPORT_OPENGL
 		Opengl,
+	#endif
+	#ifdef MYGLIB_SUPPORT_VULKAN
 		Vulkan,
+	#endif
 		Unsupported // must be the last one
 	};
 
