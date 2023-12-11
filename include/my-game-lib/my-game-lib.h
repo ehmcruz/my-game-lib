@@ -5,6 +5,7 @@
 
 #include <my-game-lib/events.h>
 #include <my-game-lib/audio.h>
+#include <my-game-lib/graphics.h>
 
 namespace MyGlib
 {
@@ -21,6 +22,7 @@ private:
 
 	AudioManager *audio_manager = nullptr;
 	EventManager *event_manager = nullptr;
+	GraphicsManager *graphics_manager = nullptr;
 
 private:
 	Lib ();
@@ -38,6 +40,11 @@ public:
 	EventManager& get_event_manager ()
 	{
 		return *this->event_manager;
+	}
+
+	GraphicsManager& get_graphics_manager ()
+	{
+		return *this->graphics_manager;
 	}
 };
 

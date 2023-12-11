@@ -1,5 +1,5 @@
-#ifndef __MY_GAME_LIB_SDL_AUDIO_HEADER_H__
-#define __MY_GAME_LIB_SDL_AUDIO_HEADER_H__
+#ifndef __MY_GAME_LIB_AUDIO_SDL_HEADER_H__
+#define __MY_GAME_LIB_AUDIO_SDL_HEADER_H__
 
 #include <string_view>
 #include <vector>
