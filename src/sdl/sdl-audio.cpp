@@ -1,5 +1,6 @@
 //#include <variant>
 
+#include <my-game-lib/debug.h>
 #include <my-game-lib/audio.h>
 #include <my-game-lib/sdl/sdl-audio.h>
 
@@ -52,7 +53,7 @@ inline constexpr int default_audio_rate = 44100;
 
 // ---------------------------------------------------
 
-static SDL_AudioDriver *driver = nullptr;
+static SDL_AudioDriver *audio_driver = nullptr;
 static uint32_t next_audio_id = 0;
 
 // ---------------------------------------------------
@@ -62,7 +63,7 @@ SDL_AudioDriver::SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_)
 {
 	dprintln("Loading SDL Audio Driver");
 
-	driver = this;
+	audio_driver = this;
 
 	Uint16 audio_format = default_audio_format;
 	int audio_channels = default_audio_channels;
@@ -71,17 +72,22 @@ SDL_AudioDriver::SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_)
 	int audio_rate = default_audio_rate;
 
 	if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers) < 0) {
-		dprintln("Couldn't open audio: " << SDL_GetError());
+		dprintln("Couldn't open audio: ", SDL_GetError());
 		exit(1);
 	}
 	else {
 		Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);
-		dprintln("Opened audio at " << audio_rate << " Hz " << (audio_format&0xFF) << " bit " << audio_channels << " channels " << audio_buffers <<  " bytes audio buffer\n");
+		dprintln("Opened audio at ",
+			audio_rate, " Hz ",
+			(audio_format & 0xFF), " bit ",
+			audio_channels, " channels ",
+			audio_buffers,  " bytes audio buffer",
+			'\n');
 	}
 
 	const int nchannels = Mix_AllocateChannels(-1);
 	
-	dprintln("there are " << nchannels << " channels");
+	dprintln("there are ", nchannels, " channels");
 	
 	channels.reserve(nchannels);
 
@@ -129,7 +135,7 @@ AudioDescriptor SDL_AudioDriver::load_sound (const std::string_view fname, const
 			throw Mylib::Exception("SDL Audio Driver requires sound effects in Wav file format!");
 	}
 
-	dprintln("loaded sound " << fname);
+	dprintln("loaded sound ", fname);
 
 	return AudioDescriptor {
 		.id = next_audio_id++,
@@ -159,7 +165,7 @@ static void sdl_channel_finished_callback (int id)
 
 	SDL_AudioDescriptor *desc = audio_descriptor.data.get_value<SDL_AudioDescriptor*>();
 
-	dprintln("channel " << id << " finished playing " << desc->fname << ", calling callback");
+	dprintln("channel ", id, " finished playing ", desc->fname, ", calling callback");
 
 	auto& c = *(channel.callback);
 	
@@ -175,7 +181,7 @@ static void sdl_channel_finished_callback (int id)
 
 	if (!event.repeat) {
 		channel.busy = false;
-		driver->get_memory_manager().deallocate(channel.callback, channel.callback_size, 1);
+		audio_driver->get_memory_manager().deallocate(channel.callback, channel.callback_size, 1);
 		channel.callback = nullptr;
 	}
 }
@@ -189,7 +195,7 @@ void SDL_AudioDriver::play_audio (AudioDescriptor& audio, Callback *callback, co
 	if (desc->type == SDL_AudioDescriptor::Type::Chunk) {
 		const int id = Mix_PlayChannel(-1, desc->chunk, 0);
 
-		dprintln("playing sound " << desc->fname << " at channel " << id);
+		dprintln("playing sound ", desc->fname, " at channel ", id);
 
 		auto& channel = channels[id];
 

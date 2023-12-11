@@ -9,7 +9,7 @@ TESTS_SRC := $(wildcard tests/*.cpp)
 # https://github.com/ehmcruz/my-lib
 MYLIB = ../my-lib
 
-CPPFLAGS = -std=c++23 -Wall -g -I$(MYLIB)/include -I./include
+CPPFLAGS = -std=c++23 -Wall -g -I$(MYLIB)/include -I./include -DMYGLIB_FP_TYPE=float
 LDFLAGS = -std=c++23
 
 # ----------------------------------
@@ -32,7 +32,7 @@ endif
 # ----------------------------------
 
 # need to add a rule for each .o/.cpp at the bottom
-MYLIB_OBJS = ext/memory.o
+MYLIB_OBJS = #ext/memory.o
 
 SRCS := $(wildcard src/*.cpp)
 

@@ -13,10 +13,12 @@
 #include <string>
 #include <algorithm>
 #include <array>
+#include <string_view>
 
 #include <my-lib/std.h>
 #include <my-lib/macros.h>
 #include <my-lib/any.h>
+#include <my-lib/memory.h>
 #include <my-lib/math.h>
 #include <my-lib/math-matrix.h>
 #include <my-lib/math-geometry.h>
@@ -85,8 +87,8 @@ protected:
 	OO_ENCAPSULATE_SCALAR_INIT(fp_t, local_rotation_angle, 0)
 	OO_ENCAPSULATE_OBJ_INIT(Vector, local_rotation_axis, Vector::zero())
 
-	OO_ENCAPSULATE_SCALAR_INIT(fp_t, own_rotation_angle, 0)
-	OO_ENCAPSULATE_OBJ_INIT(Vector, own_rotation_axis, Vector::zero())
+	OO_ENCAPSULATE_SCALAR_INIT(fp_t, self_rotation_angle, 0)
+	OO_ENCAPSULATE_OBJ_INIT(Vector, self_rotation_axis, Vector::zero())
 
 public:
 	Shape (const Type type_) noexcept
@@ -99,9 +101,9 @@ public:
 		this->local_rotation_angle = std::fmod(angle, Mylib::Math::degrees_to_radians(fp(360)));
 	}
 
-	constexpr void set_own_rotation_angle_bounded (const fp_t angle) noexcept
+	constexpr void set_self_rotation_angle_bounded (const fp_t angle) noexcept
 	{
-		this->own_rotation_angle = std::fmod(angle, Mylib::Math::degrees_to_radians(fp(360)));
+		this->self_rotation_angle = std::fmod(angle, Mylib::Math::degrees_to_radians(fp(360)));
 	}
 };
 
@@ -138,7 +140,7 @@ public:
 	}
 
 	Cube3D () noexcept
-		: Cube3d(0)
+		: Cube3D(0)
 	{
 	}
 
@@ -222,25 +224,26 @@ public:
 	};
 
 	struct InitParams {
-		Mylib::Memory::Manager& memory_manager,
-		std::string_view window_name,
-		uint32_t window_width_px,
-		uint32_t window_height_px,
+		Mylib::Memory::Manager& memory_manager;
+		std::string_view window_name;
+		uint32_t window_width_px;
+		uint32_t window_height_px;
 		bool fullscreen;
 	};
 
 protected:
-	SDL_Window *sdl_window;
+	Mylib::Memory::Manager& memory_manager;
 	OO_ENCAPSULATE_SCALAR_READONLY(uint32_t, window_width_px)
 	OO_ENCAPSULATE_SCALAR_READONLY(uint32_t, window_height_px)
 	OO_ENCAPSULATE_SCALAR_READONLY(bool, fullscreen)
+	
 	OO_ENCAPSULATE_SCALAR_READONLY(fp_t, window_aspect_ratio)
 	OO_ENCAPSULATE_OBJ_INIT(Color, background_color, Color::black())
 
-	Mylib::Memory::Manager& memory_manager;
+	SDL_Window *sdl_window;
 
 public:
-	Renderer (const InitParams& params)
+	GraphicsManager (const InitParams& params)
 		: memory_manager(params.memory_manager),
 		window_width_px(params.window_width_px),
 		window_height_px(params.window_height_px),

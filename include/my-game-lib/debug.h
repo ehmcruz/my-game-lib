@@ -14,7 +14,9 @@
 
 #include <my-lib/std.h>
 
-#include <SDL.h>
+#ifdef __ANDROID__
+	#include <SDL.h>
+#endif
 
 namespace MyGlib
 {

@@ -5,6 +5,8 @@
 	#error "SDL support is required"
 #endif
 
+#include <string_view>
+
 #include <my-lib/memory.h>
 
 #include <my-game-lib/events.h>
@@ -20,9 +22,9 @@ class Lib
 {
 public:
 	struct InitParams {
-		std::string_view window_name,
-		uint32_t window_width_px,
-		uint32_t window_height_px,
+		std::string_view window_name;
+		uint32_t window_width_px;
+		uint32_t window_height_px;
 		bool fullscreen;
 	};
 

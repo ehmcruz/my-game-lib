@@ -39,7 +39,7 @@ Lib::Lib (const InitParams& params)
 Lib::Lib (const InitParams& params, Mylib::Memory::Manager& memory_manager_)
 	: memory_manager(memory_manager_)
 {
-	this->lib_init(const InitParams& params);
+	this->lib_init(params);
 }
 
 void Lib::lib_init (const InitParams& params)

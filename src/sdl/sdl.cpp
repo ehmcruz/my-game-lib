@@ -1,6 +1,7 @@
 //#include <variant>
 
 #include <my-game-lib/my-game-lib.h>
+#include <my-game-lib/debug.h>
 #include <my-game-lib/audio.h>
 #include <my-game-lib/sdl/sdl-driver.h>
 #include <my-game-lib/sdl/sdl-audio.h>

@@ -56,7 +56,7 @@ void Shader::compile ()
 		glGetShaderiv(this->shader_id, GL_INFO_LOG_LENGTH, &log_size);
 
 		std::vector<char> berror(log_size);
-		glGetShaderInfoLog(this->shader_id, logSize, nullptr, berror.data());
+		glGetShaderInfoLog(this->shader_id, log_size, nullptr, berror.data());
 		mylib_throw_exception_msg(this->fname, " shader compilation failed", '\n', berror.data());
 	}
 }
@@ -278,10 +278,10 @@ void Renderer::wait_next_frame ()
 
 void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset)
 {
-	const Vector local_pos = cube.get_value_delta();
+	const Vector local_pos = cube.get_value_local_pos();
 	//const Vector world_pos = Vector(4.0f, 4.0f);
 
-	using PositionIndex = Cube3d::PositionIndex;
+	using PositionIndex = Cube3D::PositionIndex;
 	using enum PositionIndex;
 	
 #if 0
@@ -343,9 +343,9 @@ void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset)
 		local_pos.z + cube.get_d()*fp(0.5)
 		);
 	
-	if (cube.get_rotation_angle() != fp(0)) {
+	if (cube.get_local_rotation_angle() != fp(0)) {
 		for (auto& p : points)
-			p.rotate_around_axis(cube.get_ref_rotation_axis(), cube.get_rotation_angle());
+			p.rotate_around_axis(cube.get_ref_local_rotation_axis(), cube.get_local_rotation_angle());
 	}
 
 #ifdef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
@@ -529,7 +529,7 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 
 	// translate from (0, 2) to (-1, +1) opengl clip space
 	Matrix4 translate_subtract_one;
-	translate_subtract_one.set_translate( Vector(-1, +1) );
+	translate_subtract_one.set_translate( Vector2(-1, +1) );
 //	dprintln( "translation to clip init:" ) translate_to_clip_init.println();
 
 	// mirror y axis
@@ -544,7 +544,7 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 //	dprintln( "translation to clip init:" ) translate_to_clip_init.println();
 
 	Matrix4 scale_normalized;
-	scale_normalized.set_scale(Vector(normalized_scale_factor, normalized_scale_factor));
+	scale_normalized.set_scale(Vector2(normalized_scale_factor, normalized_scale_factor));
 //	dprintln( "scale matrix:" ) Mylib::Math::println(scale);
 //exit(1);
 
@@ -568,9 +568,6 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 	dprintln("projection matrix:");
 	dprintln(this->projection_matrix);
 	dprintln();
-	dprintln("camera position: ", args.world_camera_pos);
-	dprintln("camera target: ", args.world_camera_target);
-	dprintln("camera vector: ", args.world_camera_target - args.world_camera_pos);
 #endif
 }
 

@@ -41,7 +41,12 @@ void quit_callback (const MyGlib::EventQuit& event)
 
 int main (int argc, char **argv)
 {
-	lib = &MyGlib::Lib::init();
+	lib = &MyGlib::Lib::init({
+		.window_name = "My Game Lib Test",
+		.window_width_px = 640,
+		.window_height_px = 480,
+		.fullscreen = false
+	});
 	event_manager = &lib->get_event_manager();
 	audio_manager = &lib->get_audio_manager();
 
