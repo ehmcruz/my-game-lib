@@ -27,7 +27,7 @@ public:
 public:
 	AudioDescriptor load_sound (const std::string_view fname, const AudioFormat format) override;
 	void unload_audio (AudioDescriptor& audio) override;
-	void play_audio (AudioDescriptor& audio, Callback *callback, const size_t callback_size) override;
+	void driver_play_audio (AudioDescriptor& audio, Callback *callback) override;
 };
 
 // ---------------------------------------------------

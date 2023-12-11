@@ -1,11 +1,15 @@
 //#include <variant>
 
+#include <mutex>
+#include <atomic>
+
 #include <my-game-lib/debug.h>
 #include <my-game-lib/audio.h>
 #include <my-game-lib/sdl/sdl-audio.h>
 
 #include <my-lib/macros.h>
 #include <my-lib/trigger.h>
+#include <my-lib/std.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
@@ -33,7 +37,6 @@ struct ChannelDescriptor {
 	bool busy;
 	AudioDescriptor audio_descriptor;
 	AudioManager::Callback *callback;
-	size_t callback_size;
 };
 
 // ---------------------------------------------------
@@ -42,6 +45,7 @@ struct ChannelDescriptor {
 // I want to avoid that
 
 static std::vector<ChannelDescriptor> channels;
+static std::mutex channels_mutex;
 
 // ---------------------------------------------------
 
@@ -54,7 +58,11 @@ inline constexpr int default_audio_rate = 44100;
 // ---------------------------------------------------
 
 static SDL_AudioDriver *audio_driver = nullptr;
-static uint32_t next_audio_id = 0;
+static std::atomic<uint32_t> next_audio_id = 0;
+
+// ---------------------------------------------------
+
+static void sdl_channel_finished_callback (int id);
 
 // ---------------------------------------------------
 
@@ -72,8 +80,7 @@ SDL_AudioDriver::SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_)
 	int audio_rate = default_audio_rate;
 
 	if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers) < 0) {
-		dprintln("Couldn't open audio: ", SDL_GetError());
-		exit(1);
+		mylib_throw_exception_msg("Couldn't open audio", '\n', SDL_GetError());
 	}
 	else {
 		Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);
@@ -96,9 +103,10 @@ SDL_AudioDriver::SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_)
 			.channel = i,
 			.busy = false,
 			.audio_descriptor = { .id = 0, .data = nullptr},
-			.callback = nullptr,
-			.callback_size = 0
+			.callback = nullptr
 			} );
+	
+	Mix_ChannelFinished(sdl_channel_finished_callback);
 
 	dprintln("SDL Audio Driver Loaded");
 }
@@ -137,8 +145,11 @@ AudioDescriptor SDL_AudioDriver::load_sound (const std::string_view fname, const
 
 	dprintln("loaded sound ", fname);
 
+	uint32_t id = next_audio_id;
+	next_audio_id++;
+
 	return AudioDescriptor {
-		.id = next_audio_id++,
+		.id = id,
 		.data = desc
 		};
 }
@@ -160,57 +171,66 @@ void SDL_AudioDriver::unload_audio (AudioDescriptor& audio)
 
 static void sdl_channel_finished_callback (int id)
 {
+	channels_mutex.lock();
+
 	auto& channel = channels[id];
 	AudioDescriptor audio_descriptor = channel.audio_descriptor;
 
 	SDL_AudioDescriptor *desc = audio_descriptor.data.get_value<SDL_AudioDescriptor*>();
 
-	dprintln("channel ", id, " finished playing ", desc->fname, ", calling callback");
-
-	auto& c = *(channel.callback);
+	//dprintln("channel ", id, " finished playing ", desc->fname, ", calling callback");
 	
 	AudioManager::Event event {
 		.type = AudioManager::Event::Type::AudioFinished,
 		.audio_descriptor = audio_descriptor,
-		.repeat = false
 	};
 
-	c(event);
-
-	mylib_assert_exception(event.repeat == false)
-
-	if (!event.repeat) {
-		channel.busy = false;
-		audio_driver->get_memory_manager().deallocate(channel.callback, channel.callback_size, 1);
-		channel.callback = nullptr;
+	if (channel.callback != nullptr) {
+		auto& c = *channel.callback;
+		c(event);
 	}
+
+	// backup so we can deallocate the memory after unlocking the mutex
+	auto *ptr = channel.callback;
+	auto size = channel.callback->get_size();
+
+	// It would be nice to call the callbback after unlocking the mutex,
+	// but we would need to know the callback type to make a copy of it
+	// in the stack before unlocking the mutex, but we don't know the type,
+	// so it is not possible unless we do some black magic.
+	// Since this code should not be critical, let's leave black magic only
+	// for places where it will make a performance difference.
+
+	channel.callback = nullptr;
+	channel.busy = false;
+
+	channels_mutex.unlock();
+
+	if (ptr != nullptr)
+		audio_driver->get_memory_manager().deallocate(ptr, size, 1);
 }
 
 // ---------------------------------------------------
 
-void SDL_AudioDriver::play_audio (AudioDescriptor& audio, Callback *callback, const size_t callback_size)
+void SDL_AudioDriver::driver_play_audio (AudioDescriptor& audio, Callback *callback)
 {
 	SDL_AudioDescriptor *desc = audio.data.get_value<SDL_AudioDescriptor*>();
 
 	if (desc->type == SDL_AudioDescriptor::Type::Chunk) {
-		const int id = Mix_PlayChannel(-1, desc->chunk, 0);
+		channels_mutex.lock();
 
-		dprintln("playing sound ", desc->fname, " at channel ", id);
+		const int id = Mix_PlayChannel(-1, desc->chunk, 0);
 
 		auto& channel = channels[id];
 
 		channel.busy = true;
 		channel.audio_descriptor = audio;
 		channel.callback = callback;
-		channel.callback_size = callback_size;
 
-		if (callback)
-			Mix_ChannelFinished(sdl_channel_finished_callback);
-		else
-			Mix_ChannelFinished(nullptr);
+		channels_mutex.unlock();
+
+		//dprintln("playing sound ", desc->fname, " at channel ", id);
 	}
-
-	#warning possible race condition when calling callback, will fix later
 }
 
 // ---------------------------------------------------

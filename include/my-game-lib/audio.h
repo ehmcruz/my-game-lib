@@ -80,14 +80,14 @@ public:
 
 	inline void play_audio (AudioDescriptor& audio)
 	{
-		this->play_audio(audio, nullptr, 0);
+		this->driver_play_audio(audio, nullptr);
 	}
 
 	template <typename Tcallback>
 	void play_audio (AudioDescriptor& audio, const Tcallback& callback);
 
 protected:
-	virtual void play_audio (AudioDescriptor& audio, Callback *callback, const size_t callback_size) = 0;
+	virtual void driver_play_audio (AudioDescriptor& audio, Callback *callback) = 0;
 };
 
 // ---------------------------------------------------
@@ -99,7 +99,7 @@ void AudioManager::play_audio (AudioDescriptor& audio, const Tcallback& callback
 
 	Tc *persistent_callback = new (this->memory_manager.allocate( sizeof(Tc), 1 )) Tc(callback);
 
-	this->play_audio(audio, persistent_callback, sizeof(Tc));
+	this->driver_play_audio(audio, persistent_callback);
 }
 
 // ---------------------------------------------------
