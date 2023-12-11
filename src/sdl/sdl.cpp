@@ -21,18 +21,6 @@ void SDL_Driver_Init ()
 {
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
-	SDL_Window *screen = SDL_CreateWindow("My Game Window",
-		SDL_WINDOWPOS_UNDEFINED,
-		SDL_WINDOWPOS_UNDEFINED,
-		800, 500,
-		SDL_WINDOW_OPENGL);
-
-	SDL_Renderer *renderer = SDL_CreateRenderer(screen, -1, 0);
-
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderClear(renderer);
-	SDL_RenderPresent(renderer);
-
 	dprintln("SDL Driver Initialized");
 }
 
