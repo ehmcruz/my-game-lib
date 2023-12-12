@@ -5,7 +5,7 @@
 bool alive = true;
 
 MyGlib::Lib *lib;
-MyGlib::EventManager *event_manager;
+MyGlib::Event::Manager *event_manager;
 MyGlib::Audio::Manager *audio_manager;
 
 MyGlib::Audio::Descriptor audio_explosion;
@@ -21,17 +21,17 @@ void my_music_callback (MyGlib::Audio::Manager::Event& event)
 	std::cout << "Music " << event.audio_descriptor.id << " finished" << std::endl;
 }
 
-void key_down_callback (const MyGlib::EventKeyDown& event)
+void key_down_callback (const MyGlib::Event::KeyDown& event)
 {
-	switch (event.key)
+	switch (event.key_code)
 	{
-		case MyGlib::Key::Space: {
+		case SDLK_SPACE: {
 			std::cout << "Playing audio " << audio_explosion.id << std::endl;
 			audio_manager->play_audio(audio_explosion, Mylib::Trigger::make_callback_function<MyGlib::Audio::Manager::Event>(&my_sound_callback));
 			}
 			break;
 	
-		case MyGlib::Key::Return:
+		case SDLK_RETURN:
 			std::cout << "Playing audio " << audio_explosion.id << " without callback" << std::endl;
 			audio_manager->play_audio(audio_explosion);
 			break;
@@ -41,7 +41,7 @@ void key_down_callback (const MyGlib::EventKeyDown& event)
 	}
 }
 
-void quit_callback (const MyGlib::EventQuit& event)
+void quit_callback (const MyGlib::Event::Quit& event)
 {
 	alive = false;
 }
@@ -62,8 +62,8 @@ int main (int argc, char **argv)
 
 	audio_manager->play_audio(music, Mylib::Trigger::make_callback_function<MyGlib::Audio::Manager::Event>(&my_music_callback));
 
-	event_manager->key_down().subscribe( Mylib::Trigger::make_callback_function<MyGlib::EventKeyDown>(&key_down_callback) );
-	event_manager->quit().subscribe( Mylib::Trigger::make_callback_function<MyGlib::EventQuit>(&quit_callback) );
+	event_manager->key_down().subscribe( Mylib::Trigger::make_callback_function<MyGlib::Event::KeyDown>(&key_down_callback) );
+	event_manager->quit().subscribe( Mylib::Trigger::make_callback_function<MyGlib::Event::Quit>(&quit_callback) );
 
 	while (alive)
 	{

@@ -14,13 +14,16 @@ namespace MyGlib
 void SDL_Driver_Init ();
 void SDL_Driver_End ();
 
-class SDL_EventDriver : public EventManager
+namespace Event
 {
-public:
-	SDL_EventDriver (Mylib::Memory::Manager& memory_manager_);
+	class SDL_EventDriver : public Manager
+	{
+	public:
+		SDL_EventDriver (Mylib::Memory::Manager& memory_manager_);
 
-	void process_events () override;
-};
+		void process_events () override final;
+	};
+} // end namespace Event
 
 // ---------------------------------------------------
 
