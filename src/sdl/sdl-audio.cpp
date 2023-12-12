@@ -1,5 +1,4 @@
-//#include <variant>
-
+#include <variant>
 #include <mutex>
 #include <atomic>
 
@@ -28,12 +27,11 @@ struct SDL_AudioDescriptor {
 	Type type;
 	AudioFormat format;
 	std::string fname;
-	Mix_Music *music = nullptr; // use variant later, although I read that variant can't store pointers
-	Mix_Chunk *chunk = nullptr;
+	std::variant<Mix_Music*, Mix_Chunk*> ptr;
 };
 
 struct ChannelDescriptor {
-	int channel;
+	int id;
 	bool busy;
 	AudioDescriptor audio_descriptor;
 	AudioManager::Callback *callback;
@@ -47,6 +45,9 @@ struct ChannelDescriptor {
 static std::vector<ChannelDescriptor> channels;
 static std::mutex channels_mutex;
 
+static ChannelDescriptor music_channel;
+static std::mutex music_channel_mutex;
+
 // ---------------------------------------------------
 
 inline constexpr Uint16 default_audio_format = MIX_DEFAULT_FORMAT;
@@ -58,11 +59,12 @@ inline constexpr int default_audio_rate = 44100;
 // ---------------------------------------------------
 
 static SDL_AudioDriver *audio_driver = nullptr;
-static std::atomic<uint32_t> next_audio_id = 0;
+static std::atomic<uint64_t> next_audio_id {0};
 
 // ---------------------------------------------------
 
 static void sdl_channel_finished_callback (int id);
+static void sdl_music_finished_callback ();
 
 // ---------------------------------------------------
 
@@ -100,13 +102,21 @@ SDL_AudioDriver::SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_)
 
 	for (int32_t i = 0; i < nchannels; i++)
 		channels.push_back( ChannelDescriptor {
-			.channel = i,
+			.id = i,
 			.busy = false,
 			.audio_descriptor = { .id = 0, .data = nullptr},
 			.callback = nullptr
 			} );
 	
+	music_channel = ChannelDescriptor {
+		.id = -1,
+		.busy = false,
+		.audio_descriptor = { .id = 0, .data = nullptr},
+		.callback = nullptr
+		};
+	
 	Mix_ChannelFinished(sdl_channel_finished_callback);
+	Mix_HookMusicFinished(sdl_music_finished_callback);
 
 	dprintln("SDL Audio Driver Loaded");
 }
@@ -130,26 +140,59 @@ AudioDescriptor SDL_AudioDriver::load_sound (const std::string_view fname, const
 		case Wav:
 			desc->type = SDL_AudioDescriptor::Type::Chunk;
 			desc->format = Wav;
-			desc->chunk = Mix_LoadWAV(fname.data());
+			desc->ptr = Mix_LoadWAV(fname.data());
+
+			if (std::get<Mix_Chunk*>(desc->ptr) == nullptr)
+				mylib_throw_exception_msg("SDL Audio Driver: couldn't load sound effect file ", fname);
 		break;
 
-/*		case MP3:
-			desc->type = SDL_AudioDescriptor::Type::Music;
-			desc->format = MP3;
-			desc->music = Mix_LoadMUS(fname_explosion);
-		break;*/
-
 		default:
-			throw Mylib::Exception("SDL Audio Driver requires sound effects in Wav file format!");
+			mylib_throw_exception_msg("SDL Audio Driver requires sound effects in Wav file format!");
 	}
 
 	dprintln("loaded sound ", fname);
 
-	uint32_t id = next_audio_id;
-	next_audio_id++;
+	return AudioDescriptor {
+		.id = next_audio_id++,
+		.data = desc
+		};
+}
+
+AudioDescriptor SDL_AudioDriver::load_music (const std::string_view fname, const AudioFormat format)
+{
+	SDL_AudioDescriptor *desc = new(this->memory_manager.allocate_type<SDL_AudioDescriptor>(1)) SDL_AudioDescriptor;
+//music = Mix_LoadMUS(fname);
+	desc->fname = fname;
+
+	switch (format) {
+		using enum AudioFormat;
+
+		case Wav:
+			desc->type = SDL_AudioDescriptor::Type::Chunk;
+			desc->format = Wav;
+			desc->ptr = Mix_LoadWAV(fname.data());
+
+			if (std::get<Mix_Chunk*>(desc->ptr) == nullptr)
+				mylib_throw_exception_msg("SDL Audio Driver: couldn't load music file ", fname);
+		break;
+
+		case MP3:
+			desc->type = SDL_AudioDescriptor::Type::Music;
+			desc->format = MP3;
+			desc->ptr = Mix_LoadMUS(fname.data());
+
+			if (std::get<Mix_Music*>(desc->ptr) == nullptr)
+				mylib_throw_exception_msg("SDL Audio Driver: couldn't load music file ", fname);
+		break;
+
+		default:
+			mylib_throw_exception_msg("SDL Audio Driver: unsupported audio format for music");
+	}
+
+	dprintln("loaded music ", fname);
 
 	return AudioDescriptor {
-		.id = id,
+		.id = next_audio_id++,
 		.data = desc
 		};
 }
@@ -169,45 +212,67 @@ void SDL_AudioDriver::unload_audio (AudioDescriptor& audio)
 
 // ---------------------------------------------------
 
+static void call_callback (AudioDescriptor audio_descriptor, AudioManager::Callback *ptr_callback)
+{
+	if (ptr_callback != nullptr) {
+		SDL_AudioDescriptor *desc = audio_descriptor.data.get_value<SDL_AudioDescriptor*>();
+
+		AudioManager::Event event {
+			.type = AudioManager::Event::Type::AudioFinished,
+			.audio_descriptor = audio_descriptor,
+		};
+
+		auto& c = *ptr_callback;
+		c(event);
+
+		audio_driver->get_memory_manager().deallocate(ptr_callback, c.get_size(), 1);
+	}
+}
+
+// ---------------------------------------------------
+
 static void sdl_channel_finished_callback (int id)
 {
+	auto& channel = channels[id];
+
 	channels_mutex.lock();
 
-	auto& channel = channels[id];
+	// backup so we can:
+	// - call the callback after unlocking the mutex
+	// - deallocate the memory after unlocking the mutex
+	auto *ptr_callback = channel.callback;
 	AudioDescriptor audio_descriptor = channel.audio_descriptor;
-
-	SDL_AudioDescriptor *desc = audio_descriptor.data.get_value<SDL_AudioDescriptor*>();
-
-	//dprintln("channel ", id, " finished playing ", desc->fname, ", calling callback");
-	
-	AudioManager::Event event {
-		.type = AudioManager::Event::Type::AudioFinished,
-		.audio_descriptor = audio_descriptor,
-	};
-
-	if (channel.callback != nullptr) {
-		auto& c = *channel.callback;
-		c(event);
-	}
-
-	// backup so we can deallocate the memory after unlocking the mutex
-	auto *ptr = channel.callback;
-	auto size = channel.callback->get_size();
-
-	// It would be nice to call the callbback after unlocking the mutex,
-	// but we would need to know the callback type to make a copy of it
-	// in the stack before unlocking the mutex, but we don't know the type,
-	// so it is not possible unless we do some black magic.
-	// Since this code should not be critical, let's leave black magic only
-	// for places where it will make a performance difference.
 
 	channel.callback = nullptr;
 	channel.busy = false;
 
 	channels_mutex.unlock();
 
-	if (ptr != nullptr)
-		audio_driver->get_memory_manager().deallocate(ptr, size, 1);
+	//dprintln("channel ", id, " finished playing ", desc->fname, ", calling callback");
+
+	call_callback(audio_descriptor, ptr_callback);
+}
+
+// ---------------------------------------------------
+
+static void sdl_music_finished_callback ()
+{
+	music_channel_mutex.lock();
+
+	// backup so we can:
+	// - call the callback after unlocking the mutex
+	// - deallocate the memory after unlocking the mutex
+	auto *ptr_callback = music_channel.callback;
+	AudioDescriptor audio_descriptor = music_channel.audio_descriptor;
+
+	music_channel.callback = nullptr;
+	music_channel.busy = false;
+
+	music_channel_mutex.unlock();
+
+	//dprintln("channel ", id, " finished playing ", desc->fname, ", calling callback");
+
+	call_callback(audio_descriptor, ptr_callback);
 }
 
 // ---------------------------------------------------
@@ -219,17 +284,52 @@ void SDL_AudioDriver::driver_play_audio (AudioDescriptor& audio, Callback *callb
 	if (desc->type == SDL_AudioDescriptor::Type::Chunk) {
 		channels_mutex.lock();
 
-		const int id = Mix_PlayChannel(-1, desc->chunk, 0);
+		ChannelDescriptor *channel = nullptr;
 
-		auto& channel = channels[id];
+		for (auto& c: channels) {
+			if (!c.busy) {
+				channel = &c;
+				break;
+			}
+		}
 
-		channel.busy = true;
-		channel.audio_descriptor = audio;
-		channel.callback = callback;
+		mylib_assert_exception_msg(channel != nullptr, "SDL Audio Driver: no free channel available to play sound effect")
+
+		const int channel_playing = Mix_PlayChannel(channel->id, std::get<Mix_Chunk*>(desc->ptr), 0);
+
+		mylib_assert_exception_msg(channel_playing == channel->id, "something really bad happenned")
+
+		channel->busy = true;
+		channel->audio_descriptor = audio;
+		channel->callback = callback;
 
 		channels_mutex.unlock();
 
-		//dprintln("playing sound ", desc->fname, " at channel ", id);
+		dprintln("playing sound ", desc->fname, " at channel ", channel->id);
+	}
+	else { // music
+		music_channel_mutex.lock();
+
+		Mix_PlayMusic(std::get<Mix_Music*>(desc->ptr), 0);
+
+		music_channel.busy = true;
+		music_channel.audio_descriptor = audio;
+		music_channel.callback = callback;
+
+		music_channel_mutex.unlock();
+	}
+}
+
+// ---------------------------------------------------
+
+void SDL_AudioDriver::set_volume (AudioDescriptor& audio, const float volume)
+{
+	SDL_AudioDescriptor *desc = audio.data.get_value<SDL_AudioDescriptor*>();
+
+	mylib_assert_exception(false)  // not finished implementation
+	
+	if (desc->type == SDL_AudioDescriptor::Type::Chunk) {
+		//Mix_VolumeChunk(desc->chunk, static_cast<int>(volume * static_cast<float>(MIX_MAX_VOLUME)));
 	}
 }
 

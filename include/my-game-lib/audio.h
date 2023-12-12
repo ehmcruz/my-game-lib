@@ -30,7 +30,7 @@ enum class AudioType {
 struct AudioDescriptor {
 //	AudioFormat format;
 //	AudioType type;
-	uint32_t id;
+	uint64_t id;
 	Mylib::Any<sizeof(void*), sizeof(void*)> data;
 };
 
@@ -74,7 +74,7 @@ public:
 	virtual AudioDescriptor load_sound (const std::string_view fname, const AudioFormat format) = 0;
 
 	// load background music
-	//virtual AudioDescriptor load_music (const std::string_view fname, const AudioFormat format) = 0;
+	virtual AudioDescriptor load_music (const std::string_view fname, const AudioFormat format) = 0;
 
 	virtual void unload_audio (AudioDescriptor& audio) = 0;
 
@@ -85,6 +85,8 @@ public:
 
 	template <typename Tcallback>
 	void play_audio (AudioDescriptor& audio, const Tcallback& callback);
+
+	virtual void set_volume (AudioDescriptor& audio, const float volume) = 0;
 
 protected:
 	virtual void driver_play_audio (AudioDescriptor& audio, Callback *callback) = 0;
