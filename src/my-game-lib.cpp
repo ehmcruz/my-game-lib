@@ -46,7 +46,7 @@ void Lib::lib_init (const InitParams& params)
 {
 #ifdef MYGLIB_SUPPORT_SDL
 	SDL_Driver_Init();
-	this->audio_manager = new SDL_AudioDriver(this->memory_manager);
+	this->audio_manager = new Audio::SDL_AudioDriver(this->memory_manager);
 	this->event_manager = new SDL_EventDriver(this->memory_manager);
 #endif
 

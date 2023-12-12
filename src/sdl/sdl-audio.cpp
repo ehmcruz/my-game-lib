@@ -15,6 +15,8 @@
 
 namespace MyGlib
 {
+namespace Audio
+{
 
 // ---------------------------------------------------
 
@@ -25,7 +27,7 @@ struct SDL_AudioDescriptor {
 	};
 
 	Type type;
-	AudioFormat format;
+	Format format;
 	std::string fname;
 	std::variant<Mix_Music*, Mix_Chunk*> ptr;
 };
@@ -33,8 +35,8 @@ struct SDL_AudioDescriptor {
 struct ChannelDescriptor {
 	int id;
 	bool busy;
-	AudioDescriptor audio_descriptor;
-	AudioManager::Callback *callback;
+	Descriptor audio_descriptor;
+	Manager::Callback *callback;
 };
 
 // ---------------------------------------------------
@@ -69,7 +71,7 @@ static void sdl_music_finished_callback ();
 // ---------------------------------------------------
 
 SDL_AudioDriver::SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_)
-	: AudioManager(memory_manager_)
+	: Manager(memory_manager_)
 {
 	dprintln("Loading SDL Audio Driver");
 
@@ -128,14 +130,14 @@ SDL_AudioDriver::~SDL_AudioDriver ()
 
 // ---------------------------------------------------
 
-AudioDescriptor SDL_AudioDriver::load_sound (const std::string_view fname, const AudioFormat format)
+Descriptor SDL_AudioDriver::load_sound (const std::string_view fname, const Format format)
 {
 	SDL_AudioDescriptor *desc = new(this->memory_manager.allocate_type<SDL_AudioDescriptor>(1)) SDL_AudioDescriptor;
 
 	desc->fname = fname;
 
 	switch (format) {
-		using enum AudioFormat;
+		using enum Format;
 
 		case Wav:
 			desc->type = SDL_AudioDescriptor::Type::Chunk;
@@ -152,20 +154,20 @@ AudioDescriptor SDL_AudioDriver::load_sound (const std::string_view fname, const
 
 	dprintln("loaded sound ", fname);
 
-	return AudioDescriptor {
+	return Descriptor {
 		.id = next_audio_id++,
 		.data = desc
 		};
 }
 
-AudioDescriptor SDL_AudioDriver::load_music (const std::string_view fname, const AudioFormat format)
+Descriptor SDL_AudioDriver::load_music (const std::string_view fname, const Format format)
 {
 	SDL_AudioDescriptor *desc = new(this->memory_manager.allocate_type<SDL_AudioDescriptor>(1)) SDL_AudioDescriptor;
 //music = Mix_LoadMUS(fname);
 	desc->fname = fname;
 
 	switch (format) {
-		using enum AudioFormat;
+		using enum Format;
 
 		case Wav:
 			desc->type = SDL_AudioDescriptor::Type::Chunk;
@@ -191,7 +193,7 @@ AudioDescriptor SDL_AudioDriver::load_music (const std::string_view fname, const
 
 	dprintln("loaded music ", fname);
 
-	return AudioDescriptor {
+	return Descriptor {
 		.id = next_audio_id++,
 		.data = desc
 		};
@@ -199,7 +201,7 @@ AudioDescriptor SDL_AudioDriver::load_music (const std::string_view fname, const
 
 // ---------------------------------------------------
 
-void SDL_AudioDriver::unload_audio (AudioDescriptor& audio)
+void SDL_AudioDriver::unload_audio (Descriptor& audio)
 {
 	SDL_AudioDescriptor *desc = audio.data.get_value<SDL_AudioDescriptor*>();
 
@@ -212,13 +214,13 @@ void SDL_AudioDriver::unload_audio (AudioDescriptor& audio)
 
 // ---------------------------------------------------
 
-static void call_callback (AudioDescriptor audio_descriptor, AudioManager::Callback *ptr_callback)
+static void call_callback (Descriptor audio_descriptor, Manager::Callback *ptr_callback)
 {
 	if (ptr_callback != nullptr) {
 		SDL_AudioDescriptor *desc = audio_descriptor.data.get_value<SDL_AudioDescriptor*>();
 
-		AudioManager::Event event {
-			.type = AudioManager::Event::Type::AudioFinished,
+		Manager::Event event {
+			.type = Manager::Event::Type::AudioFinished,
 			.audio_descriptor = audio_descriptor,
 		};
 
@@ -241,7 +243,7 @@ static void sdl_channel_finished_callback (int id)
 	// - call the callback after unlocking the mutex
 	// - deallocate the memory after unlocking the mutex
 	auto *ptr_callback = channel.callback;
-	AudioDescriptor audio_descriptor = channel.audio_descriptor;
+	Descriptor audio_descriptor = channel.audio_descriptor;
 
 	channel.callback = nullptr;
 	channel.busy = false;
@@ -263,7 +265,7 @@ static void sdl_music_finished_callback ()
 	// - call the callback after unlocking the mutex
 	// - deallocate the memory after unlocking the mutex
 	auto *ptr_callback = music_channel.callback;
-	AudioDescriptor audio_descriptor = music_channel.audio_descriptor;
+	Descriptor audio_descriptor = music_channel.audio_descriptor;
 
 	music_channel.callback = nullptr;
 	music_channel.busy = false;
@@ -277,7 +279,7 @@ static void sdl_music_finished_callback ()
 
 // ---------------------------------------------------
 
-void SDL_AudioDriver::driver_play_audio (AudioDescriptor& audio, Callback *callback)
+void SDL_AudioDriver::driver_play_audio (Descriptor& audio, Callback *callback)
 {
 	SDL_AudioDescriptor *desc = audio.data.get_value<SDL_AudioDescriptor*>();
 
@@ -322,12 +324,12 @@ void SDL_AudioDriver::driver_play_audio (AudioDescriptor& audio, Callback *callb
 
 // ---------------------------------------------------
 
-void SDL_AudioDriver::set_volume (AudioDescriptor& audio, const float volume)
+void SDL_AudioDriver::set_volume (Descriptor& audio, const float volume)
 {
 	SDL_AudioDescriptor *desc = audio.data.get_value<SDL_AudioDescriptor*>();
 
 	mylib_assert_exception(false)  // not finished implementation
-	
+
 	if (desc->type == SDL_AudioDescriptor::Type::Chunk) {
 		//Mix_VolumeChunk(desc->chunk, static_cast<int>(volume * static_cast<float>(MIX_MAX_VOLUME)));
 	}
@@ -335,4 +337,5 @@ void SDL_AudioDriver::set_volume (AudioDescriptor& audio, const float volume)
 
 // ---------------------------------------------------
 
+} // end namespace Audio
 } // end namespace MyGlib

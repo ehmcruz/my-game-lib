@@ -34,7 +34,7 @@ private:
 	Mylib::Memory::DefaultManager default_memory_manager;
 	Mylib::Memory::Manager& memory_manager;
 
-	AudioManager *audio_manager = nullptr;
+	Audio::Manager *audio_manager = nullptr;
 	EventManager *event_manager = nullptr;
 	GraphicsManager *graphics_manager = nullptr;
 
@@ -53,7 +53,7 @@ public:
 		return *instance;
 	}
 
-	AudioManager& get_audio_manager ()
+	Audio::Manager& get_audio_manager ()
 	{
 		mylib_assert_exception(this->audio_manager != nullptr)
 		return *this->audio_manager;

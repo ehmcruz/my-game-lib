@@ -14,29 +14,31 @@
 
 namespace MyGlib
 {
+namespace Audio
+{
 
 // ---------------------------------------------------
 
-enum class AudioFormat {
+enum class Format {
 	Wav,
 	MP3
 };
 
-enum class AudioType {
+enum class Type {
 	Sound, // sound effect
 	Music
 };
 
-struct AudioDescriptor {
+struct Descriptor {
 //	AudioFormat format;
 //	AudioType type;
 	uint64_t id;
-	Mylib::Any<sizeof(void*), sizeof(void*)> data;
+	Mylib::Any<sizeof(void*), sizeof(void*)> data; // used by backend driver
 };
 
 // ---------------------------------------------------
 
-class AudioManager
+class Manager
 {
 public:
 	struct Event {
@@ -44,26 +46,26 @@ public:
 			AudioFinished
 		};
 		const Type type;
-		const AudioDescriptor audio_descriptor;
+		const Descriptor audio_descriptor;
 		bool repeat;
 	};
 
 	using Callback = Mylib::Trigger::Callback<Event>;
 
 private:
-	static AudioManager *instance;
+	static Manager *instance;
 
 protected:
 	Mylib::Memory::Manager& memory_manager;
 
 protected:
-	AudioManager (Mylib::Memory::Manager& memory_manager_)
+	Manager (Mylib::Memory::Manager& memory_manager_)
 		: memory_manager(memory_manager_)
 	{
 	}
 
 public:
-	AudioManager& init ();
+	Manager& init ();
 
 	Mylib::Memory::Manager& get_memory_manager ()
 	{
@@ -71,31 +73,31 @@ public:
 	}
 
 	// load sound effect
-	virtual AudioDescriptor load_sound (const std::string_view fname, const AudioFormat format) = 0;
+	virtual Descriptor load_sound (const std::string_view fname, const Format format) = 0;
 
 	// load background music
-	virtual AudioDescriptor load_music (const std::string_view fname, const AudioFormat format) = 0;
+	virtual Descriptor load_music (const std::string_view fname, const Format format) = 0;
 
-	virtual void unload_audio (AudioDescriptor& audio) = 0;
+	virtual void unload_audio (Descriptor& audio) = 0;
 
-	inline void play_audio (AudioDescriptor& audio)
+	inline void play_audio (Descriptor& audio)
 	{
 		this->driver_play_audio(audio, nullptr);
 	}
 
 	template <typename Tcallback>
-	void play_audio (AudioDescriptor& audio, const Tcallback& callback);
+	void play_audio (Descriptor& audio, const Tcallback& callback);
 
-	virtual void set_volume (AudioDescriptor& audio, const float volume) = 0;
+	virtual void set_volume (Descriptor& audio, const float volume) = 0;
 
 protected:
-	virtual void driver_play_audio (AudioDescriptor& audio, Callback *callback) = 0;
+	virtual void driver_play_audio (Descriptor& audio, Callback *callback) = 0;
 };
 
 // ---------------------------------------------------
 
 template <typename Tcallback>
-void AudioManager::play_audio (AudioDescriptor& audio, const Tcallback& callback)
+void Manager::play_audio (Descriptor& audio, const Tcallback& callback)
 {
 	using Tc = Tcallback;
 
@@ -106,6 +108,7 @@ void AudioManager::play_audio (AudioDescriptor& audio, const Tcallback& callback
 
 // ---------------------------------------------------
 
+} // end namespace Audio
 } // end namespace MyGlib
 
 #endif

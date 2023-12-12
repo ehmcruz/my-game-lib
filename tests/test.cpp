@@ -6,17 +6,17 @@ bool alive = true;
 
 MyGlib::Lib *lib;
 MyGlib::EventManager *event_manager;
-MyGlib::AudioManager *audio_manager;
+MyGlib::Audio::Manager *audio_manager;
 
-MyGlib::AudioDescriptor audio_explosion;
-MyGlib::AudioDescriptor music;
+MyGlib::Audio::Descriptor audio_explosion;
+MyGlib::Audio::Descriptor music;
 
-void my_sound_callback (MyGlib::AudioManager::Event& event)
+void my_sound_callback (MyGlib::Audio::Manager::Event& event)
 {
 	std::cout << "Sound effect " << event.audio_descriptor.id << " finished" << std::endl;
 }
 
-void my_music_callback (MyGlib::AudioManager::Event& event)
+void my_music_callback (MyGlib::Audio::Manager::Event& event)
 {
 	std::cout << "Music " << event.audio_descriptor.id << " finished" << std::endl;
 }
@@ -27,7 +27,7 @@ void key_down_callback (const MyGlib::EventKeyDown& event)
 	{
 		case MyGlib::Key::Space: {
 			std::cout << "Playing audio " << audio_explosion.id << std::endl;
-			audio_manager->play_audio(audio_explosion, Mylib::Trigger::make_callback_function<MyGlib::AudioManager::Event>(&my_sound_callback));
+			audio_manager->play_audio(audio_explosion, Mylib::Trigger::make_callback_function<MyGlib::Audio::Manager::Event>(&my_sound_callback));
 			}
 			break;
 	
@@ -57,10 +57,10 @@ int main (int argc, char **argv)
 	event_manager = &lib->get_event_manager();
 	audio_manager = &lib->get_audio_manager();
 
-	music = audio_manager->load_music("music.mp3", MyGlib::AudioFormat::MP3);
-	audio_explosion = audio_manager->load_sound("hq-explosion-6288.wav", MyGlib::AudioFormat::Wav);
+	music = audio_manager->load_music("music.mp3", MyGlib::Audio::Format::MP3);
+	audio_explosion = audio_manager->load_sound("hq-explosion-6288.wav", MyGlib::Audio::Format::Wav);
 
-	audio_manager->play_audio(music, Mylib::Trigger::make_callback_function<MyGlib::AudioManager::Event>(&my_music_callback));
+	audio_manager->play_audio(music, Mylib::Trigger::make_callback_function<MyGlib::Audio::Manager::Event>(&my_music_callback));
 
 	event_manager->key_down().subscribe( Mylib::Trigger::make_callback_function<MyGlib::EventKeyDown>(&key_down_callback) );
 	event_manager->quit().subscribe( Mylib::Trigger::make_callback_function<MyGlib::EventQuit>(&quit_callback) );

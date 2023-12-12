@@ -15,21 +15,23 @@
 
 namespace MyGlib
 {
+namespace Audio
+{
 
 // ---------------------------------------------------
 
-class SDL_AudioDriver: public AudioManager
+class SDL_AudioDriver: public Manager
 {
 public:
 	SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_);
 	~SDL_AudioDriver ();
 	
 public:
-	AudioDescriptor load_sound (const std::string_view fname, const AudioFormat format) override final;
-	AudioDescriptor load_music (const std::string_view fname, const AudioFormat format) override final;
-	void unload_audio (AudioDescriptor& audio) override final;
-	void driver_play_audio (AudioDescriptor& audio, Callback *callback) override final;
-	void set_volume (AudioDescriptor& audio, const float volume) override final;
+	Descriptor load_sound (const std::string_view fname, const Format format) override final;
+	Descriptor load_music (const std::string_view fname, const Format format) override final;
+	void unload_audio (Descriptor& audio) override final;
+	void driver_play_audio (Descriptor& audio, Callback *callback) override final;
+	void set_volume (Descriptor& audio, const float volume) override final;
 };
 
 // ---------------------------------------------------
@@ -38,6 +40,7 @@ public:
 
 // ---------------------------------------------------
 
+} // end namespace Audio
 } // end namespace MyGlib
 
 #endif
