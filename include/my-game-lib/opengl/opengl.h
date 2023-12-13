@@ -204,6 +204,7 @@ protected:
 	Matrix4 projection_matrix;
 
 	ProgramTriangle *program_triangle;
+	CircleFactoryManager circle_factory_manager;
 
 public:
 	Renderer (const InitParams& params);

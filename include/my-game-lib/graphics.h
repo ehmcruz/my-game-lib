@@ -71,6 +71,21 @@ struct Color {
 	{
 		return Color{1.0f, 1.0f, 1.0f, 1.0f};
 	}
+
+	static consteval Color red ()
+	{
+		return Color{1.0f, 0.0f, 0.0f, 1.0f};
+	}
+
+	static consteval Color green ()
+	{
+		return Color{0.0f, 1.0f, 0.0f, 1.0f};
+	}
+
+	static consteval Color blue ()
+	{
+		return Color{0.0f, 0.0f, 1.0f, 1.0f};
+	}
 };
 
 // ---------------------------------------------------
@@ -335,13 +350,12 @@ public:
 class CircleFactory
 {
 private:
-	fp_t *table_sin;
-	fp_t *table_cos;
+	std::vector<fp_t> table_sin;
+	std::vector<fp_t> table_cos;
 	const uint32_t n_triangles;
 
 public:
 	CircleFactory (const uint32_t n_triangles_);
-	~CircleFactory ();
 
 	inline uint32_t get_n_vertices () const noexcept
 	{
@@ -388,6 +402,28 @@ public:
 
 			j++;
 		}
+	}
+};
+
+// ---------------------------------------------------
+
+class CircleFactoryManager
+{
+private:
+	std::vector<CircleFactory> factories;
+	const uint32_t min_n_triangles;
+	const uint32_t max_n_triangles;
+public:
+	CircleFactoryManager (const uint32_t n_cats, const uint32_t min_n_triangles, const uint32_t max_n_triangles);
+
+	inline const CircleFactory& get_factory (fp_t screen_size_per_cent) const noexcept
+	{
+		if (screen_size_per_cent > fp(1))
+			screen_size_per_cent = fp(1); // max value
+		uint32_t index = static_cast<uint32_t>(factories.size() * screen_size_per_cent);
+		if (index >= factories.size()) [[unlikely]]
+			index = factories.size() - 1;
+		return this->factories[index];
 	}
 };
 

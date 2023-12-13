@@ -204,7 +204,8 @@ void ProgramTriangle::debug ()
 // ---------------------------------------------------
 
 Renderer::Renderer (const InitParams& params)
-	: Manager (params)
+	: Manager (params),
+	  circle_factory_manager(10, 1000, 50)
 {
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 	SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 1 );
@@ -442,26 +443,33 @@ void Renderer::draw_circle2D (const Circle2D& circle, const Vector& offset, cons
 	rect.set_delta(circle.get_delta());
 	this->draw_rect(rect, offset, color);*/
 
+	// let's first estimate the size of the circle on the screen
+	// and then we can calculate the number of vertices needed to draw it
+
+	const fp_t radius = circle.get_radius();
+	const Vector4 circle_left (-radius, 0, 0, 1);
+	const Vector4 circle_right (radius, 0, 0, 1);
+	const Vector4 circle_left_rendered = this->projection_matrix * circle_left;
+	const Vector4 circle_right_rendered = this->projection_matrix * circle_right;
+	const fp_t circle_size_per_cent_of_screen = std::abs(circle_right_rendered.x - circle_left_rendered.x) / fp(2); // opengl viewport size is 2
+
+	const CircleFactory& factory = this->circle_factory_manager.get_factory(circle_size_per_cent_of_screen);
+
 	const Vector local_pos = circle.get_value_local_pos();
-	const uint32_t n_vertices = this->circle_factory_low_def->get_n_vertices();
+	const uint32_t n_vertices = factory.get_n_vertices();
+
+	dprint("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen);
+	dprintln(" n_triangles: ", n_vertices / 3);
+
 	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
 
-	this->circle_factory_low_def->fill_vertex_buffer(
-		circle.get_radius(),
-		&vertices[0].x,
-		&vertices[0].y,
-		ProgramTriangle::get_stride_in_floats()
-		);
+	factory.fill_vertex_buffer(radius, vertices);
 
 	for (uint32_t i=0; i<n_vertices; i++) {
-		vertices[i].x += local_pos.x;
-		vertices[i].y += local_pos.y;
-		vertices[i].offset_x = offset.x;
-		vertices[i].offset_y = offset.y;
-		vertices[i].r = color.r;
-		vertices[i].g = color.g;
-		vertices[i].b = color.b;
-		vertices[i].a = color.a;
+		vertices[i].local_pos.z = 0;
+		vertices[i].local_pos += local_pos;
+		vertices[i].offset = offset;
+		vertices[i].color = color;
 	}
 }
 
@@ -513,8 +521,8 @@ void Renderer::draw_rect2D (const Rect2D& rect, const Vector& offset, const Colo
 	vertices[5].local_pos.y = local_pos.y + rect.get_h()*0.5f;
 
 	for (uint32_t i=0; i<n_vertices; i++) {
-		vertices[i].offset.x = offset.x;
-		vertices[i].offset.y = offset.y;
+		vertices[i].local_pos.z = local_pos.z;
+		vertices[i].offset = offset;
 		vertices[i].color = color;
 	}
 }
