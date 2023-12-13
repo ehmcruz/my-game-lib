@@ -61,7 +61,11 @@ void render ()
 		.world_screen_width = 10 * (1.0f / zoom)
 		} );
 
-	renderer->draw_rect2D(MyGlib::Graphics::Rect2D(4, 2), Vector2(1, 1), MyGlib::Graphics::Color::red());
+	renderer->draw_rect2D(MyGlib::Graphics::Rect2D(4, 2), Vector2(3, 3), MyGlib::Graphics::Color::red());
+	renderer->draw_circle2D(MyGlib::Graphics::Circle2D(3), Vector2(5, 5), MyGlib::Graphics::Color::green());
+	renderer->draw_circle2D(MyGlib::Graphics::Circle2D(0.5), Vector2(8, 8), MyGlib::Graphics::Color::blue());
+
+	renderer->render();
 }
 
 void quit_callback (const MyGlib::Event::Quit& event)

@@ -205,7 +205,7 @@ void ProgramTriangle::debug ()
 
 Renderer::Renderer (const InitParams& params)
 	: Manager (params),
-	  circle_factory_manager(10, 1000, 50)
+	  circle_factory_manager(10, 50, 1000)
 {
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 	SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 1 );
@@ -458,8 +458,7 @@ void Renderer::draw_circle2D (const Circle2D& circle, const Vector& offset, cons
 	const Vector local_pos = circle.get_value_local_pos();
 	const uint32_t n_vertices = factory.get_n_vertices();
 
-	dprint("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen);
-	dprintln(" n_triangles: ", n_vertices / 3);
+	//dprintln("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen, " n_triangles: ", n_vertices / 3);
 
 	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
 

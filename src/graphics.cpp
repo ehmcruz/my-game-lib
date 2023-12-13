@@ -50,7 +50,6 @@ CircleFactory::CircleFactory (const uint32_t n_triangles_)
 // ---------------------------------------------------
 
 CircleFactoryManager::CircleFactoryManager (const uint32_t n_cats, const uint32_t min_n_triangles, const uint32_t max_n_triangles)
-: min_n_triangles(min_n_triangles), max_n_triangles(max_n_triangles)
 {
 	this->factories.reserve(n_cats);
 
@@ -60,8 +59,6 @@ CircleFactoryManager::CircleFactoryManager (const uint32_t n_cats, const uint32_
 		const uint32_t n_triangles = min_n_triangles + (i * static_cast<uint32_t>(delta));
 		this->factories.emplace_back(n_triangles);
 	}
-
-	dprintln("CircleFactoryManager created with ", n_cats, " categories");
 }
 
 // ---------------------------------------------------

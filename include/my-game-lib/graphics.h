@@ -411,8 +411,6 @@ class CircleFactoryManager
 {
 private:
 	std::vector<CircleFactory> factories;
-	const uint32_t min_n_triangles;
-	const uint32_t max_n_triangles;
 public:
 	CircleFactoryManager (const uint32_t n_cats, const uint32_t min_n_triangles, const uint32_t max_n_triangles);
 
