@@ -42,6 +42,8 @@ using Point4 = Vector4;
 using Vector = Vector3;
 using Point = Vector;
 
+using Vector2f = Mylib::Math::Vector<float, 2>;
+
 // ---------------------------------------------------
 
 consteval fp_t fp (const auto v)

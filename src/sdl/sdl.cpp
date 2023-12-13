@@ -1,5 +1,3 @@
-//#include <variant>
-
 #include <my-game-lib/my-game-lib.h>
 #include <my-game-lib/debug.h>
 #include <my-game-lib/sdl/sdl-driver.h>
@@ -40,8 +38,8 @@ struct FingerEvent {
 	SDL_TouchID touch_id;
 	SDL_FingerID finger_id;
 	uint64_t global_id;
-	Vector norm_down_pos;
-	Vector norm_last_pos;
+	Vector2f norm_down_pos;
+	Vector2f norm_last_pos;
 };
 
 static std::vector<FingerEvent> finger_events;
@@ -74,15 +72,15 @@ static void finger_event_check_trigger (SDL_EventDriver& sdl_driver, const Finge
 
 	if (std::abs(dx_px) > threshold) {
 		if (dx_px < 0.0f)
-			sdl_driver.touch_screen_move().publish(TouchScreenMoveData { .direction = MoveData::Direction::Left });
+			sdl_driver.touch_screen_move().publish(TouchScreenMoveData { .direction = TouchScreenMoveData::Direction::Left });
 		else
-			sdl_driver.touch_screen_move().publish(TouchScreenMoveData { .direction = MoveData::Direction::Right });
+			sdl_driver.touch_screen_move().publish(TouchScreenMoveData { .direction = TouchScreenMoveData::Direction::Right });
 	}
 	else if (std::abs(dy_px) > threshold) {
 		if (dy_px < 0.0f)
-			sdl_driver.touch_screen_move().publish(TouchScreenMoveData { .direction = MoveData::Direction::Up });
+			sdl_driver.touch_screen_move().publish(TouchScreenMoveData { .direction = TouchScreenMoveData::Direction::Up });
 		else
-			sdl_driver.touch_screen_move().publish(TouchScreenMoveData { .direction = MoveData::Direction::Down });
+			sdl_driver.touch_screen_move().publish(TouchScreenMoveData { .direction = TouchScreenMoveData::Direction::Down });
 	}
 }
 
@@ -95,7 +93,7 @@ static FingerEvent& find_finger_event (const SDL_TouchID touch_id, const SDL_Fin
 			return event;
 	}
 
-	mylib_throw_exception_msg("finger event not found: touch_id=", touch_id, " finger_id=", finger_id)
+	mylib_throw_exception_msg("finger event not found: touch_id=", touch_id, " finger_id=", finger_id);
 }
 
 // ---------------------------------------------------
@@ -119,7 +117,7 @@ static void process_fingerdown (SDL_EventDriver& sdl_driver, const SDL_TouchFing
 	fe->touch_id = event.touchId;
 	fe->finger_id = event.fingerId;
 	fe->global_id = global_touch_id++;
-	fe->norm_down_pos = Vector(event.x, event.y);
+	fe->norm_down_pos = Vector2f(event.x, event.y);
 	fe->norm_last_pos = fe->norm_down_pos;
 }
 
@@ -136,7 +134,7 @@ static void process_fingerup (SDL_EventDriver& sdl_driver, const SDL_TouchFinger
 {
 	FingerEvent& fe = find_finger_event(event_.touchId, event_.fingerId);
 
-	fe.norm_last_pos = Vector(event_.x, event_.y);
+	fe.norm_last_pos = Vector2f(event_.x, event_.y);
 	finger_event_check_trigger(sdl_driver, fe);
 
 	fe.free = true;
