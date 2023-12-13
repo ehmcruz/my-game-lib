@@ -211,8 +211,10 @@ public:
 
 	void wait_next_frame () override final;
 	void draw_cube3D (const Cube3D& cube, const Vector& offset) override final;
-	virtual void setup_render_3D (const RenderArgs3D& args) override final;
-	virtual void setup_render_2D (const RenderArgs2D& args) override final;
+	void draw_circle2D (const Circle2D& circle, const Vector& offset, const Color& color) override final;
+	void draw_rect2D (const Rect2D& rect, const Vector& offset, const Color& color) override final;
+	void setup_render_3D (const RenderArgs3D& args) override final;
+	void setup_render_2D (const RenderArgs2D& args) override final;
 	void render () override final;
 
 	void load_opengl_programs ();

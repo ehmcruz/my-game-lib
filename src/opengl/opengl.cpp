@@ -247,6 +247,8 @@ Renderer::Renderer (const InitParams& params)
 	this->wait_next_frame();
 }
 
+// ---------------------------------------------------
+
 void Renderer::load_opengl_programs ()
 {
 	this->program_triangle = new ProgramTriangle;
@@ -263,6 +265,8 @@ void Renderer::load_opengl_programs ()
 	dprintln("generated and binded opengl world vertex array/buffer");
 }
 
+// ---------------------------------------------------
+
 Renderer::~Renderer ()
 {
 	delete this->program_triangle;
@@ -271,12 +275,16 @@ Renderer::~Renderer ()
 	SDL_DestroyWindow(this->sdl_window);
 }
 
+// ---------------------------------------------------
+
 void Renderer::wait_next_frame ()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	this->program_triangle->clear();
 }
+
+// ---------------------------------------------------
 
 void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset)
 {
@@ -426,6 +434,93 @@ void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset)
 	mylib_assert_exception(i == n_vertices)
 }
 
+// ---------------------------------------------------
+
+void Renderer::draw_circle2D (const Circle2D& circle, const Vector& offset, const Color& color)
+{
+	/*Graphics::ShapeRect rect(circle.get_radius()*2.0f, circle.get_radius()*2.0f);
+	rect.set_delta(circle.get_delta());
+	this->draw_rect(rect, offset, color);*/
+
+	const Vector local_pos = circle.get_value_local_pos();
+	const uint32_t n_vertices = this->circle_factory_low_def->get_n_vertices();
+	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
+
+	this->circle_factory_low_def->fill_vertex_buffer(
+		circle.get_radius(),
+		&vertices[0].x,
+		&vertices[0].y,
+		ProgramTriangle::get_stride_in_floats()
+		);
+
+	for (uint32_t i=0; i<n_vertices; i++) {
+		vertices[i].x += local_pos.x;
+		vertices[i].y += local_pos.y;
+		vertices[i].offset_x = offset.x;
+		vertices[i].offset_y = offset.y;
+		vertices[i].r = color.r;
+		vertices[i].g = color.g;
+		vertices[i].b = color.b;
+		vertices[i].a = color.a;
+	}
+}
+
+// ---------------------------------------------------
+
+void Renderer::draw_rect2D (const Rect2D& rect, const Vector& offset, const Color& color)
+{
+	constexpr uint32_t n_vertices = 6;
+	const Vector local_pos = rect.get_value_local_pos();
+	//const Vector world_pos = Vector(4.0f, 4.0f);
+	
+#if 0
+	dprint( "local_pos:" )
+	Mylib::Math::println(world_pos);
+
+	dprint( "clip_pos:" )
+	Mylib::Math::println(clip_pos);
+//exit(1);
+#endif
+
+	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
+
+	// draw first triangle
+
+	// upper left vertex
+	vertices[0].local_pos.x = local_pos.x - rect.get_w()*0.5f;
+	vertices[0].local_pos.y = local_pos.y - rect.get_h()*0.5f;
+
+	// down right vertex
+	vertices[1].local_pos.x = local_pos.x + rect.get_w()*0.5f;
+	vertices[1].local_pos.y = local_pos.y + rect.get_h()*0.5f;
+
+	// down left vertex
+	vertices[2].local_pos.x = local_pos.x - rect.get_w()*0.5f;
+	vertices[2].local_pos.y = local_pos.y + rect.get_h()*0.5f;
+
+	// draw second triangle
+
+	// upper left vertex
+	vertices[3].local_pos.x = local_pos.x - rect.get_w()*0.5f;
+	vertices[3].local_pos.y = local_pos.y - rect.get_h()*0.5f;
+
+	// upper right vertex
+	vertices[4].local_pos.x = local_pos.x + rect.get_w()*0.5f;
+	vertices[4].local_pos.y = local_pos.y - rect.get_h()*0.5f;
+
+	// down right vertex
+	vertices[5].local_pos.x = local_pos.x + rect.get_w()*0.5f;
+	vertices[5].local_pos.y = local_pos.y + rect.get_h()*0.5f;
+
+	for (uint32_t i=0; i<n_vertices; i++) {
+		vertices[i].offset.x = offset.x;
+		vertices[i].offset.y = offset.y;
+		vertices[i].color = color;
+	}
+}
+
+// ---------------------------------------------------
+
 void Renderer::setup_render_3D (const RenderArgs3D& args)
 {
 #ifndef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
@@ -454,6 +549,8 @@ void Renderer::setup_render_3D (const RenderArgs3D& args)
 	dprintln("camera vector: ", args.world_camera_target - args.world_camera_pos);
 #endif
 }
+
+// ---------------------------------------------------
 
 void Renderer::setup_render_2D (const RenderArgs2D& args)
 {
@@ -572,6 +669,8 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 	dprintln();
 #endif
 }
+
+// ---------------------------------------------------
 
 void Renderer::render ()
 {

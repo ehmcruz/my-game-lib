@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <array>
 #include <string_view>
+#include <span>
 
 #include <my-lib/std.h>
 #include <my-lib/macros.h>
@@ -176,6 +177,47 @@ public:
 
 // ---------------------------------------------------
 
+class Circle2D: public Shape
+{
+protected:
+	OO_ENCAPSULATE_SCALAR(fp_t, radius)
+
+public:
+	Circle2D (const fp_t radius_) noexcept
+		: Shape (Type::Circle2D),
+		  radius(radius_)
+	{
+	}
+
+	Circle2D () noexcept
+		: Circle2D (0)
+	{
+	}
+};
+
+// ---------------------------------------------------
+
+class Rect2D: public Shape
+{
+protected:
+	OO_ENCAPSULATE_SCALAR(fp_t, w)
+	OO_ENCAPSULATE_SCALAR(fp_t, h)
+
+public:
+	Rect2D (const fp_t w_, const fp_t h_) noexcept
+		: Shape (Type::Rect2D),
+		  w(w_), h(h_)
+	{
+	}
+
+	Rect2D () noexcept
+		: Rect2D (0, 0)
+	{
+	}
+};
+
+// ---------------------------------------------------
+
 struct RenderArgs3D {
 	Point world_camera_pos;
 	Point world_camera_target;
@@ -269,9 +311,84 @@ public:
 
 	virtual void wait_next_frame () = 0;
 	virtual void draw_cube3D (const Cube3D& cube, const Vector& offset) = 0;
+	virtual void draw_circle2D (const Circle2D& circle, const Vector& offset, const Color& color) = 0;
+	virtual void draw_rect2D (const Rect2D& rect, const Vector& offset, const Color& color) = 0;
 	virtual void setup_render_3D (const RenderArgs3D& args) = 0;
 	virtual void setup_render_2D (const RenderArgs2D& args) = 0;
 	virtual void render () = 0;
+
+	// 2D Wrappers
+
+	void draw_circle2D (const Circle2D& circle, const Vector2& offset, const Color& color)
+	{
+		this->draw_circle2D(circle, Vector(offset.x, offset.y, 0), color);
+	}
+	
+	void draw_rect2D (const Rect2D& rect, const Vector2& offset, const Color& color)
+	{
+		this->draw_rect2D(rect, Vector(offset.x, offset.y, 0), color);
+	}
+};
+
+// ---------------------------------------------------
+
+class CircleFactory
+{
+private:
+	fp_t *table_sin;
+	fp_t *table_cos;
+	const uint32_t n_triangles;
+
+public:
+	CircleFactory (const uint32_t n_triangles_);
+	~CircleFactory ();
+
+	inline uint32_t get_n_vertices () const noexcept
+	{
+		return (this->n_triangles * 3);
+	}
+
+	template <typename T>
+	void fill_vertex_buffer (const fp_t radius, std::span<T> vertices) const
+	{
+		uint32_t j;
+		fp_t previous_x, previous_y;
+
+		/*
+			For each triangle:
+				- first vertex is the center (0.0f, 0.0f)
+				- second vertex is the previous calculated vertex (from previous triangle)
+				- third vertex is the new vertex
+		*/
+
+		// for the first triangle
+		previous_x = radius;
+		previous_y = 0;
+
+		j = 0;
+		for (uint32_t i=0; i<this->n_triangles; i++) {
+			// first vertex
+			vertices[j].local_pos.x = 0;
+			vertices[j].local_pos.y = 0;
+
+			j++;
+
+			// second vertex
+			vertices[j].local_pos.x = previous_x;
+			vertices[j].local_pos.y = previous_y;
+
+			j++;
+
+			// third vertex
+			vertices[j].local_pos.x = this->table_cos[i] * radius;
+			vertices[j].local_pos.y = this->table_sin[i] * radius;
+
+			previous_x = vertices[j].local_pos.x;
+			previous_y = vertices[j].local_pos.y;
+
+			j++;
+		}
+	}
 };
 
 // ---------------------------------------------------
