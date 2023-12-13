@@ -31,12 +31,11 @@ public:
 private:
 	static inline Lib *instance = nullptr;
 
-	Mylib::Memory::DefaultManager default_memory_manager;
 	Mylib::Memory::Manager& memory_manager;
 
 	Audio::Manager *audio_manager = nullptr;
 	Event::Manager *event_manager = nullptr;
-	GraphicsManager *graphics_manager = nullptr;
+	Graphics::Manager *graphics_manager = nullptr;
 
 private:
 	Lib (const InitParams& params);
@@ -65,7 +64,7 @@ public:
 		return *this->event_manager;
 	}
 
-	GraphicsManager& get_graphics_manager ()
+	Graphics::Manager& get_graphics_manager ()
 	{
 		mylib_assert_exception(this->graphics_manager != nullptr)
 		return *this->graphics_manager;

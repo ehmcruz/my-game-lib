@@ -22,6 +22,8 @@
 
 namespace MyGlib
 {
+namespace Graphics
+{
 namespace Opengl
 {
 
@@ -202,7 +204,7 @@ void ProgramTriangle::debug ()
 // ---------------------------------------------------
 
 Renderer::Renderer (const InitParams& params)
-	: GraphicsManager (params)
+	: Manager (params)
 {
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 	SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 1 );
@@ -582,5 +584,6 @@ void Renderer::render ()
 
 // ---------------------------------------------------
 
+} // namespace Graphics
 } // namespace Opengl
 } // namespace MyGlib

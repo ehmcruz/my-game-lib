@@ -27,6 +27,8 @@
 
 namespace MyGlib
 {
+namespace Graphics
+{
 
 // ---------------------------------------------------
 
@@ -209,7 +211,7 @@ struct RenderArgs2D {
 
 // ---------------------------------------------------
 
-class GraphicsManager
+class Manager
 {
 public:
 	enum class Type { // any change here will need a change in get_type_str
@@ -245,7 +247,7 @@ protected:
 	SDL_Window *sdl_window;
 
 public:
-	GraphicsManager (const InitParams& params)
+	Manager (const InitParams& params)
 		: memory_manager(params.memory_manager),
 		window_width_px(params.window_width_px),
 		window_height_px(params.window_height_px),
@@ -274,6 +276,7 @@ public:
 
 // ---------------------------------------------------
 
+} // end namespace Graphics
 } // end namespace MyGlib
 
 #endif

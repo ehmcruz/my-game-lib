@@ -25,6 +25,8 @@
 
 namespace MyGlib
 {
+namespace Graphics
+{
 namespace Opengl
 {
 
@@ -195,7 +197,7 @@ public:
 
 // ---------------------------------------------------
 
-class Renderer : public GraphicsManager
+class Renderer : public Manager
 {
 protected:
 	SDL_GLContext sdl_gl_context;
@@ -218,6 +220,7 @@ public:
 
 // ---------------------------------------------------
 
+} // end namespace Graphics
 } // end namespace Opengl
 } // end namespace MyGlib
 

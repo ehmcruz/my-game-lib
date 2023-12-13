@@ -38,8 +38,8 @@ struct FingerEvent {
 	SDL_TouchID touch_id;
 	SDL_FingerID finger_id;
 	uint64_t global_id;
-	Vector2f norm_down_pos;
-	Vector2f norm_last_pos;
+	Graphics::Vector2f norm_down_pos;
+	Graphics::Vector2f norm_last_pos;
 };
 
 static std::vector<FingerEvent> finger_events;
@@ -56,7 +56,7 @@ SDL_EventDriver::SDL_EventDriver (Mylib::Memory::Manager& memory_manager_)
 
 static void finger_event_check_trigger (SDL_EventDriver& sdl_driver, const FingerEvent& fe)
 {
-	const GraphicsManager& graphics = Lib::get_instance().get_graphics_manager();
+	const Graphics::Manager& graphics = Lib::get_instance().get_graphics_manager();
 
 	const float dx = fe.norm_last_pos.x - fe.norm_down_pos.x;
 	const float dy = fe.norm_last_pos.y - fe.norm_down_pos.y;
@@ -117,7 +117,7 @@ static void process_fingerdown (SDL_EventDriver& sdl_driver, const SDL_TouchFing
 	fe->touch_id = event.touchId;
 	fe->finger_id = event.fingerId;
 	fe->global_id = global_touch_id++;
-	fe->norm_down_pos = Vector2f(event.x, event.y);
+	fe->norm_down_pos = Graphics::Vector2f(event.x, event.y);
 	fe->norm_last_pos = fe->norm_down_pos;
 }
 
@@ -134,7 +134,7 @@ static void process_fingerup (SDL_EventDriver& sdl_driver, const SDL_TouchFinger
 {
 	FingerEvent& fe = find_finger_event(event_.touchId, event_.fingerId);
 
-	fe.norm_last_pos = Vector2f(event_.x, event_.y);
+	fe.norm_last_pos = Graphics::Vector2f(event_.x, event_.y);
 	finger_event_check_trigger(sdl_driver, fe);
 
 	fe.free = true;

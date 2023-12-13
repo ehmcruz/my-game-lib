@@ -31,7 +31,7 @@ Lib& Lib::init (const InitParams& params, Mylib::Memory::Manager& memory_manager
 // ---------------------------------------------------
 
 Lib::Lib (const InitParams& params)
-	: memory_manager(this->default_memory_manager)
+	: memory_manager(Mylib::Memory::default_manager)
 {
 	this->lib_init(params);
 }
@@ -51,7 +51,7 @@ void Lib::lib_init (const InitParams& params)
 #endif
 
 #ifdef MYGLIB_SUPPORT_OPENGL
-	this->graphics_manager = new Opengl::Renderer({
+	this->graphics_manager = new Graphics::Opengl::Renderer({
 		.memory_manager = this->memory_manager,
 		.window_name = params.window_name,
 		.window_width_px = params.window_width_px,

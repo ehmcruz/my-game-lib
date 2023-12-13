@@ -75,7 +75,10 @@ protected:
 	
 public:
 	Manager (Mylib::Memory::Manager& memory_manager_)
-		: memory_manager(memory_manager_)
+		: memory_manager(memory_manager_),
+		  event_key_down(memory_manager),
+		  event_touch_screen_move(memory_manager),
+		  event_quit(memory_manager)
 	{
 	}
 
