@@ -99,31 +99,53 @@ public:
 		Cube3D,
 		Sphere3D,
 	};
+
 protected:
 	OO_ENCAPSULATE_SCALAR_READONLY(Type, type)
 
-	// distance from the center of the shape to the center of the object
-	OO_ENCAPSULATE_OBJ_INIT(Vector, local_pos, Vector::zero())
-	OO_ENCAPSULATE_SCALAR_INIT(fp_t, local_rotation_angle, 0)
-	OO_ENCAPSULATE_OBJ_INIT(Vector, local_rotation_axis, Vector::zero())
+	OO_ENCAPSULATE_SCALAR_INIT(fp_t, rotation_angle, 0)
+	OO_ENCAPSULATE_OBJ_INIT(Vector, rotation_axis, Vector::zero())
 
-	OO_ENCAPSULATE_SCALAR_INIT(fp_t, self_rotation_angle, 0)
-	OO_ENCAPSULATE_OBJ_INIT(Vector, self_rotation_axis, Vector::zero())
+private:
+	std::span<Point> vertices__;
 
-public:
+protected:
 	Shape (const Type type_) noexcept
 		: type(type_)
 	{
 	}
 
-	constexpr void set_local_rotation_angle_bounded (const fp_t angle) noexcept
+	Shape (const Type type_, const std::span<Point> vertices_) noexcept
+		: type(type_),
+		  vertices__(vertices_)
 	{
-		this->local_rotation_angle = std::fmod(angle, Mylib::Math::degrees_to_radians(fp(360)));
+	}
+
+public:
+	inline std::span<Point> get_vertices () noexcept
+	{
+		return this->vertices__;
+	}
+
+	inline const std::span<Point> get_vertices () const noexcept
+	{
+		return this->vertices__;
+	}
+
+	constexpr void set_rotation_angle_bounded (const fp_t angle) noexcept
+	{
+		this->rotation_angle = std::fmod(angle, Mylib::Math::degrees_to_radians(fp(360)));
 	}
 
 	constexpr void set_self_rotation_angle_bounded (const fp_t angle) noexcept
 	{
-		this->self_rotation_angle = std::fmod(angle, Mylib::Math::degrees_to_radians(fp(360)));
+		this->rotation_angle = std::fmod(angle, Mylib::Math::degrees_to_radians(fp(360)));
+	}
+
+protected:
+	inline void set_vertices (const std::span<Point> vertices) noexcept
+	{
+		this->vertices__ = vertices;
 	}
 };
 
@@ -134,7 +156,7 @@ class Cube3D: public Shape
 public:
 	static consteval uint32_t get_n_vertices ()
 	{
-		return 8;
+		return 36; // 6 sides * 2 triangles * 3 vertices
 	}
 
 	enum PositionIndex {
@@ -150,33 +172,20 @@ public:
 
 protected:
 	OO_ENCAPSULATE_SCALAR(fp_t, w) // width
-	std::array<Color, 8> colors;
+
+private:
+	std::array<Point, 36> vertices; // 6 sides * 2 triangles * 3 vertices
 
 public:
 	Cube3D (const fp_t w_) noexcept
-		: Shape(Type::Cube3D), w(w_)
+		: Shape(Type::Cube3D, vertices), w(w_)
 	{
-		//dprint( "circle created r=" << this->radius << std::endl )
+		this->calculate_vertices();
 	}
 
 	Cube3D () noexcept
 		: Cube3D(0)
 	{
-	}
-
-	void set_vertex_color (const PositionIndex i, const Color& color) noexcept
-	{
-		this->colors[i] = color;
-	}
-
-	const Color& get_vertex_color (const PositionIndex i) const noexcept
-	{
-		return this->colors[i];
-	}
-
-	std::array<Color, 8>& get_colors_ref () noexcept
-	{
-		return this->colors;
 	}
 
 	inline fp_t get_h () const noexcept
@@ -188,47 +197,79 @@ public:
 	{
 		return this->w;
 	}
+
+	void calculate_vertices () noexcept;
 };
 
 // ---------------------------------------------------
 
-class Circle2D: public Shape
+class CircleFactory;
+
+class Circle2D : public Shape
 {
 protected:
 	OO_ENCAPSULATE_SCALAR(fp_t, radius)
+
+private:
+	std::vector<Point> vertices;
 
 public:
 	Circle2D (const fp_t radius_) noexcept
 		: Shape (Type::Circle2D),
 		  radius(radius_)
 	{
+		this->calculate_vertices();
 	}
 
 	Circle2D () noexcept
-		: Circle2D (0)
+		: Shape (Type::Circle2D),
+		  radius(0)
 	{
+	}
+
+	void setup_vertices_buffer (const uint32_t n_vertices);
+	void calculate_vertices (const CircleFactory& factory);
+	void calculate_vertices (const Matrix4& projection_matrix);
+	void calculate_vertices ();
+
+	inline uint32_t get_n_vertices () const noexcept
+	{
+		return this->vertices.size();
 	}
 };
 
 // ---------------------------------------------------
 
-class Rect2D: public Shape
+class Rect2D : public Shape
 {
+public:
+	consteval static uint32_t get_n_vertices ()
+	{
+		return 6; // 2 triangles
+	}
+
 protected:
 	OO_ENCAPSULATE_SCALAR(fp_t, w)
 	OO_ENCAPSULATE_SCALAR(fp_t, h)
+	OO_ENCAPSULATE_SCALAR_INIT(fp_t, z, 0)
+
+private:
+	std::array<Point, 6> vertices; // 2 triangles
 
 public:
 	Rect2D (const fp_t w_, const fp_t h_) noexcept
-		: Shape (Type::Rect2D),
+		: Shape (Type::Rect2D, vertices),
 		  w(w_), h(h_)
 	{
+		this->calculate_vertices();
 	}
 
 	Rect2D () noexcept
 		: Rect2D (0, 0)
 	{
 	}
+
+	void calculate_vertices () noexcept;
 };
 
 // ---------------------------------------------------
@@ -325,12 +366,14 @@ public:
 	}
 
 	virtual void wait_next_frame () = 0;
-	virtual void draw_cube3D (const Cube3D& cube, const Vector& offset) = 0;
+	virtual void draw_cube3D (const Cube3D& cube, const Vector& offset, const Color& color) = 0;
 	virtual void draw_circle2D (const Circle2D& circle, const Vector& offset, const Color& color) = 0;
 	virtual void draw_rect2D (const Rect2D& rect, const Vector& offset, const Color& color) = 0;
 	virtual void setup_render_3D (const RenderArgs3D& args) = 0;
 	virtual void setup_render_2D (const RenderArgs2D& args) = 0;
 	virtual void render () = 0;
+	virtual void update_screen () = 0;
+	virtual void clear_vertex_buffers () = 0;
 
 	// 2D Wrappers
 
@@ -362,8 +405,10 @@ public:
 		return (this->n_triangles * 3);
 	}
 
-	template <typename T>
-	void fill_vertex_buffer (const fp_t radius, std::span<T> vertices) const
+	// we use a template to be able to handle both 2D and 3D vertices
+
+	template <typename Tpoint>
+	void build_circle (const fp_t radius, std::span<Tpoint> vertices) const
 	{
 		uint32_t j;
 		fp_t previous_x, previous_y;
@@ -382,23 +427,23 @@ public:
 		j = 0;
 		for (uint32_t i=0; i<this->n_triangles; i++) {
 			// first vertex
-			vertices[j].local_pos.x = 0;
-			vertices[j].local_pos.y = 0;
+			vertices[j].x = 0;
+			vertices[j].y = 0;
 
 			j++;
 
 			// second vertex
-			vertices[j].local_pos.x = previous_x;
-			vertices[j].local_pos.y = previous_y;
+			vertices[j].x = previous_x;
+			vertices[j].y = previous_y;
 
 			j++;
 
 			// third vertex
-			vertices[j].local_pos.x = this->table_cos[i] * radius;
-			vertices[j].local_pos.y = this->table_sin[i] * radius;
+			vertices[j].x = this->table_cos[i] * radius;
+			vertices[j].y = this->table_sin[i] * radius;
 
-			previous_x = vertices[j].local_pos.x;
-			previous_y = vertices[j].local_pos.y;
+			previous_x = vertices[j].x;
+			previous_y = vertices[j].y;
 
 			j++;
 		}

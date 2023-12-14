@@ -204,8 +204,7 @@ void ProgramTriangle::debug ()
 // ---------------------------------------------------
 
 Renderer::Renderer (const InitParams& params)
-	: Manager (params),
-	  circle_factory_manager(10, 50, 1000)
+	: Manager (params)
 {
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 	SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 1 );
@@ -287,78 +286,8 @@ void Renderer::wait_next_frame ()
 
 // ---------------------------------------------------
 
-void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset)
+void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset, const Color& color)
 {
-	const Vector local_pos = cube.get_value_local_pos();
-	//const Vector world_pos = Vector(4.0f, 4.0f);
-
-	using PositionIndex = Cube3D::PositionIndex;
-	using enum PositionIndex;
-	
-#if 0
-	dprint( "local_pos:" )
-	Mylib::Math::println(world_pos);
-
-	dprint( "clip_pos:" )
-	Mylib::Math::println(clip_pos);
-//exit(1);
-#endif
-
-	std::array<Point, 8> points;
-
-	points[LeftTopFront] = Point(
-		local_pos.x - cube.get_w()*fp(0.5),
-		local_pos.y + cube.get_h()*fp(0.5),
-		local_pos.z - cube.get_d()*fp(0.5)
-		);
-	
-	points[LeftBottomFront] = Point(
-		local_pos.x - cube.get_w()*fp(0.5),
-		local_pos.y - cube.get_h()*fp(0.5),
-		local_pos.z - cube.get_d()*fp(0.5)
-		);
-	
-	points[RightTopFront] = Point(
-		local_pos.x + cube.get_w()*fp(0.5),
-		local_pos.y + cube.get_h()*fp(0.5),
-		local_pos.z - cube.get_d()*fp(0.5)
-		);
-	
-	points[RightBottomFront] = Point(
-		local_pos.x + cube.get_w()*fp(0.5),
-		local_pos.y - cube.get_h()*fp(0.5),
-		local_pos.z - cube.get_d()*fp(0.5)
-		);
-	
-	points[LeftTopBack] = Point(
-		local_pos.x - cube.get_w()*fp(0.5),
-		local_pos.y + cube.get_h()*fp(0.5),
-		local_pos.z + cube.get_d()*fp(0.5)
-		);
-	
-	points[LeftBottomBack] = Point(
-		local_pos.x - cube.get_w()*fp(0.5),
-		local_pos.y - cube.get_h()*fp(0.5),
-		local_pos.z + cube.get_d()*fp(0.5)
-		);
-	
-	points[RightTopBack] = Point(
-		local_pos.x + cube.get_w()*fp(0.5),
-		local_pos.y + cube.get_h()*fp(0.5),
-		local_pos.z + cube.get_d()*fp(0.5)
-		);
-	
-	points[RightBottomBack] = Point(
-		local_pos.x + cube.get_w()*fp(0.5),
-		local_pos.y - cube.get_h()*fp(0.5),
-		local_pos.z + cube.get_d()*fp(0.5)
-		);
-	
-	if (cube.get_local_rotation_angle() != fp(0)) {
-		for (auto& p : points)
-			p.rotate_around_axis(cube.get_ref_local_rotation_axis(), cube.get_local_rotation_angle());
-	}
-
 #ifdef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
 	std::array<Point4, 8> points4;
 
@@ -383,56 +312,28 @@ void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset)
 	}
 #endif
 	
-	constexpr uint32_t n_triangles = 12; // 6 faces * 2 triangles per face
-	constexpr uint32_t n_vertices = n_triangles * 3;
+	constexpr uint32_t n_vertices = cube.get_n_vertices();
+	//const Vector world_pos = Vector(4.0f, 4.0f);
+	
+#if 0
+	dprint( "local_pos:" )
+	Mylib::Math::println(world_pos);
 
-	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
-	uint32_t i = 0;
-
-#ifndef OPENGL_SOFTWARE_CALCULATE_MATRIX
-	auto& points_ = points;
-#else
-	auto& points_ = points4;
+	dprint( "clip_pos:" )
+	Mylib::Math::println(clip_pos);
+//exit(1);
 #endif
 
-	auto mount = [&i, vertices, &points_, &cube, &offset] (const PositionIndex p) -> void {
-		vertices[i].local_pos = points_[p];
+	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
+	std::span<Point> shape_vertices = cube.get_vertices();
+
+	mylib_assert_exception(shape_vertices.size() == n_vertices)
+
+	for (uint32_t i=0; i<n_vertices; i++) {
+		vertices[i].local_pos = shape_vertices[i];
 		vertices[i].offset = offset;
-		vertices[i].color = cube.get_vertex_color(p);
-		i++;
-	};
-
-	auto mount_triangle = [&mount] (const PositionIndex p1, const PositionIndex p2, const PositionIndex p3) -> void {
-		mount(p1);
-		mount(p2);
-		mount(p3);
-	};
-
-	// bottom
-	mount_triangle(LeftBottomFront, RightBottomFront, LeftBottomBack);
-	mount_triangle(RightBottomBack, RightBottomFront, LeftBottomBack);
-
-	// top
-	mount_triangle(LeftTopFront, RightTopFront, LeftTopBack);
-	mount_triangle(RightTopBack, RightTopFront, LeftTopBack);
-
-	// front
-	mount_triangle(LeftTopFront, LeftBottomFront, RightTopFront);
-	mount_triangle(RightBottomFront, LeftBottomFront, RightTopFront);
-
-	// back
-	mount_triangle(LeftTopBack, LeftBottomBack, RightTopBack);
-	mount_triangle(RightBottomBack, LeftBottomBack, RightTopBack);
-
-	// left
-	mount_triangle(LeftTopFront, LeftBottomFront, LeftTopBack);
-	mount_triangle(LeftBottomBack, LeftBottomFront, LeftTopBack);
-
-	// right
-	mount_triangle(RightTopFront, RightBottomFront, RightTopBack);
-	mount_triangle(RightBottomBack, RightBottomFront, RightTopBack);
-
-	mylib_assert_exception(i == n_vertices)
+		vertices[i].color = color;
+	}
 }
 
 // ---------------------------------------------------
@@ -446,27 +347,19 @@ void Renderer::draw_circle2D (const Circle2D& circle, const Vector& offset, cons
 	// let's first estimate the size of the circle on the screen
 	// and then we can calculate the number of vertices needed to draw it
 
-	const fp_t radius = circle.get_radius();
-	const Vector4 circle_left (-radius, 0, 0, 1);
-	const Vector4 circle_right (radius, 0, 0, 1);
-	const Vector4 circle_left_rendered = this->projection_matrix * circle_left;
-	const Vector4 circle_right_rendered = this->projection_matrix * circle_right;
-	const fp_t circle_size_per_cent_of_screen = std::abs(circle_right_rendered.x - circle_left_rendered.x) / fp(2); // opengl viewport size is 2
+	//circle.calculate_vertices(this->projection_matrix);
+	
+	const uint32_t n_vertices = circle.get_n_vertices();
+	std::span<Point> shape_vertices = circle.get_vertices();
 
-	const CircleFactory& factory = this->circle_factory_manager.get_factory(circle_size_per_cent_of_screen);
-
-	const Vector local_pos = circle.get_value_local_pos();
-	const uint32_t n_vertices = factory.get_n_vertices();
+	mylib_assert_exception(shape_vertices.size() == n_vertices)
 
 	//dprintln("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen, " n_triangles: ", n_vertices / 3);
 
 	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
 
-	factory.fill_vertex_buffer(radius, vertices);
-
 	for (uint32_t i=0; i<n_vertices; i++) {
-		vertices[i].local_pos.z = 0;
-		vertices[i].local_pos += local_pos;
+		vertices[i].local_pos = shape_vertices[i];
 		vertices[i].offset = offset;
 		vertices[i].color = color;
 	}
@@ -476,8 +369,7 @@ void Renderer::draw_circle2D (const Circle2D& circle, const Vector& offset, cons
 
 void Renderer::draw_rect2D (const Rect2D& rect, const Vector& offset, const Color& color)
 {
-	constexpr uint32_t n_vertices = 6;
-	const Vector local_pos = rect.get_value_local_pos();
+	constexpr uint32_t n_vertices = rect.get_n_vertices();
 	//const Vector world_pos = Vector(4.0f, 4.0f);
 	
 #if 0
@@ -490,37 +382,12 @@ void Renderer::draw_rect2D (const Rect2D& rect, const Vector& offset, const Colo
 #endif
 
 	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
+	std::span<Point> shape_vertices = rect.get_vertices();
 
-	// draw first triangle
-
-	// upper left vertex
-	vertices[0].local_pos.x = local_pos.x - rect.get_w()*0.5f;
-	vertices[0].local_pos.y = local_pos.y - rect.get_h()*0.5f;
-
-	// down right vertex
-	vertices[1].local_pos.x = local_pos.x + rect.get_w()*0.5f;
-	vertices[1].local_pos.y = local_pos.y + rect.get_h()*0.5f;
-
-	// down left vertex
-	vertices[2].local_pos.x = local_pos.x - rect.get_w()*0.5f;
-	vertices[2].local_pos.y = local_pos.y + rect.get_h()*0.5f;
-
-	// draw second triangle
-
-	// upper left vertex
-	vertices[3].local_pos.x = local_pos.x - rect.get_w()*0.5f;
-	vertices[3].local_pos.y = local_pos.y - rect.get_h()*0.5f;
-
-	// upper right vertex
-	vertices[4].local_pos.x = local_pos.x + rect.get_w()*0.5f;
-	vertices[4].local_pos.y = local_pos.y - rect.get_h()*0.5f;
-
-	// down right vertex
-	vertices[5].local_pos.x = local_pos.x + rect.get_w()*0.5f;
-	vertices[5].local_pos.y = local_pos.y + rect.get_h()*0.5f;
+	mylib_assert_exception(shape_vertices.size() == n_vertices)
 
 	for (uint32_t i=0; i<n_vertices; i++) {
-		vertices[i].local_pos.z = local_pos.z;
+		vertices[i].local_pos = shape_vertices[i];
 		vertices[i].offset = offset;
 		vertices[i].color = color;
 	}
@@ -685,7 +552,20 @@ void Renderer::render ()
 	this->program_triangle->upload_projection_matrix(this->projection_matrix);
 	this->program_triangle->upload_vertex_buffer();
 	this->program_triangle->draw();
+}
+
+// ---------------------------------------------------
+
+void Renderer::update_screen ()
+{
 	SDL_GL_SwapWindow(this->sdl_window);
+}
+
+// ---------------------------------------------------
+
+void Renderer::clear_vertex_buffers ()
+{
+	this->program_triangle->clear();
 }
 
 // ---------------------------------------------------
