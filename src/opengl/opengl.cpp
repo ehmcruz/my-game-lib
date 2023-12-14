@@ -93,11 +93,12 @@ void Program::use_program ()
 ProgramTriangle::ProgramTriangle ()
 	: Program ()
 {
+	static_assert(sizeof(Graphics::Vertex) == sizeof(Point) + sizeof(Vector));
 	static_assert(sizeof(Vector) == sizeof(fp_t) * 3);
 	static_assert(sizeof(Vector) == sizeof(Point));
 	static_assert(sizeof(Color) == sizeof(float) * 4);
 #ifndef OPENGL_SOFTWARE_CALCULATE_MATRIX
-	static_assert(sizeof(Vertex) == (sizeof(Point) + sizeof(Vector) + sizeof(Color)));
+	static_assert(sizeof(Vertex) == (sizeof(Graphics::Vertex) + sizeof(Vector) + sizeof(Color)));
 #else
 	static_assert(sizeof(Vertex) == (sizeof(Point4) + sizeof(Vector) + sizeof(Color)));
 #endif
@@ -111,6 +112,7 @@ ProgramTriangle::ProgramTriangle ()
 	this->attach_shaders();
 
 	glBindAttribLocation(this->program_id, std::to_underlying(Attrib::Position), "i_position");
+	glBindAttribLocation(this->program_id, std::to_underlying(Attrib::Normal), "i_normal");
 	glBindAttribLocation(this->program_id, std::to_underlying(Attrib::Offset), "i_offset");
 	glBindAttribLocation(this->program_id, std::to_underlying(Attrib::Color), "i_color");
 
@@ -145,7 +147,11 @@ void ProgramTriangle::setup_vertex_array ()
 	length = 4;
 #endif
 	glVertexAttribPointer( std::to_underlying(Attrib::Position), length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
-	
+
+	pos += length;
+	length = 3;
+	glVertexAttribPointer( std::to_underlying(Attrib::Normal), length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
+
 	pos += length;
 	length = 3;
 	glVertexAttribPointer( std::to_underlying(Attrib::Offset), length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
@@ -161,7 +167,7 @@ void ProgramTriangle::upload_vertex_buffer ()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * n, this->triangle_buffer.get_vertex_buffer(), GL_DYNAMIC_DRAW);
 }
 
-void ProgramTriangle::upload_projection_matrix (const Matrix4& m)
+void ProgramTriangle::upload_uniforms (const Matrix4& m)
 {
 	glUniformMatrix4fv( glGetUniformLocation(this->program_id, "u_projection_matrix"), 1, GL_TRUE, m.get_raw() );
 	//dprintln( "projection matrix sent to GPU" )
@@ -184,9 +190,9 @@ void ProgramTriangle::debug ()
 			dprintln();
 
 		dprintln("vertex[", i,
-			"] x=", v.local_pos.x,
-			" y=", v.local_pos.y,
-			" z=", v.local_pos.z,
+			"] x=", v.gvertex.pos.x,
+			" y=", v.gvertex.pos.y,
+			" z=", v.gvertex.pos.z,
 		#ifdef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
 			" w=", v->local_pos.w,
 		#endif
@@ -325,12 +331,12 @@ void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset, const Colo
 #endif
 
 	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
-	std::span<Point> shape_vertices = cube.get_vertices();
+	std::span<Vertex> shape_vertices = cube.get_vertices();
 
 	mylib_assert_exception(shape_vertices.size() == n_vertices)
 
 	for (uint32_t i=0; i<n_vertices; i++) {
-		vertices[i].local_pos = shape_vertices[i];
+		vertices[i].gvertex = shape_vertices[i];
 		vertices[i].offset = offset;
 		vertices[i].color = color;
 	}
@@ -350,7 +356,7 @@ void Renderer::draw_circle2D (const Circle2D& circle, const Vector& offset, cons
 	//circle.calculate_vertices(this->projection_matrix);
 	
 	const uint32_t n_vertices = circle.get_n_vertices();
-	std::span<Point> shape_vertices = circle.get_vertices();
+	std::span<Vertex> shape_vertices = circle.get_vertices();
 
 	mylib_assert_exception(shape_vertices.size() == n_vertices)
 
@@ -359,7 +365,7 @@ void Renderer::draw_circle2D (const Circle2D& circle, const Vector& offset, cons
 	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
 
 	for (uint32_t i=0; i<n_vertices; i++) {
-		vertices[i].local_pos = shape_vertices[i];
+		vertices[i].gvertex = shape_vertices[i];
 		vertices[i].offset = offset;
 		vertices[i].color = color;
 	}
@@ -382,12 +388,12 @@ void Renderer::draw_rect2D (const Rect2D& rect, const Vector& offset, const Colo
 #endif
 
 	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
-	std::span<Point> shape_vertices = rect.get_vertices();
+	std::span<Vertex> shape_vertices = rect.get_vertices();
 
 	mylib_assert_exception(shape_vertices.size() == n_vertices)
 
 	for (uint32_t i=0; i<n_vertices; i++) {
-		vertices[i].local_pos = shape_vertices[i];
+		vertices[i].gvertex = shape_vertices[i];
 		vertices[i].offset = offset;
 		vertices[i].color = color;
 	}
@@ -549,7 +555,7 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 void Renderer::render ()
 {
 	//this->program_triangle->debug();
-	this->program_triangle->upload_projection_matrix(this->projection_matrix);
+	this->program_triangle->upload_uniforms(this->projection_matrix);
 	this->program_triangle->upload_vertex_buffer();
 	this->program_triangle->draw();
 }

@@ -90,6 +90,13 @@ struct Color {
 
 // ---------------------------------------------------
 
+struct Vertex {
+	Point pos; // local x,y,z coords
+	Vector normal; // normal vector used for lighting
+};
+
+// ---------------------------------------------------
+
 class Shape
 {
 public:
@@ -107,7 +114,7 @@ protected:
 	OO_ENCAPSULATE_OBJ_INIT(Vector, rotation_axis, Vector::zero())
 
 private:
-	std::span<Point> vertices__;
+	std::span<Vertex> vertices__;
 
 protected:
 	Shape (const Type type_) noexcept
@@ -115,19 +122,19 @@ protected:
 	{
 	}
 
-	Shape (const Type type_, const std::span<Point> vertices_) noexcept
+	Shape (const Type type_, const std::span<Vertex> vertices_) noexcept
 		: type(type_),
 		  vertices__(vertices_)
 	{
 	}
 
 public:
-	inline std::span<Point> get_vertices () noexcept
+	inline std::span<Vertex> get_vertices () noexcept
 	{
 		return this->vertices__;
 	}
 
-	inline const std::span<Point> get_vertices () const noexcept
+	inline const std::span<Vertex> get_vertices () const noexcept
 	{
 		return this->vertices__;
 	}
@@ -143,7 +150,7 @@ public:
 	}
 
 protected:
-	inline void set_vertices (const std::span<Point> vertices) noexcept
+	inline void set_vertices (const std::span<Vertex> vertices) noexcept
 	{
 		this->vertices__ = vertices;
 	}
@@ -174,7 +181,7 @@ protected:
 	OO_ENCAPSULATE_SCALAR(fp_t, w) // width
 
 private:
-	std::array<Point, 36> vertices; // 6 sides * 2 triangles * 3 vertices
+	std::array<Vertex, 36> vertices; // 6 sides * 2 triangles * 3 vertices
 
 public:
 	Cube3D (const fp_t w_) noexcept
@@ -211,7 +218,7 @@ protected:
 	OO_ENCAPSULATE_SCALAR(fp_t, radius)
 
 private:
-	std::vector<Point> vertices;
+	std::vector<Vertex> vertices;
 
 public:
 	Circle2D (const fp_t radius_) noexcept
@@ -254,7 +261,7 @@ protected:
 	OO_ENCAPSULATE_SCALAR_INIT(fp_t, z, 0)
 
 private:
-	std::array<Point, 6> vertices; // 2 triangles
+	std::array<Vertex, 6> vertices; // 2 triangles
 
 public:
 	Rect2D (const fp_t w_, const fp_t h_) noexcept
@@ -405,49 +412,7 @@ public:
 		return (this->n_triangles * 3);
 	}
 
-	// we use a template to be able to handle both 2D and 3D vertices
-
-	template <typename Tpoint>
-	void build_circle (const fp_t radius, std::span<Tpoint> vertices) const
-	{
-		uint32_t j;
-		fp_t previous_x, previous_y;
-
-		/*
-			For each triangle:
-				- first vertex is the center (0.0f, 0.0f)
-				- second vertex is the previous calculated vertex (from previous triangle)
-				- third vertex is the new vertex
-		*/
-
-		// for the first triangle
-		previous_x = radius;
-		previous_y = 0;
-
-		j = 0;
-		for (uint32_t i=0; i<this->n_triangles; i++) {
-			// first vertex
-			vertices[j].x = 0;
-			vertices[j].y = 0;
-
-			j++;
-
-			// second vertex
-			vertices[j].x = previous_x;
-			vertices[j].y = previous_y;
-
-			j++;
-
-			// third vertex
-			vertices[j].x = this->table_cos[i] * radius;
-			vertices[j].y = this->table_sin[i] * radius;
-
-			previous_x = vertices[j].x;
-			previous_y = vertices[j].y;
-
-			j++;
-		}
-	}
+	void build_circle (const fp_t radius, std::span<Vertex> vertices) const;
 };
 
 // ---------------------------------------------------

@@ -78,42 +78,41 @@ void Cube3D::calculate_vertices () noexcept
 
 	uint32_t i = 0;
 
-	auto mount = [&i, this, &points] (const PositionIndex p) -> void {
-		this->vertices[i] = points[p];
+	auto mount = [&i, this, &points] (const PositionIndex p, const Vector& normal) -> void {
+		this->vertices[i].pos = points[p];
+		this->vertices[i].normal = normal;
 		i++;
 	};
 
-	auto mount_triangle = [&mount] (const PositionIndex p1, const PositionIndex p2, const PositionIndex p3) -> void {
-		mount(p1);
-		mount(p2);
-		mount(p3);
+	auto mount_triangle = [&mount] (const PositionIndex p1, const PositionIndex p2, const PositionIndex p3, const Vector& normal) -> void {
+		mount(p1, normal);
+		mount(p2, normal);
+		mount(p3, normal);
+	};
+
+	// p1 and p2 should be a diagonal of the rectangle
+	auto mount_surface = [&mount_triangle] (const PositionIndex p1, const PositionIndex p2, const PositionIndex p3, const PositionIndex p4, const Vector& normal) -> void {
+		mount_triangle(p1, p2, p3, normal);
+		mount_triangle(p1, p2, p4, normal);
 	};
 
 	// bottom
-	mount_triangle(LeftBottomFront, RightBottomFront, LeftBottomBack);
-	mount_triangle(RightBottomBack, RightBottomFront, LeftBottomBack);
+	mount_surface(LeftBottomFront, RightBottomBack, RightBottomFront, LeftBottomBack, Vector(0, -1, 0));
 
 	// top
-	mount_triangle(LeftTopFront, RightTopFront, LeftTopBack);
-	mount_triangle(RightTopBack, RightTopFront, LeftTopBack);
+	mount_surface(LeftTopFront, RightTopBack, RightTopFront, LeftTopBack, Vector(0, 1, 0));
 
 	// front
-	mount_triangle(LeftTopFront, LeftBottomFront, RightTopFront);
-	mount_triangle(RightBottomFront, LeftBottomFront, RightTopFront);
+	mount_surface(LeftTopFront, RightBottomFront, RightTopFront, LeftBottomFront, Vector(0, 0, -1));
 
 	// back
-	mount_triangle(LeftTopBack, LeftBottomBack, RightTopBack);
-	mount_triangle(RightBottomBack, LeftBottomBack, RightTopBack);
+	mount_surface(LeftTopBack, RightBottomBack, RightTopBack, LeftBottomBack, Vector(0, 0, 1));
 
 	// left
-	mount_triangle(LeftTopFront, LeftBottomFront, LeftTopBack);
-	mount_triangle(LeftBottomBack, LeftBottomFront, LeftTopBack);
+	mount_surface(LeftTopFront, LeftBottomBack, LeftTopBack, LeftBottomFront, Vector(-1, 0, 0));
 
 	// right
-	mount_triangle(RightTopFront, RightBottomFront, RightTopBack);
-	mount_triangle(RightBottomBack, RightBottomFront, RightTopBack);
-
-	//mylib_assert_exception(i == get_n_vertices)
+	mount_surface(RightTopFront, RightBottomBack, RightTopBack, RightBottomFront, Vector(1, 0, 0));
 }
 
 // ---------------------------------------------------
@@ -131,7 +130,7 @@ void Circle2D::calculate_vertices (const CircleFactory& factory)
 	const uint32_t n_vertices = factory.get_n_vertices();
 	this->setup_vertices_buffer(n_vertices);
 	//dprintln("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen, " n_triangles: ", n_vertices / 3);
-	factory.build_circle(radius, std::span<Point>(this->vertices));
+	factory.build_circle(radius, std::span<Vertex>(this->vertices));
 }
 
 void Circle2D::calculate_vertices (const Matrix4& projection_matrix)
@@ -161,36 +160,36 @@ void Rect2D::calculate_vertices () noexcept
 	const fp_t half_h = this->get_h() * fp(0.5);
 
 	// upper left vertex
-	this->vertices[0].x = -half_w;
-	this->vertices[0].y = -half_h;
-	this->vertices[0].z = this->z;
+	this->vertices[0].pos.x = -half_w;
+	this->vertices[0].pos.y = -half_h;
+	this->vertices[0].pos.z = this->z;
 
 	// down right vertex
-	this->vertices[1].x = half_w;
-	this->vertices[1].y = half_h;
-	this->vertices[1].z = this->z;
+	this->vertices[1].pos.x = half_w;
+	this->vertices[1].pos.y = half_h;
+	this->vertices[1].pos.z = this->z;
 
 	// down left vertex
-	this->vertices[2].x = -half_w;
-	this->vertices[2].y = half_h;
-	this->vertices[2].z = this->z;
+	this->vertices[2].pos.x = -half_w;
+	this->vertices[2].pos.y = half_h;
+	this->vertices[2].pos.z = this->z;
 
 	// draw second triangle
 
 	// upper left vertex
-	this->vertices[3].x = -half_w;
-	this->vertices[3].y = -half_h;
-	this->vertices[3].z = this->z;
+	this->vertices[3].pos.x = -half_w;
+	this->vertices[3].pos.y = -half_h;
+	this->vertices[3].pos.z = this->z;
 
 	// upper right vertex
-	this->vertices[4].x = half_w;
-	this->vertices[4].y = -half_h;
-	this->vertices[4].z = this->z;
+	this->vertices[4].pos.x = half_w;
+	this->vertices[4].pos.y = -half_h;
+	this->vertices[4].pos.z = this->z;
 
 	// down right vertex
-	this->vertices[5].x = half_w;
-	this->vertices[5].y = half_h;
-	this->vertices[5].z = this->z;
+	this->vertices[5].pos.x = half_w;
+	this->vertices[5].pos.y = half_h;
+	this->vertices[5].pos.z = this->z;
 }
 
 // ---------------------------------------------------
@@ -231,6 +230,49 @@ CircleFactory::CircleFactory (const uint32_t n_triangles_)
 	*/
 
 		angle += delta;
+	}
+}
+
+// ---------------------------------------------------
+
+void CircleFactory::build_circle (const fp_t radius, std::span<Vertex> vertices) const
+{
+	uint32_t j;
+	fp_t previous_x, previous_y;
+
+	/*
+		For each triangle:
+			- first vertex is the center (0.0f, 0.0f)
+			- second vertex is the previous calculated vertex (from previous triangle)
+			- third vertex is the new vertex
+	*/
+
+	// for the first triangle
+	previous_x = radius;
+	previous_y = 0;
+
+	j = 0;
+	for (uint32_t i=0; i<this->n_triangles; i++) {
+		// first vertex
+		vertices[j].pos.x = 0;
+		vertices[j].pos.y = 0;
+
+		j++;
+
+		// second vertex
+		vertices[j].pos.x = previous_x;
+		vertices[j].pos.y = previous_y;
+
+		j++;
+
+		// third vertex
+		vertices[j].pos.x = this->table_cos[i] * radius;
+		vertices[j].pos.y = this->table_sin[i] * radius;
+
+		previous_x = vertices[j].pos.x;
+		previous_y = vertices[j].pos.y;
+
+		j++;
 	}
 }
 

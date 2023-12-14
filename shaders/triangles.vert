@@ -1,6 +1,7 @@
 #version 330
 
 in vec3 i_position;
+in vec3 i_normal;
 in vec3 i_offset;
 in vec4 i_color;
 

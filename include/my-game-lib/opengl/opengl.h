@@ -146,6 +146,7 @@ class ProgramTriangle: public Program
 protected:
 	enum class Attrib : uint32_t {
 		Position,
+		Normal,
 		Offset,
 		Color
 	};
@@ -153,7 +154,7 @@ protected:
 public:
 	struct Vertex {
 	#ifndef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
-		Point local_pos; // local x,y,z coords
+		Graphics::Vertex gvertex;
 	#else
 		Point4 local_pos; // local x,y,z coords
 	#endif
@@ -189,7 +190,7 @@ public:
 	void bind_vertex_buffer ();
 	void setup_vertex_array ();
 	void upload_vertex_buffer ();
-	void upload_projection_matrix (const Matrix4& m);
+	void upload_uniforms (const Matrix4& m);
 	void draw ();
 
 	void debug ();
