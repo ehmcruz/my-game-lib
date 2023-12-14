@@ -5,8 +5,10 @@
 using MyGlib::Graphics::Vector;
 using MyGlib::Graphics::Point;
 using MyGlib::Graphics::Vector2;
+using MyGlib::Graphics::Vector4f;
 using MyGlib::Graphics::fp_t;
 using MyGlib::Graphics::fp;
+using MyGlib::Graphics::Color;
 
 bool alive = true;
 
@@ -85,7 +87,8 @@ void render ()
 		.world_camera_target = Point(0, 0, -1),
 		.fov_y = Mylib::Math::degrees_to_radians(fp(45)),
 		.z_near = 0.1,
-		.z_far = 10
+		.z_far = 10,
+		.ambient_light = (1, 1, 1, 1),
 		} );
 	
 	renderer->draw_cube3D(cube, cube_pos, MyGlib::Graphics::Color::red());

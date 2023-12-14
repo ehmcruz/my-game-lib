@@ -46,6 +46,8 @@ using Vector = Vector3;
 using Point = Vector;
 
 using Vector2f = Mylib::Math::Vector<float, 2>;
+using Vector3f = Mylib::Math::Vector<float, 3>;
+using Vector4f = Mylib::Math::Vector<float, 4>;
 
 // ---------------------------------------------------
 
@@ -61,6 +63,16 @@ struct Color {
 	float g;
 	float b;
 	float a; // alpha
+
+	float* get_raw () noexcept
+	{
+		return &this->r;
+	}
+
+	const float* get_raw () const noexcept
+	{
+		return &this->r;
+	}
 
 	static consteval Color black ()
 	{
@@ -287,6 +299,7 @@ struct RenderArgs3D {
 	fp_t fov_y;
 	fp_t z_near;
 	fp_t z_far;
+	Color ambient_light;
 };
 
 struct RenderArgs2D {
@@ -316,8 +329,15 @@ struct RenderArgs2D {
 
 // ---------------------------------------------------
 
+using LightPointDescriptor = uint32_t;
+
+// ---------------------------------------------------
+
 class Manager
 {
+protected:
+	static inline constexpr uint32_t max_points_light_source = 5;
+
 public:
 	enum class Type { // any change here will need a change in get_type_str
 	#ifdef MYGLIB_SUPPORT_SDL
@@ -348,6 +368,14 @@ protected:
 	
 	OO_ENCAPSULATE_SCALAR_READONLY(fp_t, window_aspect_ratio)
 	OO_ENCAPSULATE_OBJ_INIT(Color, background_color, Color::black())
+
+	struct LightPointSource {
+		Point pos;
+		Color color;
+		bool busy = false;
+	};
+
+	std::array<LightPointSource, max_points_light_source> light_point_sources;
 
 	SDL_Window *sdl_window;
 
@@ -393,6 +421,8 @@ public:
 	{
 		this->draw_rect2D(rect, Vector(offset.x, offset.y, 0), color);
 	}
+
+	LightPointDescriptor add_light_point_source (const Point& pos, const Color& color);
 };
 
 // ---------------------------------------------------

@@ -167,9 +167,12 @@ void ProgramTriangle::upload_vertex_buffer ()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * n, this->triangle_buffer.get_vertex_buffer(), GL_DYNAMIC_DRAW);
 }
 
-void ProgramTriangle::upload_uniforms (const Matrix4& m)
+void ProgramTriangle::upload_uniforms (const Matrix4& projection_matrix,
+                                       const Color& ambient_light
+                                      )
 {
-	glUniformMatrix4fv( glGetUniformLocation(this->program_id, "u_projection_matrix"), 1, GL_TRUE, m.get_raw() );
+	glUniformMatrix4fv( glGetUniformLocation(this->program_id, "u_projection_matrix"), 1, GL_TRUE, projection_matrix.get_raw() );
+	glUniform4fv( glGetUniformLocation(this->program_id, "u_ambient_light"), 1, ambient_light.get_raw() );
 	//dprintln( "projection matrix sent to GPU" )
 }
 
@@ -420,6 +423,8 @@ void Renderer::setup_render_3D (const RenderArgs3D& args)
 	this->projection_matrix = Mylib::Math::gen_identity_matrix<fp_t, 4>();
 #endif
 
+	this->ambient_light = args.ambient_light;
+
 #if 1
 	dprintln("projection matrix:");
 	dprintln(this->projection_matrix);
@@ -539,6 +544,8 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 		* translate_camera;
 	//this->projection_matrix = scale * translate_camera;
 	//dprintln( "final matrix:" ) this->projection_matrix.println();
+
+	this->ambient_light = {1, 1, 1, 1};
 #else
 	this->projection_matrix = Mylib::Math::gen_identity_matrix<fp_t, 4>();
 #endif
@@ -555,7 +562,7 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 void Renderer::render ()
 {
 	//this->program_triangle->debug();
-	this->program_triangle->upload_uniforms(this->projection_matrix);
+	this->program_triangle->upload_uniforms(this->projection_matrix, this->ambient_light);
 	this->program_triangle->upload_vertex_buffer();
 	this->program_triangle->draw();
 }

@@ -292,5 +292,22 @@ CircleFactoryManager::CircleFactoryManager (const uint32_t n_cats, const uint32_
 
 // ---------------------------------------------------
 
+LightPointDescriptor Manager::add_light_point_source (const Point& pos, const Color& color)
+{
+	for (uint32_t id = 0; auto& light_source : this->light_point_sources) {
+		if (light_source.busy == false) {
+			light_source.busy = true;
+			light_source.pos = pos;
+			light_source.color = color;
+			return id;
+		}
+		id++;
+	}
+
+	mylib_throw_exception_msg("no more light point sources available");
+}
+
+// ---------------------------------------------------
+
 } // end namespace Graphics
 } // end namespace MyGlib

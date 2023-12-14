@@ -190,7 +190,11 @@ public:
 	void bind_vertex_buffer ();
 	void setup_vertex_array ();
 	void upload_vertex_buffer ();
-	void upload_uniforms (const Matrix4& m);
+
+	void upload_uniforms (const Matrix4& projection_matrix,
+	                      const Color& ambient_light
+	                     );
+
 	void draw ();
 
 	void debug ();
@@ -203,6 +207,7 @@ class Renderer : public Manager
 protected:
 	SDL_GLContext sdl_gl_context;
 	Matrix4 projection_matrix;
+	Color ambient_light;
 
 	ProgramTriangle *program_triangle;
 
