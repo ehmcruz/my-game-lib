@@ -100,6 +100,8 @@ struct Color {
 	}
 };
 
+std::ostream& operator << (std::ostream& out, const Color& color);
+
 // ---------------------------------------------------
 
 struct Vertex {
@@ -299,7 +301,7 @@ struct RenderArgs3D {
 	fp_t fov_y;
 	fp_t z_near;
 	fp_t z_far;
-	Color ambient_light;
+	Color ambient_light_color;
 };
 
 struct RenderArgs2D {

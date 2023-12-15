@@ -137,6 +137,7 @@ void ProgramTriangle::setup_vertex_array ()
 	uint32_t pos, length;
 
 	glEnableVertexAttribArray( std::to_underlying(Attrib::Position) );
+	glEnableVertexAttribArray( std::to_underlying(Attrib::Normal) );
 	glEnableVertexAttribArray( std::to_underlying(Attrib::Offset) );
 	glEnableVertexAttribArray( std::to_underlying(Attrib::Color) );
 
@@ -167,12 +168,12 @@ void ProgramTriangle::upload_vertex_buffer ()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * n, this->triangle_buffer.get_vertex_buffer(), GL_DYNAMIC_DRAW);
 }
 
-void ProgramTriangle::upload_uniforms (const Matrix4& projection_matrix,
-                                       const Color& ambient_light
-                                      )
+void ProgramTriangle::upload_uniforms (const Uniforms& uniforms)
 {
-	glUniformMatrix4fv( glGetUniformLocation(this->program_id, "u_projection_matrix"), 1, GL_TRUE, projection_matrix.get_raw() );
-	glUniform4fv( glGetUniformLocation(this->program_id, "u_ambient_light"), 1, ambient_light.get_raw() );
+	glUniformMatrix4fv( glGetUniformLocation(this->program_id, "u_projection_matrix"), 1, GL_TRUE, uniforms.projection_matrix.get_raw() );
+	glUniform4fv( glGetUniformLocation(this->program_id, "u_ambient_light_color"), 1, uniforms.ambient_light_color.get_raw() );
+	glUniform3fv( glGetUniformLocation(this->program_id, "u_point_light_pos"), 1, uniforms.point_light_pos.get_raw() );
+	glUniform4fv( glGetUniformLocation(this->program_id, "u_point_light_color"), 1, uniforms.point_light_color.get_raw() );
 	//dprintln( "projection matrix sent to GPU" )
 }
 
@@ -407,7 +408,7 @@ void Renderer::draw_rect2D (const Rect2D& rect, const Vector& offset, const Colo
 void Renderer::setup_render_3D (const RenderArgs3D& args)
 {
 #ifndef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
-	this->projection_matrix = Mylib::Math::gen_perspective_matrix<fp_t>(
+	this->uniforms.projection_matrix = Mylib::Math::gen_perspective_matrix<fp_t>(
 			args.fov_y,
 			static_cast<fp_t>(this->window_width_px),
 			static_cast<fp_t>(this->window_height_px),
@@ -423,15 +424,20 @@ void Renderer::setup_render_3D (const RenderArgs3D& args)
 	this->projection_matrix = Mylib::Math::gen_identity_matrix<fp_t, 4>();
 #endif
 
-	this->ambient_light = args.ambient_light;
+	this->uniforms.ambient_light_color = args.ambient_light_color;
+	this->uniforms.point_light_pos = this->light_point_sources[0].pos;
+	this->uniforms.point_light_color = this->light_point_sources[0].color;
 
 #if 1
 	dprintln("projection matrix:");
-	dprintln(this->projection_matrix);
+	dprintln(this->uniforms.projection_matrix);
 	dprintln();
 	dprintln("camera position: ", args.world_camera_pos);
 	dprintln("camera target: ", args.world_camera_target);
 	dprintln("camera vector: ", args.world_camera_target - args.world_camera_pos);
+	dprintln("ambient light color: ", this->uniforms.ambient_light_color);
+	dprintln("point light pos: ", this->uniforms.point_light_pos);
+	dprintln("point light color: ", this->uniforms.point_light_color);
 #endif
 }
 
@@ -536,7 +542,7 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 	translate_camera.set_translate(-world_camera);
 //	dprintln( "translation matrix:" ) translate_camera.println();
 
-	this->projection_matrix = 
+	this->uniforms.projection_matrix = 
 		(((translate_subtract_one
 		* opengl_scale_mirror)
 		* translate_to_normalized_clip_init)
@@ -545,12 +551,12 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 	//this->projection_matrix = scale * translate_camera;
 	//dprintln( "final matrix:" ) this->projection_matrix.println();
 
-	this->ambient_light = {1, 1, 1, 1};
+	this->uniforms.ambient_light_color = {1, 1, 1, 1};
 #else
 	this->projection_matrix = Mylib::Math::gen_identity_matrix<fp_t, 4>();
 #endif
 
-#if 1
+#if 0
 	dprintln("projection matrix:");
 	dprintln(this->projection_matrix);
 	dprintln();
@@ -562,7 +568,7 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 void Renderer::render ()
 {
 	//this->program_triangle->debug();
-	this->program_triangle->upload_uniforms(this->projection_matrix, this->ambient_light);
+	this->program_triangle->upload_uniforms(this->uniforms);
 	this->program_triangle->upload_vertex_buffer();
 	this->program_triangle->draw();
 }

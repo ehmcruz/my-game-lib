@@ -1,3 +1,6 @@
+#include <chrono>
+#include <thread>
+
 #include <my-game-lib/my-game-lib.h>
 
 #include <my-lib/trigger.h>
@@ -9,6 +12,21 @@ using MyGlib::Graphics::Vector4f;
 using MyGlib::Graphics::fp_t;
 using MyGlib::Graphics::fp;
 using MyGlib::Graphics::Color;
+using MyGlib::Graphics::LightPointDescriptor;
+
+using Clock = std::chrono::steady_clock;
+using ClockDuration = Clock::duration;
+using ClockTime = Clock::time_point;
+
+constexpr ClockDuration fp_to_ClockDuration (const fp_t t)
+{
+	return std::chrono::duration_cast<ClockDuration>(std::chrono::duration<fp_t>(t));
+}
+
+constexpr fp_t ClockDuration_to_fp (const ClockDuration& d)
+{
+	return std::chrono::duration_cast<std::chrono::duration<fp_t>>(d).count();
+}
 
 bool alive = true;
 
@@ -50,12 +68,50 @@ void key_down_callback (const MyGlib::Event::KeyDown& event)
 	}
 }
 
+LightPointDescriptor light;
+MyGlib::Graphics::Cube3D cube (1);
+Vector cube_pos (-1, -1, -4);
+
+void setup ()
+{
+	light = renderer->add_light_point_source(
+		Point(-5, 5, -10), Color::white()
+	);
+
+	std::cout << "Light id: " << light << std::endl;
+}
+
+static void process_keys (const Uint8 *keys, const fp_t dt)
+{
+	constexpr fp_t speed = 1.0;
+
+	if (keys[SDL_SCANCODE_UP])
+		cube_pos.y += speed * dt;
+	else if (keys[SDL_SCANCODE_DOWN])
+		cube_pos.y -= speed * dt;
+
+	if (keys[SDL_SCANCODE_LEFT])
+		cube_pos.x -= speed * dt;
+	else if (keys[SDL_SCANCODE_RIGHT])
+		cube_pos.x += speed * dt;
+
+	if (keys[SDL_SCANCODE_PERIOD])
+		cube_pos.z += speed * dt;
+	else if (keys[SDL_SCANCODE_COMMA])
+		cube_pos.z -= speed * dt;
+}
+
+void update (const fp_t dt)
+{
+	process_keys(SDL_GetKeyboardState(NULL), dt);
+}
+
 void render ()
 {
 	constexpr float zoom = 1.0;
 	renderer->wait_next_frame();
 
-#if 1
+#if 0
 	const Vector2 ws = renderer->get_normalized_window_size();
 
 	renderer->setup_render_2D( MyGlib::Graphics::RenderArgs2D {
@@ -79,16 +135,13 @@ void render ()
 	renderer->clear_vertex_buffers();
 #endif
 
-	MyGlib::Graphics::Cube3D cube (1);
-	Vector cube_pos (-1, -1, -4);
-
 	renderer->setup_render_3D( MyGlib::Graphics::RenderArgs3D {
-		.world_camera_pos = Point(0, 0, 0),
-		.world_camera_target = Point(0, 0, -1),
+		.world_camera_pos = Point(0, 0, -10),
+		.world_camera_target = Point(0, 0, 1),
 		.fov_y = Mylib::Math::degrees_to_radians(fp(45)),
 		.z_near = 0.1,
-		.z_far = 10,
-		.ambient_light = (1, 1, 1, 1),
+		.z_far = 100,
+		.ambient_light_color = {1, 1, 1, 0.3},
 		} );
 	
 	renderer->draw_cube3D(cube, cube_pos, MyGlib::Graphics::Color::red());
@@ -115,6 +168,8 @@ int main (int argc, char **argv)
 	audio_manager = &lib->get_audio_manager();
 	renderer = &lib->get_graphics_manager();
 
+	setup();
+
 	music = audio_manager->load_music("music.mp3", MyGlib::Audio::Format::MP3);
 	audio_explosion = audio_manager->load_sound("hq-explosion-6288.wav", MyGlib::Audio::Format::Wav);
 
@@ -123,10 +178,19 @@ int main (int argc, char **argv)
 	event_manager->key_down().subscribe( Mylib::Trigger::make_callback_function<MyGlib::Event::KeyDown>(&key_down_callback) );
 	event_manager->quit().subscribe( Mylib::Trigger::make_callback_function<MyGlib::Event::Quit>(&quit_callback) );
 
+	constexpr fp_t dt = 1.0 / 30.0;
+	int frame = 0;
+
 	while (alive)
 	{
+		std::cout << "rendering frame " << frame << std::endl;
+
+		update(dt);
 		event_manager->process_events();
 		render();
+
+		std::this_thread::sleep_for(fp_to_ClockDuration(dt));
+		frame++;
 	}
 
 	return 0;

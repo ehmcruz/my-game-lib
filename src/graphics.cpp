@@ -12,6 +12,14 @@ static CircleFactoryManager circle_factory_manager(10, 50, 1000);
 
 // ---------------------------------------------------
 
+std::ostream& operator << (std::ostream& out, const Color& color)
+{
+	out << "[" << color.r << ", " << color.g << ", " << color.b << ", " << color.a << "]";
+	return out;
+}
+
+// ---------------------------------------------------
+
 void Cube3D::calculate_vertices () noexcept
 {
 	std::array<Point, 8> points;

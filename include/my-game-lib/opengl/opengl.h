@@ -152,6 +152,13 @@ protected:
 	};
 
 public:
+	struct Uniforms {
+		Matrix4 projection_matrix;
+		Color ambient_light_color;
+		Point point_light_pos;
+		Color point_light_color;
+	};
+
 	struct Vertex {
 	#ifndef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
 		Graphics::Vertex gvertex;
@@ -190,10 +197,7 @@ public:
 	void bind_vertex_buffer ();
 	void setup_vertex_array ();
 	void upload_vertex_buffer ();
-
-	void upload_uniforms (const Matrix4& projection_matrix,
-	                      const Color& ambient_light
-	                     );
+	void upload_uniforms (const Uniforms& uniforms);
 
 	void draw ();
 
@@ -206,8 +210,7 @@ class Renderer : public Manager
 {
 protected:
 	SDL_GLContext sdl_gl_context;
-	Matrix4 projection_matrix;
-	Color ambient_light;
+	ProgramTriangle::Uniforms uniforms;
 
 	ProgramTriangle *program_triangle;
 
