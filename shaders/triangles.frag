@@ -14,15 +14,11 @@ uniform vec4 u_point_light_color;
 void main ()
 {
 	vec3 light_dir = normalize(u_point_light_pos - world_position);
-	//vec3 light_dir = normalize(world_position - u_point_light_pos);
 	float diff = max(dot(normal, light_dir), 0.0);
-	//vec3 diffuse_light = u_point_light_color.rgb * diff * u_point_light_color.a;
-	vec3 diffuse_light = u_point_light_color.rgb * diff;
+	vec3 diffuse_light = u_point_light_color.rgb * diff * u_point_light_color.a;
 
 	vec3 ambient_light = u_ambient_light_color.rgb * u_ambient_light_color.a;
 
 	vec3 result = (ambient_light + diffuse_light) * color.rgb;
-	//vec3 result = ambient_light * color.rgb;
 	o_color = vec4(result, color.a);
-	//o_color = vec4(normal, 1);
 }

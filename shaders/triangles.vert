@@ -15,9 +15,6 @@ void main ()
 {
 	color = i_color;
 	world_position = i_position + i_offset;
-	//normal = normalize(i_normal);
-	normal = i_normal;
+	normal = normalize(i_normal);
 	gl_Position = u_projection_matrix * vec4(world_position, 1.0 );
-
-	//gl_Position = i_position;
 }
