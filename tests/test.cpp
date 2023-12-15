@@ -71,11 +71,13 @@ void key_down_callback (const MyGlib::Event::KeyDown& event)
 LightPointDescriptor light;
 MyGlib::Graphics::Cube3D cube (1);
 Vector cube_pos (-1, -1, -4);
+Point camera_pos(0, 0, -10);
+Point camera_target(0, 0, 1);
 
 void setup ()
 {
 	light = renderer->add_light_point_source(
-		Point(-5, 5, -10), Color::white()
+		Point(5, -5, -10), Color::white()
 	);
 
 	std::cout << "Light id: " << light << std::endl;
@@ -135,9 +137,11 @@ void render ()
 	renderer->clear_vertex_buffers();
 #endif
 
+//cube_pos (-1, -1, -4)
+
 	renderer->setup_render_3D( MyGlib::Graphics::RenderArgs3D {
-		.world_camera_pos = Point(0, 0, -10),
-		.world_camera_target = Point(0, 0, 1),
+		.world_camera_pos = camera_pos,
+		.world_camera_target = camera_target,
 		.fov_y = Mylib::Math::degrees_to_radians(fp(45)),
 		.z_near = 0.1,
 		.z_far = 100,
