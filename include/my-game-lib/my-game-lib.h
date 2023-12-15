@@ -22,6 +22,7 @@ class Lib
 {
 public:
 	struct InitParams {
+		Graphics::Manager::Type graphics_type;
 		std::string_view window_name;
 		uint32_t window_width_px;
 		uint32_t window_height_px;

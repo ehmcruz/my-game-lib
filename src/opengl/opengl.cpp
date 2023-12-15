@@ -252,7 +252,7 @@ Renderer::Renderer (const InitParams& params)
 
 	this->load_opengl_programs();
 
-	dprintln("loaded opengl stuff");
+	dprintln("Opengl renderer created");
 
 	this->wait_next_frame();
 }

@@ -32,7 +32,7 @@ namespace Event
 
 namespace Audio
 {
-	class SDL_AudioDriver: public Manager
+	class SDL_AudioDriver : public Manager
 	{
 	public:
 		SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_);
@@ -51,11 +51,16 @@ namespace Audio
 
 namespace Graphics
 {
-	class SDL_Renderer : public Manager
+	class SDL_GraphicsDriver : public Manager
 	{
+	private:
+		SDL_Renderer *renderer;
+		Matrix4 projection_matrix;
+		fp_t scale_factor;
+
 	public:
-		SDL_Renderer (const InitParams& params);
-		~SDL_Renderer ();
+		SDL_GraphicsDriver (const InitParams& params);
+		~SDL_GraphicsDriver ();
 
 		void wait_next_frame () override final;
 		void draw_cube3D (const Cube3D& cube, const Vector& offset, const Color& color) override final;

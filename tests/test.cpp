@@ -161,6 +161,8 @@ void quit_callback (const MyGlib::Event::Quit& event)
 int main (int argc, char **argv)
 {
 	lib = &MyGlib::Lib::init({
+		//.graphics_type = MyGlib::Graphics::Manager::Type::SDL,
+		.graphics_type = MyGlib::Graphics::Manager::Type::Opengl,
 		.window_name = "My Game Lib Test",
 		.window_width_px = 1200,
 		.window_height_px = 800,
@@ -185,7 +187,7 @@ int main (int argc, char **argv)
 
 	while (alive)
 	{
-		std::cout << "rendering frame " << frame << std::endl;
+		//std::cout << "rendering frame " << frame << std::endl;
 
 		update(dt);
 		event_manager->process_events();

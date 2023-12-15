@@ -50,14 +50,24 @@ void Lib::lib_init (const InitParams& params)
 #endif
 
 #ifdef MYGLIB_SUPPORT_OPENGL
-	this->graphics_manager = new Graphics::Opengl::Renderer({
-		.memory_manager = this->memory_manager,
-		.window_name = params.window_name,
-		.window_width_px = params.window_width_px,
-		.window_height_px = params.window_height_px,
-		.fullscreen = params.fullscreen
-	});
+	if (params.graphics_type == Graphics::Manager::Type::Opengl) 
+		this->graphics_manager = new Graphics::Opengl::Renderer({
+			.memory_manager = this->memory_manager,
+			.window_name = params.window_name,
+			.window_width_px = params.window_width_px,
+			.window_height_px = params.window_height_px,
+			.fullscreen = params.fullscreen
+		});
 #endif
+
+	if (this->graphics_manager == nullptr)
+		this->graphics_manager = new Graphics::SDL_GraphicsDriver({
+			.memory_manager = this->memory_manager,
+			.window_name = params.window_name,
+			.window_width_px = params.window_width_px,
+			.window_height_px = params.window_height_px,
+			.fullscreen = params.fullscreen
+		});
 
 	mylib_assert_exception(this->audio_manager != nullptr)
 }
