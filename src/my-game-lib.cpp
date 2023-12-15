@@ -2,7 +2,6 @@
 
 #ifdef MYGLIB_SUPPORT_SDL
 	#include <my-game-lib/sdl/sdl-driver.h>
-	#include <my-game-lib/sdl/sdl-audio.h>
 #endif
 
 #ifdef MYGLIB_SUPPORT_OPENGL

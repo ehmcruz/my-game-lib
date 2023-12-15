@@ -4,7 +4,7 @@
 
 #include <my-game-lib/debug.h>
 #include <my-game-lib/audio.h>
-#include <my-game-lib/sdl/sdl-audio.h>
+#include <my-game-lib/sdl/sdl-driver.h>
 
 #include <my-lib/macros.h>
 #include <my-lib/trigger.h>

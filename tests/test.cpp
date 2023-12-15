@@ -113,7 +113,7 @@ void render ()
 	constexpr float zoom = 1.0;
 	renderer->wait_next_frame();
 
-#if 0
+#if 1
 	const Vector2 ws = renderer->get_normalized_window_size();
 
 	renderer->setup_render_2D( MyGlib::Graphics::RenderArgs2D {
@@ -135,10 +135,7 @@ void render ()
 	renderer->render();
 
 	renderer->clear_vertex_buffers();
-#endif
-
-//cube_pos (-1, -1, -4)
-
+#else
 	renderer->setup_render_3D( MyGlib::Graphics::RenderArgs3D {
 		.world_camera_pos = camera_pos,
 		.world_camera_target = camera_target,
@@ -151,6 +148,7 @@ void render ()
 	renderer->draw_cube3D(cube, cube_pos, MyGlib::Graphics::Color::red());
 
 	renderer->render();
+#endif
 
 	renderer->update_screen();
 }

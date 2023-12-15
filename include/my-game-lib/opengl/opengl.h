@@ -233,8 +233,8 @@ public:
 
 // ---------------------------------------------------
 
-} // end namespace Graphics
 } // end namespace Opengl
+} // end namespace Graphics
 } // end namespace MyGlib
 
 #endif
