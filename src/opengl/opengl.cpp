@@ -454,7 +454,7 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 
 	//const float max_norm_length = std::max(normalized_clip_size.x, normalized_clip_size.y);
 	//const float max_opengl_length = max_norm_length * 2.0f;
-	const fp_t opengl_length = 2;
+	constexpr fp_t opengl_length = 2;
 	const fp_t opengl_window_aspect_ratio = this->window_aspect_ratio;
 
 	/*
