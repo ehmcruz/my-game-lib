@@ -48,7 +48,7 @@ void my_music_callback (MyGlib::Audio::Manager::Event& event)
 	std::cout << "Music " << event.audio_descriptor.id << " finished" << std::endl;
 }
 
-void key_down_callback (const MyGlib::Event::KeyDown& event)
+void key_down_callback (const MyGlib::Event::KeyDown::Type& event)
 {
 	switch (event.key_code)
 	{
@@ -153,7 +153,7 @@ void render ()
 	renderer->update_screen();
 }
 
-void quit_callback (const MyGlib::Event::Quit& event)
+void quit_callback (const MyGlib::Event::Quit::Type& event)
 {
 	alive = false;
 }
@@ -179,8 +179,8 @@ int main (int argc, char **argv)
 
 	audio_manager->play_audio(music, Mylib::Trigger::make_callback_function<MyGlib::Audio::Manager::Event>(&my_music_callback));
 
-	event_manager->key_down().subscribe( Mylib::Trigger::make_callback_function<MyGlib::Event::KeyDown>(&key_down_callback) );
-	event_manager->quit().subscribe( Mylib::Trigger::make_callback_function<MyGlib::Event::Quit>(&quit_callback) );
+	event_manager->key_down().subscribe( Mylib::Trigger::make_callback_function<MyGlib::Event::KeyDown::Type>(&key_down_callback) );
+	event_manager->quit().subscribe( Mylib::Trigger::make_callback_function<MyGlib::Event::Quit::Type>(&quit_callback) );
 
 	constexpr fp_t dt = 1.0 / 30.0;
 	int frame = 0;

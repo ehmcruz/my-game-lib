@@ -33,6 +33,14 @@ namespace Graphics
 
 // ---------------------------------------------------
 
+#ifndef MYGLIB_FP_TYPE
+	#error "MYGLIB_FP_TYPE must be defined"
+#endif
+
+#ifndef MYGLIB_SUPPORT_SDL
+	#error "SDL support is required"
+#endif
+
 using fp_t = MYGLIB_FP_TYPE;
 using Vector2 = Mylib::Math::Vector<fp_t, 2>;
 using Vector3 = Mylib::Math::Vector<fp_t, 3>;
@@ -353,6 +361,8 @@ public:
 	#endif
 		Unsupported // must be the last one
 	};
+
+	static const char* get_type_str (const Type value);
 
 	struct InitParams {
 		Mylib::Memory::Manager& memory_manager;

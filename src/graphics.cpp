@@ -1,3 +1,7 @@
+#include <ostream>
+#include <array>
+#include <utility>
+
 #include <my-game-lib/graphics.h>
 #include <my-game-lib/debug.h>
 
@@ -9,6 +13,29 @@ namespace Graphics
 // ---------------------------------------------------
 
 static CircleFactoryManager circle_factory_manager(10, 50, 1000);
+
+// ---------------------------------------------------
+
+const char* Manager::get_type_str (const Type value)
+{
+	static constexpr auto strs = std::to_array<const char*>({
+	#ifdef MYGLIB_SUPPORT_SDL
+		"SDL",
+	#endif
+	#ifdef MYGLIB_SUPPORT_OPENGL
+		"Opengl",
+	#endif
+	#ifdef MYGLIB_SUPPORT_VULKAN
+		"Vulkan",
+	#endif
+		"Unsupported" // must be the last one
+	});
+
+	mylib_assert_exception_msg(std::to_underlying(value) < strs.size(), "invalid enum class value ", std::to_underlying(value))
+
+	return strs[ std::to_underlying(value) ];
+
+}
 
 // ---------------------------------------------------
 

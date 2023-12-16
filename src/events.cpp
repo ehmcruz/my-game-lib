@@ -11,7 +11,7 @@ namespace Event
 
 // ---------------------------------------------------
 
-const char* enum_class_to_str (const TouchScreenMoveData::Direction value)
+const char* enum_class_to_str (const TouchScreenMove_Data__::Direction value)
 {
 	static constexpr auto strs = std::to_array<const char*>({
 		#define _MYGLIB_ENUM_CLASS_DIRECTION_VALUE_(V) #V,

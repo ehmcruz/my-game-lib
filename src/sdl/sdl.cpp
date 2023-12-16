@@ -72,15 +72,15 @@ static void finger_event_check_trigger (SDL_EventDriver& sdl_driver, const Finge
 
 	if (std::abs(dx_px) > threshold) {
 		if (dx_px < 0.0f)
-			sdl_driver.touch_screen_move().publish(TouchScreenMoveData { .direction = TouchScreenMoveData::Direction::Left });
+			sdl_driver.touch_screen_move().publish(TouchScreenMove::Type { .direction = TouchScreenMove::Type::Direction::Left });
 		else
-			sdl_driver.touch_screen_move().publish(TouchScreenMoveData { .direction = TouchScreenMoveData::Direction::Right });
+			sdl_driver.touch_screen_move().publish(TouchScreenMove::Type { .direction = TouchScreenMove::Type::Direction::Right });
 	}
 	else if (std::abs(dy_px) > threshold) {
 		if (dy_px < 0.0f)
-			sdl_driver.touch_screen_move().publish(TouchScreenMoveData { .direction = TouchScreenMoveData::Direction::Up });
+			sdl_driver.touch_screen_move().publish(TouchScreenMove::Type { .direction = TouchScreenMove::Type::Direction::Up });
 		else
-			sdl_driver.touch_screen_move().publish(TouchScreenMoveData { .direction = TouchScreenMoveData::Direction::Down });
+			sdl_driver.touch_screen_move().publish(TouchScreenMove::Type { .direction = TouchScreenMove::Type::Direction::Down });
 	}
 }
 
@@ -147,13 +147,15 @@ void SDL_EventDriver::process_events ()
 	SDL_Event sdl_event;
 
 	while (SDL_PollEvent(&sdl_event)) {
+		this->event_sdl.publish(sdl_event);
+
 		switch (sdl_event.type) {
 			case SDL_QUIT:
-				this->event_quit.publish( Quit { } );
+				this->event_quit.publish( { } );
 			break;
 
 			case SDL_KEYDOWN:
-				this->event_key_down.publish( KeyDown {
+				this->event_key_down.publish( KeyDown::Type {
 					.key_code = sdl_event.key.keysym.sym,
 					.scan_code = sdl_event.key.keysym.scancode,
 					.modifiers = sdl_event.key.keysym.mod

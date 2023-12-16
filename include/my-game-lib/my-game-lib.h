@@ -42,10 +42,12 @@ private:
 	Lib (const InitParams& params);
 	Lib (const InitParams& params, Mylib::Memory::Manager& memory_manager_);
 	void lib_init (const InitParams& params);
+	~Lib ();
 
 public:
 	static Lib& init (const InitParams& params);
 	static Lib& init (const InitParams& params, Mylib::Memory::Manager& memory_manager_);
+	static void quit ();
 	
 	static Lib& get_instance ()
 	{

@@ -27,6 +27,14 @@ Lib& Lib::init (const InitParams& params, Mylib::Memory::Manager& memory_manager
 	return *instance;
 }
 
+void Lib::quit ()
+{
+	if (instance != nullptr) {
+		delete instance;
+		instance = nullptr;
+	}
+}
+
 // ---------------------------------------------------
 
 Lib::Lib (const InitParams& params)
@@ -70,6 +78,19 @@ void Lib::lib_init (const InitParams& params)
 		});
 
 	mylib_assert_exception(this->audio_manager != nullptr)
+	mylib_assert_exception(this->event_manager != nullptr)
+	mylib_assert_exception(this->graphics_manager != nullptr)
+}
+
+// ---------------------------------------------------
+
+Lib::~Lib ()
+{
+	delete this->audio_manager;
+	delete this->event_manager;
+	delete this->graphics_manager;
+
+	SDL_Driver_End();
 }
 
 // ---------------------------------------------------
