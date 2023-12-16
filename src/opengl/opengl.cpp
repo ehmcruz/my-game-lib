@@ -216,7 +216,7 @@ void ProgramTriangle::debug ()
 Renderer::Renderer (const InitParams& params)
 	: Manager (params)
 {
-	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+//	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 	SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 1 );
 	SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 8 );
 	SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 8 );
@@ -227,14 +227,31 @@ Renderer::Renderer (const InitParams& params)
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 2 );
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
 
-	this->sdl_window = SDL_CreateWindow(
-		params.window_name.data(),
-		SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED,
-		this->window_width_px,
-		this->window_height_px,
-		SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN
+	if (this->fullscreen) {
+		SDL_DisplayMode display_mode;
+
+		const auto error = SDL_GetCurrentDisplayMode(0, &display_mode);
+		
+		mylib_assert_exception_msg(error == 0, "error getting display mode\n", SDL_GetError())
+
+		this->window_width_px = display_mode.w;
+		this->window_height_px = display_mode.h;
+
+		this->sdl_window = SDL_CreateWindow(
+			params.window_name.data(),
+			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+			this->window_width_px, this->window_height_px,
+			SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN
 		);
+
+		dprintln("fullscrren window created with width=", this->window_width_px, " height=", this->window_height_px);
+	}
+	else
+		this->sdl_window = SDL_CreateWindow(
+			params.window_name.data(),
+			SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+			this->window_width_px, this->window_height_px,
+			SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
 	this->sdl_gl_context = SDL_GL_CreateContext(this->sdl_window);
 
@@ -455,7 +472,7 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 	//const float max_norm_length = std::max(normalized_clip_size.x, normalized_clip_size.y);
 	//const float max_opengl_length = max_norm_length * 2.0f;
 	constexpr fp_t opengl_length = 2;
-	const fp_t opengl_window_aspect_ratio = this->window_aspect_ratio;
+	const fp_t opengl_window_aspect_ratio = this->get_window_aspect_ratio();
 
 	/*
 		1.0f (norm_length) -> 2.0f (opengl_length)

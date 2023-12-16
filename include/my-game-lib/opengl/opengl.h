@@ -5,10 +5,18 @@
 	#define SDL_MAIN_HANDLED
 #endif
 
-#include <GL/glew.h>
+#ifndef __ANDROID__
+	#include <GL/glew.h>
+#endif
 
 #include <SDL.h>
-#include <SDL_opengl.h>
+
+#ifndef __ANDROID__
+	#include <SDL_opengl.h>
+#else
+	#include <SDL_opengles2.h>
+	#include <GLES3/gl3.h>
+#endif
 
 #include <cstring>
 

@@ -62,6 +62,10 @@ void key_down_callback (const MyGlib::Event::KeyDown::Type& event)
 			std::cout << "Playing audio " << audio_explosion.id << " without callback" << std::endl;
 			audio_manager->play_audio(audio_explosion);
 			break;
+		
+		case SDLK_ESCAPE:
+			alive = false;
+		break;
 	
 		default:
 			break;
@@ -166,7 +170,8 @@ int main (int argc, char **argv)
 		.window_name = "My Game Lib Test",
 		.window_width_px = 1200,
 		.window_height_px = 800,
-		.fullscreen = false
+		.fullscreen = true
+		//.fullscreen = false
 	});
 	event_manager = &lib->get_event_manager();
 	audio_manager = &lib->get_audio_manager();

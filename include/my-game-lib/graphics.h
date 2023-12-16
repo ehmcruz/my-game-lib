@@ -378,7 +378,6 @@ protected:
 	OO_ENCAPSULATE_SCALAR_READONLY(uint32_t, window_height_px)
 	OO_ENCAPSULATE_SCALAR_READONLY(bool, fullscreen)
 	
-	OO_ENCAPSULATE_SCALAR_READONLY(fp_t, window_aspect_ratio)
 	OO_ENCAPSULATE_OBJ_INIT(Color, background_color, Color::black())
 
 	struct LightPointSource {
@@ -398,14 +397,18 @@ public:
 		window_height_px(params.window_height_px),
 		fullscreen(params.fullscreen)
 	{
-		this->window_aspect_ratio = static_cast<fp_t>(this->window_width_px) / static_cast<fp_t>(this->window_height_px);
 	}
 
 	virtual ~Manager () = default;
 
+	inline fp_t get_window_aspect_ratio () const
+	{
+		return static_cast<fp_t>(this->window_width_px) / static_cast<fp_t>(this->window_height_px);
+	}
+
 	inline fp_t get_inverted_window_aspect_ratio () const
 	{
-		return fp(1) / this->window_aspect_ratio;
+		return fp(1) / this->get_window_aspect_ratio();
 	}
 
 	inline Vector2 get_normalized_window_size () const
