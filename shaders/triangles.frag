@@ -1,4 +1,18 @@
-#version 330
+#version 300 es
+
+/*
+	"precision" is required by OpenGL ES 3.0.
+
+	https://stackoverflow.com/questions/13780609/what-does-precision-mediump-float-mean
+
+	In this stackoverflow answer, it says that:
+	- highp for vertex positions;
+	- mediump for texture coordinates;
+	- lowp for colors.
+
+	It also says that highp is not always available, so let's use mediump.
+*/
+precision mediump float;
 
 in vec3 world_position;
 in vec3 normal;

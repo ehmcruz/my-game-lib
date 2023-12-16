@@ -7,8 +7,6 @@
 #include <cstdlib>
 #include <cmath>
 
-#include <GL/glew.h>
-
 #include <my-lib/math.h>
 
 #include <my-game-lib/debug.h>
@@ -216,16 +214,17 @@ void ProgramTriangle::debug ()
 Renderer::Renderer (const InitParams& params)
 	: Manager (params)
 {
-//	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+//	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 ); // already set in sdl.cpp
 	SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 1 );
 	SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 8 );
 	SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 8 );
 	SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 8 );
 	SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
 
-	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
-	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 2 );
-	SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+	// Check sdl.cpp
+	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
+	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 2 );
+	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
 
 	if (this->fullscreen) {
 		SDL_DisplayMode display_mode;
@@ -255,11 +254,13 @@ Renderer::Renderer (const InitParams& params)
 
 	this->sdl_gl_context = SDL_GL_CreateContext(this->sdl_window);
 
+#ifndef __ANDROID__
 	GLenum err = glewInit();
 
 	mylib_assert_exception_msg(err == GLEW_OK, "Error: ", glewGetErrorString(err))
 
 	dprintln("Status: Using GLEW ", glewGetString(GLEW_VERSION));
+#endif
 
 	//glDisable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_TEST);
@@ -339,7 +340,7 @@ void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset, const Colo
 	}
 #endif
 	
-	constexpr uint32_t n_vertices = cube.get_n_vertices();
+	constexpr uint32_t n_vertices = Cube3D::get_n_vertices();
 	//const Vector world_pos = Vector(4.0f, 4.0f);
 	
 #if 0
@@ -396,7 +397,7 @@ void Renderer::draw_circle2D (const Circle2D& circle, const Vector& offset, cons
 
 void Renderer::draw_rect2D (const Rect2D& rect, const Vector& offset, const Color& color)
 {
-	constexpr uint32_t n_vertices = rect.get_n_vertices();
+	constexpr uint32_t n_vertices = Rect2D::get_n_vertices();
 	//const Vector world_pos = Vector(4.0f, 4.0f);
 	
 #if 0

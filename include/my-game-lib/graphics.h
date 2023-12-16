@@ -272,7 +272,7 @@ public:
 class Rect2D : public Shape
 {
 public:
-	consteval static uint32_t get_n_vertices ()
+	static consteval uint32_t get_n_vertices ()
 	{
 		return 6; // 2 triangles
 	}
