@@ -66,6 +66,7 @@ protected:
 
 public:
 	Manager& init ();
+	virtual ~Manager () = default;
 
 	Mylib::Memory::Manager& get_memory_manager ()
 	{

@@ -87,6 +87,8 @@ public:
 	{
 	}
 
+	virtual ~Manager () = default;
+
 	virtual void process_events () = 0;
 
 	KeyDown& key_down ()

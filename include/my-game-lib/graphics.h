@@ -349,7 +349,7 @@ protected:
 	static inline constexpr uint32_t max_points_light_source = 5;
 
 public:
-	enum class Type { // any change here will need a change in get_type_str
+	enum class Type : uint32_t { // any change here will need a change in get_type_str
 	#ifdef MYGLIB_SUPPORT_SDL
 		SDL,
 	#endif
@@ -400,6 +400,8 @@ public:
 	{
 		this->window_aspect_ratio = static_cast<fp_t>(this->window_width_px) / static_cast<fp_t>(this->window_height_px);
 	}
+
+	virtual ~Manager () = default;
 
 	inline fp_t get_inverted_window_aspect_ratio () const
 	{
