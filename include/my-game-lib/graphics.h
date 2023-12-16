@@ -280,7 +280,7 @@ public:
 protected:
 	OO_ENCAPSULATE_SCALAR(fp_t, w)
 	OO_ENCAPSULATE_SCALAR(fp_t, h)
-	OO_ENCAPSULATE_SCALAR_INIT(fp_t, z, 0)
+	//OO_ENCAPSULATE_SCALAR_INIT(fp_t, z, 0)
 
 private:
 	std::array<Vertex, 6> vertices; // 2 triangles

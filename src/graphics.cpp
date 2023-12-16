@@ -166,6 +166,11 @@ void Circle2D::calculate_vertices (const CircleFactory& factory)
 	this->setup_vertices_buffer(n_vertices);
 	//dprintln("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen, " n_triangles: ", n_vertices / 3);
 	factory.build_circle(radius, std::span<Vertex>(this->vertices));
+
+	for (auto& v : this->vertices) {
+		v.normal = Vector(0, 0, -1);
+		v.pos.z = 0;
+	}
 }
 
 void Circle2D::calculate_vertices (const Matrix4& projection_matrix)
@@ -193,38 +198,42 @@ void Rect2D::calculate_vertices () noexcept
 {
 	const fp_t half_w = this->get_w() * fp(0.5);
 	const fp_t half_h = this->get_h() * fp(0.5);
+	constexpr fp_t z = 0;
 
 	// upper left vertex
 	this->vertices[0].pos.x = -half_w;
 	this->vertices[0].pos.y = -half_h;
-	this->vertices[0].pos.z = this->z;
+	this->vertices[0].pos.z = z;
 
 	// down right vertex
 	this->vertices[1].pos.x = half_w;
 	this->vertices[1].pos.y = half_h;
-	this->vertices[1].pos.z = this->z;
+	this->vertices[1].pos.z = z;
 
 	// down left vertex
 	this->vertices[2].pos.x = -half_w;
 	this->vertices[2].pos.y = half_h;
-	this->vertices[2].pos.z = this->z;
+	this->vertices[2].pos.z = z;
 
 	// draw second triangle
 
 	// upper left vertex
 	this->vertices[3].pos.x = -half_w;
 	this->vertices[3].pos.y = -half_h;
-	this->vertices[3].pos.z = this->z;
+	this->vertices[3].pos.z = z;
 
 	// upper right vertex
 	this->vertices[4].pos.x = half_w;
 	this->vertices[4].pos.y = -half_h;
-	this->vertices[4].pos.z = this->z;
+	this->vertices[4].pos.z = z;
 
 	// down right vertex
 	this->vertices[5].pos.x = half_w;
 	this->vertices[5].pos.y = half_h;
-	this->vertices[5].pos.z = this->z;
+	this->vertices[5].pos.z = z;
+
+	for (auto& v : this->vertices)
+		v.normal = Vector(0, 0, -1);
 }
 
 // ---------------------------------------------------

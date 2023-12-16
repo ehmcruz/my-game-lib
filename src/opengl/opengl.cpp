@@ -552,6 +552,8 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 	//dprintln( "final matrix:" ) this->projection_matrix.println();
 
 	this->uniforms.ambient_light_color = {1, 1, 1, 1};
+	this->uniforms.point_light_pos = Vector3(0, 0, -1);
+	this->uniforms.point_light_color = {1, 1, 1, 0};
 #else
 	this->projection_matrix = Mylib::Math::gen_identity_matrix<fp_t, 4>();
 #endif
