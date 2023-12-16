@@ -10,8 +10,8 @@
 #include <my-lib/trigger.h>
 #include <my-lib/std.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_mixer.h>
+#include <SDL.h>
+#include <SDL_mixer.h>
 
 namespace MyGlib
 {
