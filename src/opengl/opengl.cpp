@@ -36,15 +36,40 @@ Shader::Shader (const GLenum shader_type_, const std::string_view fname_)
 
 void Shader::compile ()
 {
+	// Using SDL to load the file because it automatically
+	// handles platform-specific file paths, specially on Android.
+
+	SDL_RWops *fp = SDL_RWFromFile(this->fname.data(), "rb");
+	mylib_assert_exception_msg(fp != nullptr, "SDL_RWFromFile failed");
+
+	const Sint64 fsize = SDL_RWseek(fp, 0, RW_SEEK_END);
+	mylib_assert_exception_msg(fsize != -1, "SDL_RWseek failed");
+
+	const Sint64 fseekerror = SDL_RWseek(fp, 0, RW_SEEK_SET);
+	mylib_assert_exception_msg(fseekerror != -1, "SDL_RWseek failed on returnign to start of file");
+
+	std::vector<char> buffer(fsize + 1);
+
+	const size_t nread = SDL_RWread(fp, buffer.data(), sizeof(char), fsize);
+	mylib_assert_exception_msg(nread == fsize, "SDL_RWread failed nread=", nread, " fsize=", fsize);
+
+	buffer[fsize] = 0;
+
+	SDL_RWclose(fp);
+
+#if 0
+	// Old code. Deprecated because it doesn't work on Android.
+
 	std::ifstream t(this->fname);
 	std::stringstream str_stream;
 	str_stream << t.rdbuf();
 	std::string buffer = str_stream.str();
+#endif
 
 	dprintln("loaded shader (", this->fname, ")");
 	//dprint( buffer )
 	
-	const char *c_str = buffer.c_str();
+	const char *c_str = buffer.data();
 	glShaderSource(this->shader_id, 1, ( const GLchar ** )&c_str, nullptr);
 	glCompileShader(this->shader_id);
 

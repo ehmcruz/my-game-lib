@@ -28,7 +28,7 @@ namespace MyGlib
 		template <typename... Types>
 		void dprint (Types&&... vars)
 		{
-			const std::string str = Mylib::build_str_from_stream("My Game Lib: ", vars...);
+			const std::string str = Mylib::build_str_from_stream("SDL My Game Lib: ", vars...);
 			SDL_Log("%s", str.data());
 		}
 

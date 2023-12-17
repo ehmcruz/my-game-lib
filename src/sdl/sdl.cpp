@@ -7,6 +7,7 @@
 
 #include <SDL.h>
 
+
 namespace MyGlib
 {
 
@@ -24,9 +25,12 @@ void SDL_Driver_Init ()
 #endif
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+	dprintln("Initializing SDL Video and Audio ...");
 
-	dprintln("SDL Driver Initialized");
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
+		mylib_throw_exception_msg("SDL Video and Audio could not initialize! SDL_Error: ", SDL_GetError());
+
+	dprintln("SDL Video and Audio Initialized");
 }
 
 // ---------------------------------------------------
