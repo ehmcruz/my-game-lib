@@ -187,8 +187,8 @@ int main (int argc, char **argv)
 		.window_name = "My Game Lib Test",
 		.window_width_px = 1200,
 		.window_height_px = 800,
-		.fullscreen = true
-		//.fullscreen = false
+		//.fullscreen = true
+		.fullscreen = false
 	});
 	event_manager = &lib->get_event_manager();
 	audio_manager = &lib->get_audio_manager();

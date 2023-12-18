@@ -128,6 +128,7 @@ public:
 		Circle2D,
 		Cube3D,
 		Sphere3D,
+		Undefined // very usefull for library users
 	};
 
 protected:
