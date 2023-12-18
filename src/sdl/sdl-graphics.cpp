@@ -145,21 +145,21 @@ void SDL_GraphicsDriver::wait_next_frame ()
 
 // ---------------------------------------------------
 
-void SDL_GraphicsDriver::draw_cube3D (const Cube3D& cube, const Vector& offset, const Color& color)
+void SDL_GraphicsDriver::draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color)
 {
 	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
 }
 
 // ---------------------------------------------------
 
-void SDL_GraphicsDriver::draw_sphere3D (const Sphere3D& sphere, const Vector& offset, const Color& color)
+void SDL_GraphicsDriver::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color)
 {
 	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
 }
 
 // ---------------------------------------------------
 
-void SDL_GraphicsDriver::draw_circle2D (const Circle2D& circle, const Vector& offset, const Color& color)
+void SDL_GraphicsDriver::draw_circle2D (Circle2D& circle, const Vector& offset, const Color& color)
 {
 	const SDL_Color sdl_color = to_sdl_color(color);
 	const Vector world_pos = offset;
@@ -181,7 +181,7 @@ void SDL_GraphicsDriver::draw_circle2D (const Circle2D& circle, const Vector& of
 
 // ---------------------------------------------------
 
-void SDL_GraphicsDriver::draw_rect2D (const Rect2D& rect, const Vector& offset, const Color& color)
+void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& color)
 {
 	SDL_Rect sdl_rect;
 	const SDL_Color sdl_color = to_sdl_color(color);

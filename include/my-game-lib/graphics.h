@@ -46,6 +46,7 @@ using Vector2 = Mylib::Math::Vector<fp_t, 2>;
 using Vector3 = Mylib::Math::Vector<fp_t, 3>;
 using Vector4 = Mylib::Math::Vector<fp_t, 4>;
 using Line = Mylib::Math::Line<fp_t, 3>;
+using Matrix3 = Mylib::Math::Matrix<fp_t, 3, 3>;
 using Matrix4 = Mylib::Math::Matrix<fp_t, 4, 4>;
 using Point2 = Vector2;
 using Point3 = Vector3;
@@ -132,11 +133,15 @@ public:
 protected:
 	OO_ENCAPSULATE_SCALAR_READONLY(Type, type)
 
-	OO_ENCAPSULATE_SCALAR_INIT(fp_t, rotation_angle, 0)
-	OO_ENCAPSULATE_OBJ_INIT(Vector, rotation_axis, Vector::zero())
+	OO_ENCAPSULATE_SCALAR_INIT_READONLY(fp_t, rotation_angle, 0)
+	OO_ENCAPSULATE_OBJ_INIT_READONLY(Vector, rotation_axis, Vector::zero())
 
 private:
-	std::span<Vertex> vertices__;
+	std::span<Vertex> local_vertices_buffer__; // not rotated
+	std::span<Vertex> local_rotated_vertices_buffer__;
+	bool must_recalculate_rotation = false;
+
+	void calculate_rotation () noexcept;
 
 protected:
 	Shape (const Type type_) noexcept
@@ -144,37 +149,41 @@ protected:
 	{
 	}
 
-	Shape (const Type type_, const std::span<Vertex> vertices_) noexcept
-		: type(type_),
-		  vertices__(vertices_)
-	{
-	}
-
 public:
-	inline std::span<Vertex> get_vertices () noexcept
+	inline std::span<Vertex> get_local_rotated_vertices () noexcept
 	{
-		return this->vertices__;
+		if (this->rotation_angle == fp(0))
+			return this->local_vertices_buffer__;
+		if (this->must_recalculate_rotation)
+			this->calculate_rotation();
+		return this->local_rotated_vertices_buffer__;
 	}
 
-	inline const std::span<Vertex> get_vertices () const noexcept
+	constexpr void rotate (const Vector& axis, const fp_t angle) noexcept
 	{
-		return this->vertices__;
+		this->rotation_axis = axis;
+		this->rotation_angle = std::fmod(angle, Mylib::Math::degrees_to_radians(fp(360)));
+		this->must_recalculate_rotation = true;
 	}
 
-	constexpr void set_rotation_angle_bounded (const fp_t angle) noexcept
+	constexpr void rotate (const fp_t angle) noexcept
 	{
 		this->rotation_angle = std::fmod(angle, Mylib::Math::degrees_to_radians(fp(360)));
-	}
-
-	constexpr void set_self_rotation_angle_bounded (const fp_t angle) noexcept
-	{
-		this->rotation_angle = std::fmod(angle, Mylib::Math::degrees_to_radians(fp(360)));
+		this->must_recalculate_rotation = true;
 	}
 
 protected:
-	inline void set_vertices (const std::span<Vertex> vertices) noexcept
+	inline void set_vertices_buffer (const std::span<Vertex> local_vertices_buffer,
+	                                 const std::span<Vertex> local_rotated_vertices_buffer
+	                                 ) noexcept
 	{
-		this->vertices__ = vertices;
+		this->local_vertices_buffer__ = local_vertices_buffer;
+		this->local_rotated_vertices_buffer__ = local_rotated_vertices_buffer;
+	}
+
+	inline void force_recalculate_rotation () noexcept
+	{
+		this->must_recalculate_rotation = true;
 	}
 };
 
@@ -206,23 +215,27 @@ protected:
 
 private:
 	std::array<Vertex, 36> vertices; // 6 sides * 2 triangles * 3 vertices
+	std::array<Vertex, 36> rotated_vertices; // 6 sides * 2 triangles * 3 vertices
 
 public:
 	Cube3D (const fp_t w_) noexcept
-		: Shape(Type::Cube3D, vertices), w(w_), h(w_), d(w_)
+		: Shape(Type::Cube3D), w(w_), h(w_), d(w_)
 	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 		this->calculate_vertices();
 	}
 
 	Cube3D (const fp_t w_, const fp_t h_, const fp_t d_) noexcept
-		: Shape(Type::Cube3D, vertices), w(w_), h(h_), d(d_)
+		: Shape(Type::Cube3D), w(w_), h(h_), d(d_)
 	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 		this->calculate_vertices();
 	}
 
 	Cube3D () noexcept
-		: Shape(Type::Cube3D, vertices)
+		: Shape(Type::Cube3D)
 	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 	}
 
 	void set_size (const fp_t w, const fp_t h, const fp_t d) noexcept
@@ -245,6 +258,12 @@ protected:
 
 private:
 	std::vector<Vertex> vertices;
+
+	/*
+		We rotate Spheres3D in a shader, since rotating a sphere doesn't
+		change its vertices.
+		Why rotate a sphere then? Because of the textures.
+	*/
 
 public:
 	Sphere3D (const fp_t radius_) noexcept
@@ -279,6 +298,14 @@ protected:
 
 private:
 	std::vector<Vertex> vertices;
+	std::vector<Vertex> rotated_vertices;
+
+	/*
+		As with Spheres3D, rotating a Circle2D doesn't change its vertices positions.
+		Also as well, we nvertheless need to rotate them because of the textures.
+		However, we are going to rotate Circle2D in the CPU, since the
+		performance impact of a Circle2D is low.
+	*/
 
 public:
 	Circle2D (const fp_t radius_) noexcept
@@ -321,18 +348,21 @@ protected:
 
 private:
 	std::array<Vertex, 6> vertices; // 2 triangles
+	std::array<Vertex, 6> rotated_vertices; // 2 triangles
 
 public:
 	Rect2D (const fp_t w_, const fp_t h_) noexcept
-		: Shape (Type::Rect2D, vertices),
+		: Shape (Type::Rect2D),
 		  w(w_), h(h_)
 	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 		this->calculate_vertices();
 	}
 
 	Rect2D () noexcept
-		: Shape (Type::Rect2D, vertices)
+		: Shape (Type::Rect2D)
 	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 	}
 
 	void set_size (const fp_t w, const fp_t h) noexcept
@@ -461,11 +491,16 @@ public:
 		return Vector2(static_cast<fp_t>(this->window_width_px) / max_value, static_cast<fp_t>(this->window_height_px) / max_value);
 	}
 
+	/*
+		We don't receive the shapes as const in the draw functions
+		because we need to manipulate their buffers.
+	*/
+
 	virtual void wait_next_frame () = 0;
-	virtual void draw_cube3D (const Cube3D& cube, const Vector& offset, const Color& color) = 0;
-	virtual void draw_sphere3D (const Sphere3D& sphere, const Vector& offset, const Color& color) = 0;
-	virtual void draw_circle2D (const Circle2D& circle, const Vector& offset, const Color& color) = 0;
-	virtual void draw_rect2D (const Rect2D& rect, const Vector& offset, const Color& color) = 0;
+	virtual void draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color) = 0;
+	virtual void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color) = 0;
+	virtual void draw_circle2D (Circle2D& circle, const Vector& offset, const Color& color) = 0;
+	virtual void draw_rect2D (Rect2D& rect, const Vector& offset, const Color& color) = 0;
 	virtual void setup_render_3D (const RenderArgs3D& args) = 0;
 	virtual void setup_render_2D (const RenderArgs2D& args) = 0;
 	virtual void render () = 0;
@@ -474,12 +509,12 @@ public:
 
 	// 2D Wrappers
 
-	void draw_circle2D (const Circle2D& circle, const Vector2& offset, const Color& color)
+	void draw_circle2D (Circle2D& circle, const Vector2& offset, const Color& color)
 	{
 		this->draw_circle2D(circle, Vector(offset.x, offset.y, 0), color);
 	}
 	
-	void draw_rect2D (const Rect2D& rect, const Vector2& offset, const Color& color)
+	void draw_rect2D (Rect2D& rect, const Vector2& offset, const Color& color)
 	{
 		this->draw_rect2D(rect, Vector(offset.x, offset.y, 0), color);
 	}

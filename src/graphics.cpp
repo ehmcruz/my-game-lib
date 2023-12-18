@@ -47,6 +47,23 @@ std::ostream& operator << (std::ostream& out, const Color& color)
 
 // ---------------------------------------------------
 
+void Shape::calculate_rotation () noexcept
+{
+	this->must_recalculate_rotation = false;
+
+	mylib_assert_exception_msg(this->type != Type::Sphere3D,
+		"We rotate Spheres3D in a shader");
+
+	Matrix3 rotation_matrix = Mylib::Math::gen_rotation_matrix(this->rotation_axis, this->rotation_angle);
+
+	for (uint32_t i = 0; i < this->local_vertices_buffer__.size(); i++) {
+		this->local_rotated_vertices_buffer__[i].pos = rotation_matrix * this->local_vertices_buffer__[i].pos;
+		this->local_rotated_vertices_buffer__[i].normal = rotation_matrix * this->local_vertices_buffer__[i].normal;
+	}
+}
+
+// ---------------------------------------------------
+
 void Cube3D::calculate_vertices () noexcept
 {
 	std::array<Point, 8> points;
@@ -148,6 +165,8 @@ void Cube3D::calculate_vertices () noexcept
 
 	// right
 	mount_surface(RightTopFront, RightBottomBack, RightTopBack, RightBottomFront, Vector(1, 0, 0));
+
+	this->force_recalculate_rotation();
 }
 
 // ---------------------------------------------------
@@ -156,12 +175,19 @@ void Sphere3D::setup_vertices_buffer (const uint32_t n_vertices)
 {
 	if (this->vertices.size() != n_vertices) {
 		this->vertices.resize(n_vertices);
-		this->set_vertices(this->vertices);
+		this->set_vertices_buffer(this->vertices, this->vertices);
 	}
 }
 
 void Sphere3D::calculate_vertices ()
 {
+	/*
+		The code here is very inneficient.
+		Let's leave as it is right now.
+		Later we are goind to write a shader specific for spheres
+		and speed things up.
+	*/
+
 	constexpr uint32_t v_resolution = 50; // latitude
 	constexpr uint32_t u_resolution = v_resolution * 2; // longitude
 
@@ -228,6 +254,9 @@ void Sphere3D::calculate_vertices ()
 			k += 6;
 		}
 	}
+
+	// no need to force recalculate rotation
+	// we will rotate the sphere in a shader
 }
 
 // ---------------------------------------------------
@@ -236,7 +265,8 @@ void Circle2D::setup_vertices_buffer (const uint32_t n_vertices)
 {
 	if (this->vertices.size() != n_vertices) {
 		this->vertices.resize(n_vertices);
-		this->set_vertices(this->vertices);
+		this->rotated_vertices.resize(n_vertices);
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 	}
 }
 
@@ -251,6 +281,8 @@ void Circle2D::calculate_vertices (const CircleFactory& factory)
 		v.normal = Vector(0, 0, -1);
 		v.pos.z = 0;
 	}
+
+	this->force_recalculate_rotation();
 }
 
 void Circle2D::calculate_vertices (const Matrix4& projection_matrix)
@@ -314,6 +346,8 @@ void Rect2D::calculate_vertices () noexcept
 
 	for (auto& v : this->vertices)
 		v.normal = Vector(0, 0, -1);
+
+	this->force_recalculate_rotation();
 }
 
 // ---------------------------------------------------

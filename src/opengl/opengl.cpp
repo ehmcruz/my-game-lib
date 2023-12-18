@@ -339,7 +339,7 @@ void Renderer::wait_next_frame ()
 
 // ---------------------------------------------------
 
-void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset, const Color& color)
+void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color)
 {
 #ifdef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
 	std::array<Point4, 8> points4;
@@ -378,7 +378,7 @@ void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset, const Colo
 #endif
 
 	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
-	std::span<Vertex> shape_vertices = cube.get_vertices();
+	std::span<Vertex> shape_vertices = cube.get_local_rotated_vertices();
 
 	mylib_assert_exception(shape_vertices.size() == n_vertices)
 
@@ -391,10 +391,10 @@ void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset, const Colo
 
 // ---------------------------------------------------
 
-void Renderer::draw_sphere3D (const Sphere3D& sphere, const Vector& offset, const Color& color)
+void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color)
 {
 	const uint32_t n_vertices = sphere.get_n_vertices();
-	std::span<Vertex> shape_vertices = sphere.get_vertices();
+	std::span<Vertex> shape_vertices = sphere.get_local_rotated_vertices();
 
 	mylib_assert_exception(shape_vertices.size() == n_vertices)
 
@@ -411,7 +411,7 @@ void Renderer::draw_sphere3D (const Sphere3D& sphere, const Vector& offset, cons
 
 // ---------------------------------------------------
 
-void Renderer::draw_circle2D (const Circle2D& circle, const Vector& offset, const Color& color)
+void Renderer::draw_circle2D (Circle2D& circle, const Vector& offset, const Color& color)
 {
 	/*Graphics::ShapeRect rect(circle.get_radius()*2.0f, circle.get_radius()*2.0f);
 	rect.set_delta(circle.get_delta());
@@ -423,7 +423,7 @@ void Renderer::draw_circle2D (const Circle2D& circle, const Vector& offset, cons
 	//circle.calculate_vertices(this->projection_matrix);
 	
 	const uint32_t n_vertices = circle.get_n_vertices();
-	std::span<Vertex> shape_vertices = circle.get_vertices();
+	std::span<Vertex> shape_vertices = circle.get_local_rotated_vertices();
 
 	mylib_assert_exception(shape_vertices.size() == n_vertices)
 
@@ -440,7 +440,7 @@ void Renderer::draw_circle2D (const Circle2D& circle, const Vector& offset, cons
 
 // ---------------------------------------------------
 
-void Renderer::draw_rect2D (const Rect2D& rect, const Vector& offset, const Color& color)
+void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& color)
 {
 	constexpr uint32_t n_vertices = Rect2D::get_n_vertices();
 	//const Vector world_pos = Vector(4.0f, 4.0f);
@@ -455,7 +455,7 @@ void Renderer::draw_rect2D (const Rect2D& rect, const Vector& offset, const Colo
 #endif
 
 	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
-	std::span<Vertex> shape_vertices = rect.get_vertices();
+	std::span<Vertex> shape_vertices = rect.get_local_rotated_vertices();
 
 	mylib_assert_exception(shape_vertices.size() == n_vertices)
 

@@ -77,8 +77,12 @@ void key_down_callback (const MyGlib::Event::KeyDown::Type& event)
 }
 
 LightPointDescriptor light;
+
 Cube3D cube (1);
 Vector cube_pos (-1, -1, -4);
+
+Sphere3D sphere(2);
+
 Point camera_pos(0, 0, -10);
 Point camera_target(0, 0, 1);
 
@@ -89,11 +93,14 @@ void setup ()
 	);
 
 	std::cout << "Light id: " << light << std::endl;
+
+	cube.rotate(Vector(0, 1, 0), 0);
 }
 
 static void process_keys (const Uint8 *keys, const fp_t dt)
 {
 	constexpr fp_t speed = 1.0;
+	constexpr fp_t rot_speed = Mylib::Math::degrees_to_radians(fp(90));
 
 	if (keys[SDL_SCANCODE_UP])
 		cube_pos.y += speed * dt;
@@ -109,6 +116,11 @@ static void process_keys (const Uint8 *keys, const fp_t dt)
 		cube_pos.z += speed * dt;
 	else if (keys[SDL_SCANCODE_COMMA])
 		cube_pos.z -= speed * dt;
+	
+	if (keys[SDL_SCANCODE_N])
+		cube.rotate(cube.get_rotation_angle() + rot_speed * dt);
+	else if (keys[SDL_SCANCODE_M])
+		cube.rotate(cube.get_rotation_angle() - rot_speed * dt);
 }
 
 void update (const fp_t dt)
@@ -154,7 +166,7 @@ void render ()
 		} );
 	
 	renderer->draw_cube3D(cube, cube_pos, Color::red());
-	renderer->draw_sphere3D(Sphere3D(2), Vector(0, 0, 0), Color::green());
+	renderer->draw_sphere3D(sphere, Vector(0, 0, 0), Color::green());
 
 	renderer->render();
 #endif
