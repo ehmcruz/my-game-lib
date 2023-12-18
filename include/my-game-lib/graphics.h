@@ -267,14 +267,14 @@ private:
 	*/
 
 public:
-	Sphere3D (const fp_t radius_) noexcept
+	Sphere3D (const fp_t radius_)
 		: Shape (Type::Sphere3D),
 		  radius(radius_)
 	{
 		this->calculate_vertices();
 	}
 
-	Sphere3D () noexcept
+	Sphere3D ()
 		: Shape (Type::Sphere3D)
 	{
 	}
@@ -309,14 +309,14 @@ private:
 	*/
 
 public:
-	Circle2D (const fp_t radius_) noexcept
+	Circle2D (const fp_t radius_)
 		: Shape (Type::Circle2D),
 		  radius(radius_)
 	{
 		this->calculate_vertices();
 	}
 
-	Circle2D () noexcept
+	Circle2D ()
 		: Shape (Type::Circle2D)
 	{
 	}
