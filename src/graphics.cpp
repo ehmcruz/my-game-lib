@@ -12,7 +12,7 @@ namespace Graphics
 
 // ---------------------------------------------------
 
-static CircleFactoryManager circle_factory_manager(10, 50, 1000);
+static CircleFactoryManager circle_factory_manager(10, 20, 80);
 
 // ---------------------------------------------------
 
@@ -148,6 +148,86 @@ void Cube3D::calculate_vertices () noexcept
 
 	// right
 	mount_surface(RightTopFront, RightBottomBack, RightTopBack, RightBottomFront, Vector(1, 0, 0));
+}
+
+// ---------------------------------------------------
+
+void Sphere3D::setup_vertices_buffer (const uint32_t n_vertices)
+{
+	if (this->vertices.size() != n_vertices) {
+		this->vertices.resize(n_vertices);
+		this->set_vertices(this->vertices);
+	}
+}
+
+void Sphere3D::calculate_vertices ()
+{
+	constexpr uint32_t v_resolution = 50; // latitude
+	constexpr uint32_t u_resolution = v_resolution * 2; // longitude
+
+	constexpr fp_t start_u = 0;
+	constexpr fp_t start_v = 0;
+
+	constexpr fp_t end_u = std::numbers::pi_v<fp_t> * fp(2);
+	constexpr fp_t end_v = std::numbers::pi_v<fp_t>;
+
+	constexpr fp_t step_u = (end_u - start_u) / static_cast<fp_t>(u_resolution);
+	constexpr fp_t step_v = (end_v - start_v) / static_cast<fp_t>(v_resolution);
+
+	const fp_t radius = this->get_radius();
+
+	auto f = [] (const fp_t u, const fp_t v, const fp_t r) -> Point {
+		return Point(
+			std::cos(u) * std::sin(v) * r,
+			std::cos(v) * r,
+			std::sin(u) * std::sin(v) * r
+		);
+	};
+
+	this->setup_vertices_buffer(u_resolution * v_resolution * 6);
+
+	uint32_t k = 0;
+
+	for (uint32_t i = 0; i < u_resolution; i++) {
+		for (uint32_t j = 0; j < v_resolution; j++) {
+			const fp_t u = static_cast<fp_t>(i) * step_u + start_u;
+			const fp_t v = static_cast<fp_t>(j) * step_v + start_v;
+			const fp_t un = (i + 1 == u_resolution) ? end_u : static_cast<fp_t>(i + 1) * step_u + start_u;
+			const fp_t vn = (j + 1 == v_resolution) ? end_v : static_cast<fp_t>(j + 1) * step_v + start_v;
+
+			const Point p0 = f(u, v, radius);
+			const Point p1 = f(u, vn, radius);
+			const Point p2 = f(un, v, radius);
+			const Point p3 = f(un, vn, radius);
+
+			// For spheres, the normal is just the normalized
+			// version of each vertex point.
+
+			// Output the first triangle of this grid square
+
+			this->vertices[k].pos = p0;
+			this->vertices[k].normal = normalize(p0);
+
+			this->vertices[k + 1].pos = p2;
+			this->vertices[k + 1].normal = normalize(p2);
+
+			this->vertices[k + 2].pos = p1;
+			this->vertices[k + 2].normal = normalize(p1);
+
+			// Output the other triangle of this grid square
+
+			this->vertices[k + 3].pos = p3;
+			this->vertices[k + 3].normal = normalize(p3);
+
+			this->vertices[k + 4].pos = p1;
+			this->vertices[k + 4].normal = normalize(p1);
+
+			this->vertices[k + 5].pos = p2;
+			this->vertices[k + 5].normal = normalize(p2);
+
+			k += 6;
+		}
+	}
 }
 
 // ---------------------------------------------------

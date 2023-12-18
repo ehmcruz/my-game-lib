@@ -391,6 +391,26 @@ void Renderer::draw_cube3D (const Cube3D& cube, const Vector& offset, const Colo
 
 // ---------------------------------------------------
 
+void Renderer::draw_sphere3D (const Sphere3D& sphere, const Vector& offset, const Color& color)
+{
+	const uint32_t n_vertices = sphere.get_n_vertices();
+	std::span<Vertex> shape_vertices = sphere.get_vertices();
+
+	mylib_assert_exception(shape_vertices.size() == n_vertices)
+
+	//dprintln("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen, " n_triangles: ", n_vertices / 3);
+
+	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
+
+	for (uint32_t i=0; i<n_vertices; i++) {
+		vertices[i].gvertex = shape_vertices[i];
+		vertices[i].offset = offset;
+		vertices[i].color = color;
+	}
+}
+
+// ---------------------------------------------------
+
 void Renderer::draw_circle2D (const Circle2D& circle, const Vector& offset, const Color& color)
 {
 	/*Graphics::ShapeRect rect(circle.get_radius()*2.0f, circle.get_radius()*2.0f);

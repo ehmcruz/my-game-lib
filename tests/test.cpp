@@ -13,6 +13,10 @@ using MyGlib::Graphics::fp_t;
 using MyGlib::Graphics::fp;
 using MyGlib::Graphics::Color;
 using MyGlib::Graphics::LightPointDescriptor;
+using MyGlib::Graphics::Cube3D;
+using MyGlib::Graphics::Sphere3D;
+using MyGlib::Graphics::Rect2D;
+using MyGlib::Graphics::Circle2D;
 
 using Clock = std::chrono::steady_clock;
 using ClockDuration = Clock::duration;
@@ -73,7 +77,7 @@ void key_down_callback (const MyGlib::Event::KeyDown::Type& event)
 }
 
 LightPointDescriptor light;
-MyGlib::Graphics::Cube3D cube (1);
+Cube3D cube (1);
 Vector cube_pos (-1, -1, -4);
 Point camera_pos(0, 0, -10);
 Point camera_target(0, 0, 1);
@@ -81,7 +85,7 @@ Point camera_target(0, 0, 1);
 void setup ()
 {
 	light = renderer->add_light_point_source(
-		Point(5, -5, -10), Color::white()
+		Point(-10, 10, -10), Color::white()
 	);
 
 	std::cout << "Light id: " << light << std::endl;
@@ -117,7 +121,7 @@ void render ()
 	constexpr float zoom = 1.0;
 	renderer->wait_next_frame();
 
-#if 1
+#if 0
 	const Vector2 ws = renderer->get_normalized_window_size();
 
 	renderer->setup_render_2D( MyGlib::Graphics::RenderArgs2D {
@@ -132,9 +136,9 @@ void render ()
 
 	const fp_t z_2d = 0.98;
 
-	renderer->draw_rect2D(MyGlib::Graphics::Rect2D(4, 2), Vector(3, 3, z_2d), MyGlib::Graphics::Color::red());
-	renderer->draw_circle2D(MyGlib::Graphics::Circle2D(3), Vector(5, 5, z_2d), MyGlib::Graphics::Color::green());
-	renderer->draw_circle2D(MyGlib::Graphics::Circle2D(0.5), Vector(8, 8, z_2d), MyGlib::Graphics::Color::blue());
+	renderer->draw_rect2D(Rect2D(4, 2), Vector(3, 3, z_2d), Color::red());
+	renderer->draw_circle2D(Circle2D(3), Vector(5, 5, z_2d), Color::green());
+	renderer->draw_circle2D(Circle2D(0.5), Vector(8, 8, z_2d), Color::blue());
 
 	renderer->render();
 
@@ -149,7 +153,8 @@ void render ()
 		.ambient_light_color = {1, 1, 1, 0.3},
 		} );
 	
-	renderer->draw_cube3D(cube, cube_pos, MyGlib::Graphics::Color::red());
+	renderer->draw_cube3D(cube, cube_pos, Color::red());
+	renderer->draw_sphere3D(Sphere3D(2), Vector(0, 0, 0), Color::green());
 
 	renderer->render();
 #endif

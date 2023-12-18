@@ -180,7 +180,7 @@ protected:
 
 // ---------------------------------------------------
 
-class Cube3D: public Shape
+class Cube3D : public Shape
 {
 public:
 	static consteval uint32_t get_n_vertices ()
@@ -200,34 +200,72 @@ public:
 	};
 
 protected:
-	OO_ENCAPSULATE_SCALAR(fp_t, w) // width
+	OO_ENCAPSULATE_SCALAR_REACT(fp_t, w, this->calculate_vertices();) // width
+	OO_ENCAPSULATE_SCALAR_REACT(fp_t, h, this->calculate_vertices();) // height
+	OO_ENCAPSULATE_SCALAR_REACT(fp_t, d, this->calculate_vertices();) // depth
 
 private:
 	std::array<Vertex, 36> vertices; // 6 sides * 2 triangles * 3 vertices
 
 public:
 	Cube3D (const fp_t w_) noexcept
-		: Shape(Type::Cube3D, vertices), w(w_)
+		: Shape(Type::Cube3D, vertices), w(w_), h(w_), d(w_)
+	{
+		this->calculate_vertices();
+	}
+
+	Cube3D (const fp_t w_, const fp_t h_, const fp_t d_) noexcept
+		: Shape(Type::Cube3D, vertices), w(w_), h(h_), d(d_)
 	{
 		this->calculate_vertices();
 	}
 
 	Cube3D () noexcept
-		: Cube3D(0)
+		: Shape(Type::Cube3D, vertices)
 	{
 	}
 
-	inline fp_t get_h () const noexcept
+	void set_size (const fp_t w, const fp_t h, const fp_t d) noexcept
 	{
-		return this->w;
-	}
-
-	inline fp_t get_d () const noexcept
-	{
-		return this->w;
+		this->w = w;
+		this->h = h;
+		this->d = d;
+		this->calculate_vertices();
 	}
 
 	void calculate_vertices () noexcept;
+};
+
+// ---------------------------------------------------
+
+class Sphere3D : public Shape
+{
+protected:
+	OO_ENCAPSULATE_SCALAR_REACT(fp_t, radius, this->calculate_vertices();)
+
+private:
+	std::vector<Vertex> vertices;
+
+public:
+	Sphere3D (const fp_t radius_) noexcept
+		: Shape (Type::Sphere3D),
+		  radius(radius_)
+	{
+		this->calculate_vertices();
+	}
+
+	Sphere3D () noexcept
+		: Shape (Type::Sphere3D)
+	{
+	}
+
+	void setup_vertices_buffer (const uint32_t n_vertices);
+	void calculate_vertices ();
+
+	inline uint32_t get_n_vertices () const noexcept
+	{
+		return this->vertices.size();
+	}
 };
 
 // ---------------------------------------------------
@@ -237,7 +275,7 @@ class CircleFactory;
 class Circle2D : public Shape
 {
 protected:
-	OO_ENCAPSULATE_SCALAR(fp_t, radius)
+	OO_ENCAPSULATE_SCALAR_REACT(fp_t, radius, this->calculate_vertices();)
 
 private:
 	std::vector<Vertex> vertices;
@@ -251,8 +289,7 @@ public:
 	}
 
 	Circle2D () noexcept
-		: Shape (Type::Circle2D),
-		  radius(0)
+		: Shape (Type::Circle2D)
 	{
 	}
 
@@ -278,8 +315,8 @@ public:
 	}
 
 protected:
-	OO_ENCAPSULATE_SCALAR(fp_t, w)
-	OO_ENCAPSULATE_SCALAR(fp_t, h)
+	OO_ENCAPSULATE_SCALAR_REACT(fp_t, w, this->calculate_vertices();)
+	OO_ENCAPSULATE_SCALAR_REACT(fp_t, h, this->calculate_vertices();)
 	//OO_ENCAPSULATE_SCALAR_INIT(fp_t, z, 0)
 
 private:
@@ -294,8 +331,15 @@ public:
 	}
 
 	Rect2D () noexcept
-		: Rect2D (0, 0)
+		: Shape (Type::Rect2D, vertices)
 	{
+	}
+
+	void set_size (const fp_t w, const fp_t h) noexcept
+	{
+		this->w = w;
+		this->h = h;
+		this->calculate_vertices();
 	}
 
 	void calculate_vertices () noexcept;
@@ -419,6 +463,7 @@ public:
 
 	virtual void wait_next_frame () = 0;
 	virtual void draw_cube3D (const Cube3D& cube, const Vector& offset, const Color& color) = 0;
+	virtual void draw_sphere3D (const Sphere3D& sphere, const Vector& offset, const Color& color) = 0;
 	virtual void draw_circle2D (const Circle2D& circle, const Vector& offset, const Color& color) = 0;
 	virtual void draw_rect2D (const Rect2D& rect, const Vector& offset, const Color& color) = 0;
 	virtual void setup_render_3D (const RenderArgs3D& args) = 0;
