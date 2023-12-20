@@ -79,12 +79,12 @@ void key_down_callback (const MyGlib::Event::KeyDown::Type& event)
 LightPointDescriptor light;
 
 Cube3D cube (1);
-Vector cube_pos (-1, -1, -4);
+Vector cube_pos (-2, -2, -4);
 
 Sphere3D sphere(2);
 
-Point camera_pos(0, 0, -10);
-Point camera_target(0, 0, 1);
+Point camera_pos(-2, -2, -10);
+Point camera_vector(0, 0, 1);
 
 void setup ()
 {
@@ -158,7 +158,7 @@ void render ()
 #else
 	renderer->setup_render_3D( MyGlib::Graphics::RenderArgs3D {
 		.world_camera_pos = camera_pos,
-		.world_camera_target = camera_target,
+		.world_camera_target = camera_pos + camera_vector,
 		.fov_y = Mylib::Math::degrees_to_radians(fp(45)),
 		.z_near = 0.1,
 		.z_far = 100,

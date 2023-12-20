@@ -51,7 +51,7 @@ void Shader::compile ()
 	std::vector<char> buffer(fsize + 1);
 
 	const size_t nread = SDL_RWread(fp, buffer.data(), sizeof(char), fsize);
-	mylib_assert_exception_msg(nread == fsize, "SDL_RWread failed nread=", nread, " fsize=", fsize);
+	mylib_assert_exception_msg(static_cast<Sint64>(nread) == fsize, "SDL_RWread failed nread=", nread, " fsize=", fsize);
 
 	buffer[fsize] = 0;
 
@@ -245,6 +245,8 @@ Renderer::Renderer (const InitParams& params)
 	SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 8 );
 	SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 8 );
 	SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
+	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
+
 
 	// Check sdl.cpp
 	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
@@ -367,18 +369,24 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const Color& col
 	
 	constexpr uint32_t n_vertices = Cube3D::get_n_vertices();
 	//const Vector world_pos = Vector(4.0f, 4.0f);
-	
+
 #if 0
 	dprint( "local_pos:" )
 	Mylib::Math::println(world_pos);
 
-	dprint( "clip_pos:" )
-	Mylib::Math::println(clip_pos);
+	//dprint( "clip_pos:" )
+	//Mylib::Math::println(clip_pos);
 //exit(1);
 #endif
 
 	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
 	std::span<Vertex> shape_vertices = cube.get_local_rotated_vertices();
+
+/*	dprintln("rendering cube with offset=", offset, " color=", color, " w=", cube.get_w(), " h=", cube.get_h(), " d=", cube.get_d());
+	for (const auto& v : shape_vertices) { Vector4 trans = this->uniforms.projection_matrix * Vector4(v.pos.x+offset.x, v.pos.y+offset.y, v.pos.z+offset.z, 1); trans /= trans.w;
+		dprintln("\tvertex.pos: ", v.pos, " transformed.pos: ", trans);
+		//dprintln("\tvertex.normal: ", v.normal);
+		}*/
 
 	mylib_assert_exception(shape_vertices.size() == n_vertices)
 
@@ -488,16 +496,16 @@ void Renderer::setup_render_3D (const RenderArgs3D& args)
 #endif
 
 	this->uniforms.ambient_light_color = args.ambient_light_color;
-	this->uniforms.point_light_pos = this->light_point_sources[0].pos;
-	this->uniforms.point_light_color = this->light_point_sources[0].color;
 
-#if 1
+#if 0
 	dprintln("projection matrix:");
 	dprintln(this->uniforms.projection_matrix);
 	dprintln();
 	dprintln("camera position: ", args.world_camera_pos);
 	dprintln("camera target: ", args.world_camera_target);
 	dprintln("camera vector: ", args.world_camera_target - args.world_camera_pos);
+	dprintln("znear: ", args.z_near);
+	dprintln("zfar: ", args.z_far);
 	dprintln("ambient light color: ", this->uniforms.ambient_light_color);
 	dprintln("point light pos: ", this->uniforms.point_light_pos);
 	dprintln("point light color: ", this->uniforms.point_light_color);
@@ -632,6 +640,9 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 
 void Renderer::render ()
 {
+	this->uniforms.point_light_pos = this->light_point_sources[0].pos;
+	this->uniforms.point_light_color = this->light_point_sources[0].color;
+
 	//this->program_triangle->debug();
 	this->program_triangle->upload_uniforms(this->uniforms);
 	this->program_triangle->upload_vertex_buffer();

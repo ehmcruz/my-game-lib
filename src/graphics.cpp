@@ -47,7 +47,7 @@ std::ostream& operator << (std::ostream& out, const Color& color)
 
 // ---------------------------------------------------
 
-void Shape::calculate_rotation () noexcept
+void Shape::calculate_rotation ()
 {
 	this->must_recalculate_rotation = false;
 
@@ -78,7 +78,7 @@ void Cube3D::calculate_vertices () noexcept
 		half_h,
 		-half_d
 		);
-	
+
 	points[LeftBottomFront] = Point(
 		-half_w,
 		-half_h,
@@ -122,11 +122,6 @@ void Cube3D::calculate_vertices () noexcept
 		-half_h,
 		half_d
 		);
-	
-	if (this->get_rotation_angle() != fp(0)) {
-		for (auto& p : points)
-			p.rotate_around_axis(this->get_ref_rotation_axis(), this->get_rotation_angle());
-	}
 
 	uint32_t i = 0;
 

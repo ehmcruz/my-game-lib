@@ -24,6 +24,8 @@
 #include <my-lib/math-matrix.h>
 #include <my-lib/math-geometry.h>
 
+#include <my-game-lib/debug.h>
+
 // ---------------------------------------------------
 
 namespace MyGlib
@@ -142,7 +144,7 @@ private:
 	std::span<Vertex> local_rotated_vertices_buffer__;
 	bool must_recalculate_rotation = false;
 
-	void calculate_rotation () noexcept;
+	void calculate_rotation ();
 
 protected:
 	Shape (const Type type_) noexcept
@@ -150,7 +152,15 @@ protected:
 	{
 	}
 
+	void shape_copy (const Shape& other) noexcept
+	{
+		this->rotation_angle = other.rotation_angle;
+		this->rotation_axis = other.rotation_axis;
+	}
+
 public:
+	MYLIB_DELETE_COPY_MOVE_CONSTRUCTOR_ASSIGN(Shape)
+
 	inline std::span<Vertex> get_local_rotated_vertices () noexcept
 	{
 		if (this->rotation_angle == fp(0))
@@ -239,11 +249,42 @@ public:
 		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 	}
 
+	// copy constructor
+	Cube3D (const Cube3D& other)
+		: Shape(Type::Cube3D), w(other.w), h(other.h), d(other.d)
+	{
+		this->shape_copy(other);
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+		this->calculate_vertices();
+	}
+
+	// copy-assign operator
+	Cube3D& operator= (const Cube3D& other)
+	{
+		this->type = Type::Cube3D;
+		this->w = other.w;
+		this->h = other.h;
+		this->d = other.d;
+		this->shape_copy(other);
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+		this->calculate_vertices();
+
+		return *this;
+	}
+
 	void set_size (const fp_t w, const fp_t h, const fp_t d) noexcept
 	{
 		this->w = w;
 		this->h = h;
 		this->d = d;
+		this->calculate_vertices();
+	}
+
+	void set_size (const fp_t w) noexcept
+	{
+		this->w = w;
+		this->h = w;
+		this->d = w;
 		this->calculate_vertices();
 	}
 
@@ -277,6 +318,25 @@ public:
 	Sphere3D ()
 		: Shape (Type::Sphere3D)
 	{
+	}
+
+	// copy constructor
+	Sphere3D (const Sphere3D& other)
+		: Shape(Type::Sphere3D), radius(other.radius)
+	{
+		this->shape_copy(other);
+		this->calculate_vertices();
+	}
+
+	// copy-assign operator
+	Sphere3D& operator= (const Sphere3D& other)
+	{
+		this->type = Type::Sphere3D;
+		this->radius = other.radius;
+		this->shape_copy(other);
+		this->calculate_vertices();
+
+		return *this;
 	}
 
 	void setup_vertices_buffer (const uint32_t n_vertices);
@@ -520,7 +580,13 @@ public:
 		this->draw_rect2D(rect, Vector(offset.x, offset.y, 0), color);
 	}
 
-	LightPointDescriptor add_light_point_source (const Point& pos, const Color& color);
+	[[nodiscard]] LightPointDescriptor add_light_point_source (const Point& pos, const Color& color);
+	
+	inline void move_light_point_source (const LightPointDescriptor desc, const Point& pos)
+	{
+		LightPointSource& light_source = this->light_point_sources[desc];
+		light_source.pos = pos;
+	}
 };
 
 // ---------------------------------------------------
