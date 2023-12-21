@@ -474,6 +474,11 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& col
 	}
 }
 
+void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDescriptor& texture_desc)
+{
+	mylib_throw_exception_msg("not implemented");
+}
+
 // ---------------------------------------------------
 
 void Renderer::setup_render_3D (const RenderArgs3D& args)
@@ -661,6 +666,20 @@ void Renderer::update_screen ()
 void Renderer::clear_vertex_buffers ()
 {
 	this->program_triangle->clear();
+}
+
+// ---------------------------------------------------
+
+TextureDescriptor Renderer::load_texture (SDL_Surface *surface)
+{
+
+}
+
+// ---------------------------------------------------
+
+void Renderer::destroy_texture (TextureDescriptor& texture)
+{
+
 }
 
 // ---------------------------------------------------

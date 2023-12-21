@@ -6,6 +6,7 @@
 #include <my-lib/trigger.h>
 
 #include <SDL.h>
+#include <SDL_image.h>
 
 
 namespace MyGlib
@@ -31,12 +32,29 @@ void SDL_Driver_Init ()
 		mylib_throw_exception_msg("SDL Video and Audio could not initialize! SDL_Error: ", SDL_GetError());
 
 	dprintln("SDL Video and Audio Initialized");
+
+	const std::initializer_list<int> img_flags = { IMG_INIT_PNG, IMG_INIT_JPG, IMG_INIT_TIF };
+	int mounted_img_flags = 0;
+
+	for (const int flag : img_flags)
+		mounted_img_flags |= flag;
+	
+	const int img_result = IMG_Init(mounted_img_flags);
+
+	for (int i = 0; const int flag : img_flags) {
+		if (! (img_result & flag))
+			mylib_throw_exception_msg("SDL Image could not initialize! error flag_i ", i, '\n', IMG_GetError());
+		i++;
+	}
+
+	dprintln("SDL Image Initialized");
 }
 
 // ---------------------------------------------------
 
 void SDL_Driver_End ()
 {
+	IMG_Quit();
 	SDL_Quit();
 }
 

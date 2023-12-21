@@ -17,6 +17,7 @@ using MyGlib::Graphics::Cube3D;
 using MyGlib::Graphics::Sphere3D;
 using MyGlib::Graphics::Rect2D;
 using MyGlib::Graphics::Circle2D;
+using MyGlib::Graphics::TextureDescriptor;
 
 using Clock = std::chrono::steady_clock;
 using ClockDuration = Clock::duration;
@@ -86,6 +87,9 @@ Sphere3D sphere(2);
 Point camera_pos(-2, -2, -10);
 Point camera_vector(0, 0, 1);
 
+Rect2D samus_rect;
+TextureDescriptor samus_texture;
+
 void setup ()
 {
 	light = renderer->add_light_point_source(
@@ -95,6 +99,9 @@ void setup ()
 	std::cout << "Light id: " << light << std::endl;
 
 	cube.rotate(Vector(0, 1, 0), 0);
+
+	samus_texture = renderer->load_texture("tests-assets/texture1.png");
+	samus_rect.set_size(1, 1);
 }
 
 static void process_keys (const Uint8 *keys, const fp_t dt)
@@ -133,7 +140,7 @@ void render ()
 	constexpr float zoom = 1.0;
 	renderer->wait_next_frame();
 
-#if 0
+#if 1
 	const Vector2 ws = renderer->get_normalized_window_size();
 
 	renderer->setup_render_2D( MyGlib::Graphics::RenderArgs2D {
@@ -182,8 +189,8 @@ void quit_callback (const MyGlib::Event::Quit::Type& event)
 int main (int argc, char **argv)
 {
 	lib = &MyGlib::Lib::init({
-		//.graphics_type = MyGlib::Graphics::Manager::Type::SDL,
-		.graphics_type = MyGlib::Graphics::Manager::Type::Opengl,
+		.graphics_type = MyGlib::Graphics::Manager::Type::SDL,
+		//.graphics_type = MyGlib::Graphics::Manager::Type::Opengl,
 		.window_name = "My Game Lib Test",
 		.window_width_px = 1200,
 		.window_height_px = 800,

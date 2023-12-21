@@ -2,6 +2,8 @@
 #include <array>
 #include <utility>
 
+#include <SDL_image.h>
+
 #include <my-game-lib/graphics.h>
 #include <my-game-lib/debug.h>
 
@@ -441,6 +443,17 @@ CircleFactoryManager::CircleFactoryManager (const uint32_t n_cats, const uint32_
 		const uint32_t n_triangles = min_n_triangles + (i * static_cast<uint32_t>(delta));
 		this->factories.emplace_back(n_triangles);
 	}
+}
+
+// ---------------------------------------------------
+
+TextureDescriptor Manager::load_texture (const std::string_view fname)
+{
+	SDL_Surface *surface = IMG_Load(fname.data());
+	mylib_assert_exception_msg(surface != nullptr, "unable to load image ", fname, '\n', IMG_GetError());
+	TextureDescriptor d = this->load_texture(surface);
+	SDL_FreeSurface(surface);
+	return d;
 }
 
 // ---------------------------------------------------

@@ -55,6 +55,7 @@ namespace Graphics
 	{
 	private:
 		SDL_Renderer *renderer;
+		SDL_RendererInfo renderer_info;
 		Matrix4 projection_matrix;
 		fp_t scale_factor;
 
@@ -67,11 +68,17 @@ namespace Graphics
 		void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color) override final;
 		void draw_circle2D (Circle2D& circle, const Vector& offset, const Color& color) override final;
 		void draw_rect2D (Rect2D& rect, const Vector& offset, const Color& color) override final;
+		void draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDescriptor& texture_desc) override final;
 		void setup_render_3D (const RenderArgs3D& args) override final;
 		void setup_render_2D (const RenderArgs2D& args) override final;
 		void render () override final;
 		void update_screen () override final;
 		void clear_vertex_buffers () override final;
+		TextureDescriptor load_texture (SDL_Surface *surface) override final;
+		void destroy_texture (TextureDescriptor& texture) override final;
+	
+	private:
+		SDL_Rect helper_calc_sdl_rect (Rect2D& rect, const Vector& world_pos);
 	};
 };
 

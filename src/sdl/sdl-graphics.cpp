@@ -22,6 +22,13 @@ namespace Graphics
 
 // ---------------------------------------------------
 
+struct SDL_TextureDescriptor {
+	SDL_Surface *surface;
+	SDL_Texture *texture;
+};
+
+// ---------------------------------------------------
+
 static SDL_Color to_sdl_color(const Color& color) noexcept
 {
 	auto calc = [](const float v) noexcept -> Uint8 {
@@ -118,8 +125,14 @@ SDL_GraphicsDriver::SDL_GraphicsDriver (const InitParams& params)
 			SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			this->window_width_px, this->window_height_px,
 			SDL_WINDOW_SHOWN);
+		
+	mylib_assert_exception_msg(this->sdl_window != nullptr, "error creating SDL window", '\n', SDL_GetError())
 	
 	this->renderer = SDL_CreateRenderer(this->sdl_window, -1, SDL_RENDERER_ACCELERATED);
+	mylib_assert_exception_msg(this->renderer != nullptr, "error creating SDL renderer", '\n', SDL_GetError())
+
+	if (SDL_GetRendererInfo(this->renderer, &this->renderer_info) < 0)
+		mylib_throw_exception_msg("error getting SDL renderer info", '\n', SDL_GetError());
 
 	dprintln("SDL renderer created");
 
@@ -181,14 +194,16 @@ void SDL_GraphicsDriver::draw_circle2D (Circle2D& circle, const Vector& offset, 
 
 // ---------------------------------------------------
 
-void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& color)
+SDL_Rect SDL_GraphicsDriver::helper_calc_sdl_rect (Rect2D& rect, const Vector& world_pos)
 {
 	SDL_Rect sdl_rect;
-	const SDL_Color sdl_color = to_sdl_color(color);
-	const Vector world_pos = offset;
-	//const Vector world_pos = Vector(4.0f, 4.0f);
+
 	const Vector4 clip_pos = this->projection_matrix * Vector4(world_pos.x, world_pos.y, 0, 1);
-	//const Vector4d clip_pos = translate_to_clip_init * clip_pos_;
+
+	sdl_rect.x = Mylib::Math::round_to_nearest<int>(clip_pos.x - (rect.get_w() * fp(0.5) * this->scale_factor));
+	sdl_rect.y = Mylib::Math::round_to_nearest<int>(clip_pos.y - (rect.get_h() * fp(0.5) * this->scale_factor));
+	sdl_rect.w = Mylib::Math::round_to_nearest<int>(rect.get_w() * this->scale_factor);
+	sdl_rect.h = Mylib::Math::round_to_nearest<int>(rect.get_h() * this->scale_factor);
 
 #if 0
 	dprint( "world_pos:" )
@@ -199,13 +214,24 @@ void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const 
 //exit(1);
 #endif
 
-	sdl_rect.x = Mylib::Math::round_to_nearest<int>(clip_pos.x - (rect.get_w() * fp(0.5) * this->scale_factor));
-	sdl_rect.y = Mylib::Math::round_to_nearest<int>(clip_pos.y - (rect.get_h() * fp(0.5) * this->scale_factor));
-	sdl_rect.w = Mylib::Math::round_to_nearest<int>(rect.get_w() * this->scale_factor);
-	sdl_rect.h = Mylib::Math::round_to_nearest<int>(rect.get_h() * this->scale_factor);
+	return sdl_rect;
+}
+
+void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& color)
+{
+	const SDL_Rect sdl_rect = this->helper_calc_sdl_rect(rect, offset);
+	const SDL_Color sdl_color = to_sdl_color(color);
 
 	SDL_SetRenderDrawColor(this->renderer, sdl_color.r, sdl_color.g, sdl_color.b, sdl_color.a);
 	SDL_RenderFillRect(this->renderer, &sdl_rect);
+}
+
+void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDescriptor& texture_desc)
+{
+	const SDL_Rect sdl_rect = this->helper_calc_sdl_rect(rect, offset);
+	SDL_TextureDescriptor *desc = texture_desc.data.get_value<SDL_TextureDescriptor*>();
+
+	SDL_RenderCopy(this->renderer, desc->texture, nullptr, &sdl_rect);
 }
 
 // ---------------------------------------------------
@@ -313,6 +339,28 @@ void SDL_GraphicsDriver::update_screen ()
 void SDL_GraphicsDriver::clear_vertex_buffers ()
 {
 
+}
+
+// ---------------------------------------------------
+
+TextureDescriptor SDL_GraphicsDriver::load_texture (SDL_Surface *surface)
+{
+	SDL_TextureDescriptor *desc = new(this->memory_manager.allocate_type<SDL_TextureDescriptor>(1)) SDL_TextureDescriptor;
+
+	desc->surface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, 0);
+	mylib_assert_exception_msg(desc->surface != nullptr, "error converting surface format", '\n', SDL_GetError())
+
+	desc->texture = SDL_CreateTextureFromSurface(this->renderer, desc->surface);
+	mylib_assert_exception_msg(desc->texture != nullptr, "error converting surface to texture", '\n', SDL_GetError())
+
+	return TextureDescriptor { .data = desc };
+}
+
+// ---------------------------------------------------
+
+void SDL_GraphicsDriver::destroy_texture (TextureDescriptor& texture)
+{
+	mylib_throw_exception_msg("SDL Renderer does not support texture destruction");
 }
 
 // ---------------------------------------------------

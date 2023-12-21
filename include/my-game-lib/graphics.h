@@ -15,6 +15,7 @@
 #include <array>
 #include <string_view>
 #include <span>
+#include <string_view>
 
 #include <my-lib/std.h>
 #include <my-lib/macros.h>
@@ -115,6 +116,14 @@ std::ostream& operator << (std::ostream& out, const Color& color);
 
 // ---------------------------------------------------
 
+struct TextureDescriptor {
+	Mylib::Any<sizeof(void*), sizeof(void*)> data; // used by backend driver
+	uint32_t width_px;
+	uint32_t height_px;
+};
+
+// ---------------------------------------------------
+
 struct Vertex {
 	Point pos; // local x,y,z coords
 	Vector normal; // normal vector used for lighting
@@ -159,6 +168,8 @@ protected:
 	}
 
 public:
+	virtual ~Shape () = default;
+
 	MYLIB_DELETE_COPY_MOVE_CONSTRUCTOR_ASSIGN(Shape)
 
 	inline std::span<Vertex> get_local_rotated_vertices () noexcept
@@ -562,13 +573,26 @@ public:
 	virtual void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color) = 0;
 	virtual void draw_circle2D (Circle2D& circle, const Vector& offset, const Color& color) = 0;
 	virtual void draw_rect2D (Rect2D& rect, const Vector& offset, const Color& color) = 0;
+	virtual void draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDescriptor& texture_desc) = 0;
 	virtual void setup_render_3D (const RenderArgs3D& args) = 0;
 	virtual void setup_render_2D (const RenderArgs2D& args) = 0;
 	virtual void render () = 0;
 	virtual void update_screen () = 0;
 	virtual void clear_vertex_buffers () = 0;
+	virtual TextureDescriptor load_texture (SDL_Surface *surface) = 0;
+	virtual void destroy_texture (TextureDescriptor& texture) = 0;
 
 	// 2D Wrappers
+
+	void draw_rect2D (Rect2D&& rect, const Vector& offset, const Color& color)
+	{
+		this->draw_rect2D(rect, offset, color);
+	}
+
+	void draw_circle2D (Circle2D&& circle, const Vector& offset, const Color& color)
+	{
+		this->draw_circle2D(circle, offset, color);
+	}
 
 	void draw_circle2D (Circle2D& circle, const Vector2& offset, const Color& color)
 	{
@@ -579,6 +603,12 @@ public:
 	{
 		this->draw_rect2D(rect, Vector(offset.x, offset.y, 0), color);
 	}
+
+	// Texture wrappers
+
+	TextureDescriptor load_texture (const std::string_view fname);
+
+	// light functions
 
 	[[nodiscard]] LightPointDescriptor add_light_point_source (const Point& pos, const Color& color);
 	
