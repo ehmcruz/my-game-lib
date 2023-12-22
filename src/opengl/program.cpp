@@ -23,7 +23,7 @@ namespace Opengl
 
 // ---------------------------------------------------
 
-static void ensure_no_error ()
+void ensure_no_error ()
 {
 	const GLenum error = glGetError();
 	mylib_assert_exception_msg(error == GL_NO_ERROR, "glGetError() returned ", error);

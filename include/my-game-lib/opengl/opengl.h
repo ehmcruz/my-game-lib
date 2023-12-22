@@ -42,9 +42,20 @@ namespace Opengl
 
 // ---------------------------------------------------
 
-class Program;
+struct Opengl_TextureDescriptor
+{
+	GLuint texture_id;
+	int32_t width_px;
+	int32_t height_px;
+};
 
 // ---------------------------------------------------
+
+void ensure_no_error ();
+
+// ---------------------------------------------------
+
+class Program;
 
 class Shader
 {

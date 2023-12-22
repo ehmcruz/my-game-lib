@@ -309,6 +309,8 @@ void Rect2D::calculate_vertices () noexcept
 	const fp_t half_h = this->get_h() * fp(0.5);
 	constexpr fp_t z = 0;
 
+	// draw first triangle
+
 	// upper left vertex
 	this->vertices[0].pos.x = -half_w;
 	this->vertices[0].pos.y = -half_h;

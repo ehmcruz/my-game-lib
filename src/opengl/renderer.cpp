@@ -80,8 +80,11 @@ Renderer::Renderer (const InitParams& params)
 	dprintln("Status: Using GLEW ", glewGetString(GLEW_VERSION));
 #endif
 
-	//glDisable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glEnable(GL_TEXTURE_2D);
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glClearColor(this->background_color.r, this->background_color.g, this->background_color.b, 1);
 	glViewport(0, 0, this->window_width_px, this->window_height_px);
@@ -238,6 +241,26 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& col
 void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDescriptor& texture_desc)
 {
 	//mylib_throw_exception_msg("not implemented");
+	constexpr uint32_t n_vertices = Rect2D::get_n_vertices();
+	std::span<ProgramTriangleTexture::Vertex> vertices = this->program_triangle_texture->alloc_vertices(n_vertices);
+	std::span<Vertex> shape_vertices = rect.get_local_rotated_vertices();
+
+	static_assert(n_vertices == 6);
+	mylib_assert_exception(shape_vertices.size() == n_vertices)
+
+	for (uint32_t i=0; i<n_vertices; i++) {
+		vertices[i].gvertex = shape_vertices[i];
+		vertices[i].offset = offset;
+	}
+
+	// we have to follow the same order used in Rect2D::calculate_vertices
+
+	vertices[0].tex_coords = Vector2f(0, 0); // upper left
+	vertices[1].tex_coords = Vector2f(1, 1); // down right
+	vertices[2].tex_coords = Vector2f(0, 1); // down left
+	vertices[3].tex_coords = Vector2f(0, 0); // upper left
+	vertices[4].tex_coords = Vector2f(1, 0); // upper right
+	vertices[5].tex_coords = Vector2f(1, 1); // down right
 }
 
 // ---------------------------------------------------
@@ -459,14 +482,48 @@ void Renderer::end_texture_loading ()
 
 TextureDescriptor Renderer::load_texture (SDL_Surface *surface)
 {
+	Opengl_TextureDescriptor *desc = new(this->memory_manager.allocate_type<Opengl_TextureDescriptor>(1)) Opengl_TextureDescriptor;
 
+	SDL_Surface *treated_surface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ABGR8888, 0);
+	mylib_assert_exception_msg(treated_surface != nullptr, "error converting surface format", '\n', SDL_GetError())
+
+	desc->width_px = treated_surface->w;
+	desc->height_px = treated_surface->h;
+	
+	glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
+	ensure_no_error();
+
+	glGenTextures(1, &desc->texture_id);
+	ensure_no_error();
+
+	glBindTexture(GL_TEXTURE_2D, desc->texture_id);
+	ensure_no_error();
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	ensure_no_error();
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, desc->width_px, desc->height_px, 0, GL_RGBA, GL_UNSIGNED_BYTE, treated_surface->pixels);
+	ensure_no_error();
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+	ensure_no_error();
+
+	SDL_FreeSurface(treated_surface);
+
+	return TextureDescriptor {
+		.data = desc,
+		.width_px = desc->width_px,
+		.height_px = desc->height_px,
+		.aspect_ratio = static_cast<fp_t>(desc->width_px) / static_cast<fp_t>(desc->height_px)
+		};
 }
 
 // ---------------------------------------------------
 
 void Renderer::destroy_texture (TextureDescriptor& texture)
 {
-
+	mylib_throw_exception_msg("OpenGl Renderer does not support texture destruction");
 }
 
 // ---------------------------------------------------

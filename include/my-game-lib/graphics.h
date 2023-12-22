@@ -409,6 +409,13 @@ public:
 class Rect2D : public Shape
 {
 public:
+/*	enum PositionIndex {
+		LeftTop,
+		LeftBottom,
+		RightTop,
+		RightBottom
+	};*/
+
 	static consteval uint32_t get_n_vertices ()
 	{
 		return 6; // 2 triangles
