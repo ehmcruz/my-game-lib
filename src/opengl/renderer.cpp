@@ -467,14 +467,21 @@ void Renderer::clear_vertex_buffers ()
 
 void Renderer::begin_texture_loading ()
 {
-
+	mylib_assert_exception(this->textures.empty())
 }
 
 // ---------------------------------------------------
 
 void Renderer::end_texture_loading ()
 {
+	for (auto& tex_desc : this->textures) {
+		this->texture_atlas.add_texture(tex_desc);
+//		if (!this->texture_atlas.process()) {
+//			mylib_throw_exception_msg("error processing texture atlas");
+//		}
+	}
 
+	this->texture_atlas.process();
 }
 
 // ---------------------------------------------------
@@ -486,10 +493,11 @@ TextureDescriptor Renderer::load_texture (SDL_Surface *surface)
 	SDL_Surface *treated_surface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ABGR8888, 0);
 	mylib_assert_exception_msg(treated_surface != nullptr, "error converting surface format", '\n', SDL_GetError())
 
+	desc->surface = treated_surface;
 	desc->width_px = treated_surface->w;
 	desc->height_px = treated_surface->h;
 	
-	glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
+/*	glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
 	ensure_no_error();
 
 	glGenTextures(1, &desc->texture_id);
@@ -508,14 +516,18 @@ TextureDescriptor Renderer::load_texture (SDL_Surface *surface)
 	glGenerateMipmap(GL_TEXTURE_2D);
 	ensure_no_error();
 
-	SDL_FreeSurface(treated_surface);
+	//SDL_FreeSurface(treated_surface);*/
 
-	return TextureDescriptor {
+	TextureDescriptor user_desc = {
 		.data = desc,
 		.width_px = desc->width_px,
 		.height_px = desc->height_px,
 		.aspect_ratio = static_cast<fp_t>(desc->width_px) / static_cast<fp_t>(desc->height_px)
 		};
+	
+	this->textures.push_back(user_desc);
+	
+	return user_desc;
 }
 
 // ---------------------------------------------------

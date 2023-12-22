@@ -89,7 +89,20 @@ Point camera_pos(-2, -2, -10);
 Point camera_vector(0, 0, 1);
 
 Rect2D samus_rect;
+
+TextureDescriptor chrono_texture;
+TextureDescriptor earth_high_texture;
+TextureDescriptor earth_low_texture;
+TextureDescriptor flowers_texture;
+TextureDescriptor fzero_texture;
+TextureDescriptor house_texture;
+TextureDescriptor mario_texture;
+TextureDescriptor moon_high_texture;
+TextureDescriptor moon_low_texture;
 TextureDescriptor samus_texture;
+TextureDescriptor tree_texture;
+TextureDescriptor yoshi_texture;
+TextureDescriptor zelda_texture;
 
 void setup ()
 {
@@ -101,7 +114,22 @@ void setup ()
 
 	cube.rotate(Vector(0, 1, 0), 0);
 
+	renderer->begin_texture_loading();
+	chrono_texture = renderer->load_texture("tests-assets/chrono.png");
+	earth_high_texture = renderer->load_texture("tests-assets/earth-high.jpg");
+	earth_low_texture = renderer->load_texture("tests-assets/earth-low.jpg");
+	flowers_texture = renderer->load_texture("tests-assets/flowers.jpg");
+	fzero_texture = renderer->load_texture("tests-assets/fzero.png");
+	house_texture = renderer->load_texture("tests-assets/house.png");
+	mario_texture = renderer->load_texture("tests-assets/mario.png");
+	moon_high_texture = renderer->load_texture("tests-assets/moon-high.jpg");
+	moon_low_texture = renderer->load_texture("tests-assets/moon-low.jpg");
 	samus_texture = renderer->load_texture("tests-assets/samus.png");
+	tree_texture = renderer->load_texture("tests-assets/tree.png");
+	yoshi_texture = renderer->load_texture("tests-assets/yoshi.jpg");
+	zelda_texture = renderer->load_texture("tests-assets/zelda.jpg");
+	renderer->end_texture_loading();
+	
 	samus_rect.set_size(1.0, 1.0 / samus_texture.aspect_ratio);
 }
 

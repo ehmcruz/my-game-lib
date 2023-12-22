@@ -30,17 +30,22 @@ protected:
 		int32_t y_end;
 	};
 
+	const int32_t min_size;
 	const int32_t max_size;
 
 	std::vector<EmptyArea> empty_areas;
 	std::vector<TextureDescriptor> textures;
 
 public:
-	TextureAtlas (const int32_t max_size_);
+	TextureAtlas (const int32_t min_size_, const int32_t max_size_);
 
 	MYLIB_DELETE_COPY_MOVE_CONSTRUCTOR_ASSIGN(TextureAtlas)
 
 	void add_texture (const TextureDescriptor& texture);
+	bool process ();
+
+protected:
+	EmptyArea* find_empty_area (const TextureDescriptor& texture);
 };
 
 // ---------------------------------------------------
