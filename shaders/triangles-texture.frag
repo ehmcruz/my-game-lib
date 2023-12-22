@@ -20,12 +20,12 @@ in vec2 tex_coord;
 
 out vec4 o_color;
 
-uniform sampler2D u_tx_unit;
-
 uniform vec4 u_ambient_light_color;
 
 uniform vec3 u_point_light_pos;
 uniform vec4 u_point_light_color;
+
+uniform sampler2D u_tx_unit;
 
 void main ()
 {

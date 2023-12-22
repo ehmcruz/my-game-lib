@@ -23,11 +23,20 @@ namespace Opengl
 
 // ---------------------------------------------------
 
+static void ensure_no_error ()
+{
+	const GLenum error = glGetError();
+	mylib_assert_exception_msg(error == GL_NO_ERROR, "glGetError() returned ", error);
+}
+
+// ---------------------------------------------------
+
 Shader::Shader (const GLenum shader_type_, const std::string_view fname_)
 : shader_type(shader_type_),
   fname(fname_)
 {
 	this->shader_id = glCreateShader(this->shader_type);
+	mylib_assert_exception_msg(this->shader_id != 0, "glCreateShader failed");
 }
 
 Shader::~Shader ()
@@ -72,6 +81,7 @@ void Shader::compile ()
 	
 	const char *c_str = buffer.data();
 	glShaderSource(this->shader_id, 1, ( const GLchar ** )&c_str, nullptr);
+	ensure_no_error();
 	glCompileShader(this->shader_id);
 
 	GLint status;
@@ -94,6 +104,7 @@ Program::Program ()
 	this->vs = nullptr;
 	this->fs = nullptr;
 	this->program_id = glCreateProgram();
+	mylib_assert_exception_msg(this->program_id != 0, "glCreateProgram failed");
 }
 
 Program::~Program ()
@@ -109,17 +120,64 @@ Program::~Program ()
 void Program::attach_shaders ()
 {
 	glAttachShader(this->program_id, this->vs->get_shader_id());
+	ensure_no_error();
 	glAttachShader(this->program_id, this->fs->get_shader_id());
+	ensure_no_error();
 }
 
 void Program::link_program ()
 {
 	glLinkProgram(this->program_id);
+	ensure_no_error();
 }
 
 void Program::use_program ()
 {
 	glUseProgram(this->program_id);
+	ensure_no_error();
+}
+
+GLint Program::get_uniform_location (const std::string_view name) const
+{
+	const GLint location = glGetUniformLocation(this->program_id, name.data());
+	mylib_assert_exception_msg(location != -1, "uniform ", name, " not found");
+	return location;
+}
+
+void Program::bind_attrib_location (const GLuint index, const std::string_view name)
+{
+	glBindAttribLocation(this->program_id, index, name.data());
+	ensure_no_error();
+}
+
+void Program::gen_vertex_arrays (const GLsizei n, GLuint *arrays)
+{
+	glGenVertexArrays(n, arrays);
+	ensure_no_error();
+}
+
+void Program::gen_buffers (const GLsizei n, GLuint *buffers)
+{
+	glGenBuffers(n, buffers);
+	ensure_no_error();
+}
+
+void Program::bind_vertex_array (const GLuint array)
+{
+	glBindVertexArray(array);
+	ensure_no_error();
+}
+
+void Program::bind_buffer (const GLenum target, const GLuint buffer)
+{
+	glBindBuffer(target, buffer);
+	ensure_no_error();
+}
+
+void Program::enable_vertex_attrib_array (const GLuint index)
+{
+	glEnableVertexAttribArray(index);
+	ensure_no_error();
 }
 
 // ---------------------------------------------------
@@ -141,20 +199,21 @@ ProgramTriangleColor::ProgramTriangleColor ()
 
 	this->attach_shaders();
 
-	glBindAttribLocation(this->program_id, iPosition, "i_position");
-	glBindAttribLocation(this->program_id, iNormal, "i_normal");
-	glBindAttribLocation(this->program_id, iOffset, "i_offset");
-	glBindAttribLocation(this->program_id, iColor, "i_color");
+	this->bind_attrib_location(iPosition, "i_position");
+	this->bind_attrib_location(iNormal, "i_normal");
+	this->bind_attrib_location(iOffset, "i_offset");
+	this->bind_attrib_location(iColor, "i_color");
 
 	this->link_program();
 
-	glGenVertexArrays(1, &(this->vao));
-	glGenBuffers(1, &(this->vbo));
+	this->gen_vertex_arrays(1, &(this->vao));
+	this->gen_buffers(1, &(this->vbo));
 
 	this->use_program();
-	this->bind_vertex_array();
-	this->bind_vertex_buffer();
-	this->setup_vertex_array();
+	this->bind_vertex_arrays();
+	this->bind_vertex_buffers();
+	this->setup_vertex_arrays();
+	this->setup_uniforms();
 
 	dprintln("loaded opengl triangle color program");
 }
@@ -164,24 +223,24 @@ ProgramTriangleColor::~ProgramTriangleColor ()
 
 }
 
-void ProgramTriangleColor::bind_vertex_array ()
+void ProgramTriangleColor::bind_vertex_arrays ()
 {
-	glBindVertexArray(this->vao);
+	this->bind_vertex_array(this->vao);
 }
 
-void ProgramTriangleColor::bind_vertex_buffer ()
+void ProgramTriangleColor::bind_vertex_buffers ()
 {
-	glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+	this->bind_buffer(GL_ARRAY_BUFFER, this->vbo);
 }
 
-void ProgramTriangleColor::setup_vertex_array ()
+void ProgramTriangleColor::setup_vertex_arrays ()
 {
 	uint32_t pos, length;
 
-	glEnableVertexAttribArray(iPosition);
-	glEnableVertexAttribArray(iNormal);
-	glEnableVertexAttribArray(iOffset);
-	glEnableVertexAttribArray(iColor);
+	this->enable_vertex_attrib_array(iPosition);
+	this->enable_vertex_attrib_array(iNormal);
+	this->enable_vertex_attrib_array(iOffset);
+	this->enable_vertex_attrib_array(iColor);
 
 	pos = 0;
 	length = 3;
@@ -198,34 +257,49 @@ void ProgramTriangleColor::setup_vertex_array ()
 	pos += length;
 	length = 4;
 	glVertexAttribPointer(iColor, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
+
+	ensure_no_error();
 }
 
-void ProgramTriangleColor::upload_vertex_buffer ()
+void ProgramTriangleColor::setup_uniforms ()
+{
+	this->u_projection_matrix = this->get_uniform_location("u_projection_matrix");
+	this->u_ambient_light_color = this->get_uniform_location("u_ambient_light_color");
+	this->u_point_light_pos = this->get_uniform_location("u_point_light_pos");
+	this->u_point_light_color = this->get_uniform_location("u_point_light_color");
+}
+
+void ProgramTriangleColor::upload_vertex_buffers ()
 {
 	const uint32_t n = this->triangle_buffer.get_vertex_buffer_used();
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * n, this->triangle_buffer.get_vertex_buffer(), GL_DYNAMIC_DRAW);
+
+	ensure_no_error();
 }
 
 void ProgramTriangleColor::upload_uniforms (const Uniforms& uniforms)
 {
-	glUniformMatrix4fv( glGetUniformLocation(this->program_id, "u_projection_matrix"), 1, GL_TRUE, uniforms.projection_matrix.get_raw() );
-	glUniform4fv( glGetUniformLocation(this->program_id, "u_ambient_light_color"), 1, uniforms.ambient_light_color.get_raw() );
-	glUniform3fv( glGetUniformLocation(this->program_id, "u_point_light_pos"), 1, uniforms.point_light_pos.get_raw() );
-	glUniform4fv( glGetUniformLocation(this->program_id, "u_point_light_color"), 1, uniforms.point_light_color.get_raw() );
-	//dprintln( "projection matrix sent to GPU" )
+	glUniformMatrix4fv(this->u_projection_matrix, 1, GL_TRUE, uniforms.projection_matrix.get_raw());
+	glUniform4fv(this->u_ambient_light_color, 1, uniforms.ambient_light_color.get_raw());
+	glUniform3fv(this->u_point_light_pos, 1, uniforms.point_light_pos.get_raw());
+	glUniform4fv(this->u_point_light_color, 1, uniforms.point_light_color.get_raw());
+
+	ensure_no_error();
 }
 
 void ProgramTriangleColor::draw ()
 {
 	const uint32_t n = this->triangle_buffer.get_vertex_buffer_used();
 	glDrawArrays(GL_TRIANGLES, 0, n);
+
+	ensure_no_error();
 }
 
 void ProgramTriangleColor::load ()
 {
 	this->use_program();
-	this->bind_vertex_array();
-	this->bind_vertex_buffer();
+	this->bind_vertex_arrays();
+	this->bind_vertex_buffers();
 }
 
 void ProgramTriangleColor::debug ()
@@ -264,28 +338,29 @@ ProgramTriangleTexture::ProgramTriangleTexture ()
 	static_assert(sizeof(Color) == sizeof(float) * 4);
 	static_assert(sizeof(Vertex) == (sizeof(Graphics::Vertex) + sizeof(Vector) + sizeof(Vector2f)));
 
-	this->vs = new Shader(GL_VERTEX_SHADER, "shaders/triangles-color.vert");
+	this->vs = new Shader(GL_VERTEX_SHADER, "shaders/triangles-texture.vert");
 	this->vs->compile();
 
-	this->fs = new Shader(GL_FRAGMENT_SHADER, "shaders/triangles-color.frag");
+	this->fs = new Shader(GL_FRAGMENT_SHADER, "shaders/triangles-texture.frag");
 	this->fs->compile();
 
 	this->attach_shaders();
 
-	glBindAttribLocation(this->program_id, iPosition, "i_position");
-	glBindAttribLocation(this->program_id, iNormal, "i_normal");
-	glBindAttribLocation(this->program_id, iOffset, "i_offset");
-	glBindAttribLocation(this->program_id, iTexCoords, "i_tex_coord");
+	this->bind_attrib_location(iPosition, "i_position");
+	this->bind_attrib_location(iNormal, "i_normal");
+	this->bind_attrib_location(iOffset, "i_offset");
+	this->bind_attrib_location(iTexCoords, "i_tex_coord");
 
 	this->link_program();
 
-	glGenVertexArrays(1, &(this->vao));
-	glGenBuffers(1, &(this->vbo));
+	this->gen_vertex_arrays(1, &(this->vao));
+	this->gen_buffers(1, &(this->vbo));
 
 	this->use_program();
-	this->bind_vertex_array();
-	this->bind_vertex_buffer();
-	this->setup_vertex_array();
+	this->bind_vertex_arrays();
+	this->bind_vertex_buffers();
+	this->setup_vertex_arrays();
+	this->setup_uniforms();
 
 	dprintln("loaded opengl triangle texture program");
 }
@@ -295,24 +370,24 @@ ProgramTriangleTexture::~ProgramTriangleTexture ()
 
 }
 
-void ProgramTriangleTexture::bind_vertex_array ()
+void ProgramTriangleTexture::bind_vertex_arrays ()
 {
-	glBindVertexArray(this->vao);
+	this->bind_vertex_array(this->vao);
 }
 
-void ProgramTriangleTexture::bind_vertex_buffer ()
+void ProgramTriangleTexture::bind_vertex_buffers ()
 {
-	glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+	this->bind_buffer(GL_ARRAY_BUFFER, this->vbo);
 }
 
-void ProgramTriangleTexture::setup_vertex_array ()
+void ProgramTriangleTexture::setup_vertex_arrays ()
 {
 	uint32_t pos, length;
 
-	glEnableVertexAttribArray(iPosition);
-	glEnableVertexAttribArray(iNormal);
-	glEnableVertexAttribArray(iOffset);
-	glEnableVertexAttribArray(iTexCoords);
+	this->enable_vertex_attrib_array(iPosition);
+	this->enable_vertex_attrib_array(iNormal);
+	this->enable_vertex_attrib_array(iOffset);
+	this->enable_vertex_attrib_array(iTexCoords);
 
 	pos = 0;
 	length = 3;
@@ -329,38 +404,51 @@ void ProgramTriangleTexture::setup_vertex_array ()
 	pos += length;
 	length = 2;
 	glVertexAttribPointer(iTexCoords, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
+
+	ensure_no_error();
 }
 
-void ProgramTriangleTexture::upload_vertex_buffer ()
+void ProgramTriangleTexture::setup_uniforms ()
+{
+	this->u_projection_matrix = this->get_uniform_location("u_projection_matrix");
+	this->u_ambient_light_color = this->get_uniform_location("u_ambient_light_color");
+	this->u_point_light_pos = this->get_uniform_location("u_point_light_pos");
+	this->u_point_light_color = this->get_uniform_location("u_point_light_color");
+	this->u_tx_unit = this->get_uniform_location("u_tx_unit");
+}
+
+void ProgramTriangleTexture::upload_vertex_buffers ()
 {
 	const uint32_t n = this->triangle_buffer.get_vertex_buffer_used();
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * n, this->triangle_buffer.get_vertex_buffer(), GL_DYNAMIC_DRAW);
+
+	ensure_no_error();
 }
 
 void ProgramTriangleTexture::upload_uniforms (const Uniforms& uniforms)
 {
-	glUniformMatrix4fv( glGetUniformLocation(this->program_id, "u_projection_matrix"), 1, GL_TRUE, uniforms.projection_matrix.get_raw() );
+	glUniformMatrix4fv(this->u_projection_matrix, 1, GL_TRUE, uniforms.projection_matrix.get_raw());
+	glUniform4fv(this->u_ambient_light_color, 1, uniforms.ambient_light_color.get_raw());
+	glUniform3fv(this->u_point_light_pos, 1, uniforms.point_light_pos.get_raw());
+	glUniform4fv(this->u_point_light_color, 1, uniforms.point_light_color.get_raw());
+	glUniform1i(this->u_tx_unit, 0); // set shader to use texture unit 0
 
-	const GLint uniform_tx_unit_location = glGetUniformLocation(this->program_id, "u_tx_unit");
-	glUniform1i(uniform_tx_unit_location, 0); // set shader to use texture unit 0
-
-	glUniform4fv( glGetUniformLocation(this->program_id, "u_ambient_light_color"), 1, uniforms.ambient_light_color.get_raw() );
-	glUniform3fv( glGetUniformLocation(this->program_id, "u_point_light_pos"), 1, uniforms.point_light_pos.get_raw() );
-	glUniform4fv( glGetUniformLocation(this->program_id, "u_point_light_color"), 1, uniforms.point_light_color.get_raw() );
-	//dprintln( "projection matrix sent to GPU" )
+	ensure_no_error();
 }
 
 void ProgramTriangleTexture::draw ()
 {
 	const uint32_t n = this->triangle_buffer.get_vertex_buffer_used();
 	glDrawArrays(GL_TRIANGLES, 0, n);
+
+	ensure_no_error();
 }
 
 void ProgramTriangleTexture::load ()
 {
 	this->use_program();
-	this->bind_vertex_array();
-	this->bind_vertex_buffer();
+	this->bind_vertex_arrays();
+	this->bind_vertex_buffers();
 }
 
 void ProgramTriangleTexture::debug ()

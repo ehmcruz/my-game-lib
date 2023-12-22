@@ -417,12 +417,12 @@ void Renderer::render ()
 	
 	this->program_triangle_color->load();
 	this->program_triangle_color->upload_uniforms(this->program_triangle_color_uniforms);
-	this->program_triangle_color->upload_vertex_buffer();
+	this->program_triangle_color->upload_vertex_buffers();
 	this->program_triangle_color->draw();
 
 	this->program_triangle_texture->load();
 	this->program_triangle_texture->upload_uniforms(this->program_triangle_texture_uniforms);
-	this->program_triangle_texture->upload_vertex_buffer();
+	this->program_triangle_texture->upload_vertex_buffers();
 	this->program_triangle_texture->draw();
 }
 

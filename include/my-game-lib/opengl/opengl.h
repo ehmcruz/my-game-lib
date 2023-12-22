@@ -74,6 +74,13 @@ protected:
 	void attach_shaders ();
 	void link_program ();
 	void use_program ();
+	GLint get_uniform_location (const std::string_view name) const;
+	void bind_attrib_location (const GLuint index, const std::string_view name);
+	void gen_vertex_arrays (const GLsizei n, GLuint *arrays);
+	void gen_buffers (const GLsizei n, GLuint *buffers);
+	void bind_vertex_array (const GLuint array);
+	void bind_buffer (const GLenum target, const GLuint buffer);
+	void enable_vertex_attrib_array (const GLuint index);
 };
 
 // ---------------------------------------------------
@@ -156,6 +163,11 @@ protected:
 		iColor
 	};
 
+	GLint u_projection_matrix;
+	GLint u_ambient_light_color;
+	GLint u_point_light_pos;
+	GLint u_point_light_color;
+
 public:
 	struct Uniforms {
 		Matrix4 projection_matrix;
@@ -190,10 +202,11 @@ public:
 		return this->triangle_buffer.alloc_vertices(n);
 	}
 
-	void bind_vertex_array ();
-	void bind_vertex_buffer ();
-	void setup_vertex_array ();
-	void upload_vertex_buffer ();
+	void bind_vertex_arrays ();
+	void bind_vertex_buffers ();
+	void setup_vertex_arrays ();
+	void setup_uniforms ();
+	void upload_vertex_buffers ();
 	void upload_uniforms (const Uniforms& uniforms);
 	void draw ();
 	void load ();
@@ -211,6 +224,12 @@ protected:
 		iOffset,
 		iTexCoords
 	};
+
+	GLint u_projection_matrix;
+	GLint u_ambient_light_color;
+	GLint u_point_light_pos;
+	GLint u_point_light_color;
+	GLint u_tx_unit;
 
 public:
 	struct Uniforms {
@@ -246,10 +265,11 @@ public:
 		return this->triangle_buffer.alloc_vertices(n);
 	}
 
-	void bind_vertex_array ();
-	void bind_vertex_buffer ();
-	void setup_vertex_array ();
-	void upload_vertex_buffer ();
+	void bind_vertex_arrays ();
+	void bind_vertex_buffers ();
+	void setup_vertex_arrays ();
+	void setup_uniforms ();
+	void upload_vertex_buffers ();
 	void upload_uniforms (const Uniforms& uniforms);
 	void draw ();
 	void load ();

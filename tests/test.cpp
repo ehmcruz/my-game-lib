@@ -192,9 +192,7 @@ int main (int argc, char **argv)
 {
 	MyGlib::Graphics::Manager::Type graphics_type;
 
-	if (argc == 1)
-		graphics_type = MyGlib::Graphics::Manager::Type::Opengl;
-	else if (argc == 2) {
+	if (argc == 2) {
 		if (std::string_view(argv[1]) == "opengl")
 			graphics_type = MyGlib::Graphics::Manager::Type::Opengl;
 		else if (std::string_view(argv[1]) == "sdl")
