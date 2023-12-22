@@ -240,7 +240,6 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& col
 
 void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDescriptor& texture_desc)
 {
-	//mylib_throw_exception_msg("not implemented");
 	constexpr uint32_t n_vertices = Rect2D::get_n_vertices();
 	std::span<ProgramTriangleTexture::Vertex> vertices = this->program_triangle_texture->alloc_vertices(n_vertices);
 	std::span<Vertex> shape_vertices = rect.get_local_rotated_vertices();
