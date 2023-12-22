@@ -6,6 +6,7 @@
 
 #include <my-lib/memory.h>
 
+// ---------------------------------------------------
 
 namespace MyGlib
 {
@@ -74,6 +75,9 @@ namespace Graphics
 		void render () override final;
 		void update_screen () override final;
 		void clear_vertex_buffers () override final;
+
+		void begin_texture_loading () override final;
+		void end_texture_loading () override final;
 		TextureDescriptor load_texture (SDL_Surface *surface) override final;
 		void destroy_texture (TextureDescriptor& texture) override final;
 	

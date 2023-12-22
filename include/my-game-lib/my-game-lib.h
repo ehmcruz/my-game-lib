@@ -13,6 +13,8 @@
 #include <my-game-lib/audio.h>
 #include <my-game-lib/graphics.h>
 
+// ---------------------------------------------------
+
 namespace MyGlib
 {
 

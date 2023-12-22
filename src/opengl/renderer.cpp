@@ -27,215 +27,6 @@ namespace Opengl
 
 // ---------------------------------------------------
 
-Shader::Shader (const GLenum shader_type_, const std::string_view fname_)
-: shader_type(shader_type_),
-  fname(fname_)
-{
-	this->shader_id = glCreateShader(this->shader_type);
-}
-
-void Shader::compile ()
-{
-	// Using SDL to load the file because it automatically
-	// handles platform-specific file paths, specially on Android.
-
-	SDL_RWops *fp = SDL_RWFromFile(this->fname.data(), "rb");
-	mylib_assert_exception_msg(fp != nullptr, "SDL_RWFromFile failed");
-
-	const Sint64 fsize = SDL_RWseek(fp, 0, RW_SEEK_END);
-	mylib_assert_exception_msg(fsize != -1, "SDL_RWseek failed");
-
-	const Sint64 fseekerror = SDL_RWseek(fp, 0, RW_SEEK_SET);
-	mylib_assert_exception_msg(fseekerror != -1, "SDL_RWseek failed on returnign to start of file");
-
-	std::vector<char> buffer(fsize + 1);
-
-	const size_t nread = SDL_RWread(fp, buffer.data(), sizeof(char), fsize);
-	mylib_assert_exception_msg(static_cast<Sint64>(nread) == fsize, "SDL_RWread failed nread=", nread, " fsize=", fsize);
-
-	buffer[fsize] = 0;
-
-	SDL_RWclose(fp);
-
-#if 0
-	// Old code. Deprecated because it doesn't work on Android.
-
-	std::ifstream t(this->fname);
-	std::stringstream str_stream;
-	str_stream << t.rdbuf();
-	std::string buffer = str_stream.str();
-#endif
-
-	dprintln("loaded shader (", this->fname, ")");
-	//dprint( buffer )
-	
-	const char *c_str = buffer.data();
-	glShaderSource(this->shader_id, 1, ( const GLchar ** )&c_str, nullptr);
-	glCompileShader(this->shader_id);
-
-	GLint status;
-	glGetShaderiv(this->shader_id, GL_COMPILE_STATUS, &status);
-
-	if (status == GL_FALSE) {
-		GLint log_size = 0;
-		glGetShaderiv(this->shader_id, GL_INFO_LOG_LENGTH, &log_size);
-
-		std::vector<char> berror(log_size);
-		glGetShaderInfoLog(this->shader_id, log_size, nullptr, berror.data());
-		mylib_throw_exception_msg(this->fname, " shader compilation failed", '\n', berror.data());
-	}
-}
-
-// ---------------------------------------------------
-
-Program::Program ()
-{
-	this->vs = nullptr;
-	this->fs = nullptr;
-	this->program_id = glCreateProgram();
-}
-
-void Program::attach_shaders ()
-{
-	glAttachShader(this->program_id, this->vs->shader_id);
-	glAttachShader(this->program_id, this->fs->shader_id);
-}
-
-void Program::link_program ()
-{
-	glLinkProgram(this->program_id);
-}
-
-void Program::use_program ()
-{
-	glUseProgram(this->program_id);
-}
-
-// ---------------------------------------------------
-
-ProgramTriangle::ProgramTriangle ()
-	: Program ()
-{
-	static_assert(sizeof(Graphics::Vertex) == sizeof(Point) + sizeof(Vector));
-	static_assert(sizeof(Vector) == sizeof(fp_t) * 3);
-	static_assert(sizeof(Vector) == sizeof(Point));
-	static_assert(sizeof(Color) == sizeof(float) * 4);
-#ifndef OPENGL_SOFTWARE_CALCULATE_MATRIX
-	static_assert(sizeof(Vertex) == (sizeof(Graphics::Vertex) + sizeof(Vector) + sizeof(Color)));
-#else
-	static_assert(sizeof(Vertex) == (sizeof(Point4) + sizeof(Vector) + sizeof(Color)));
-#endif
-
-	this->vs = new Shader(GL_VERTEX_SHADER, "shaders/triangles.vert");
-	this->vs->compile();
-
-	this->fs = new Shader(GL_FRAGMENT_SHADER, "shaders/triangles.frag");
-	this->fs->compile();
-
-	this->attach_shaders();
-
-	glBindAttribLocation(this->program_id, std::to_underlying(Attrib::Position), "i_position");
-	glBindAttribLocation(this->program_id, std::to_underlying(Attrib::Normal), "i_normal");
-	glBindAttribLocation(this->program_id, std::to_underlying(Attrib::Offset), "i_offset");
-	glBindAttribLocation(this->program_id, std::to_underlying(Attrib::Color), "i_color");
-
-	this->link_program();
-
-	glGenVertexArrays(1, &(this->vao));
-	glGenBuffers(1, &(this->vbo));
-}
-
-void ProgramTriangle::bind_vertex_array ()
-{
-	glBindVertexArray(this->vao);
-}
-
-void ProgramTriangle::bind_vertex_buffer ()
-{
-	glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
-}
-
-void ProgramTriangle::setup_vertex_array ()
-{
-	uint32_t pos, length;
-
-	glEnableVertexAttribArray( std::to_underlying(Attrib::Position) );
-	glEnableVertexAttribArray( std::to_underlying(Attrib::Normal) );
-	glEnableVertexAttribArray( std::to_underlying(Attrib::Offset) );
-	glEnableVertexAttribArray( std::to_underlying(Attrib::Color) );
-
-	pos = 0;
-#ifndef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
-	length = 3;
-#else
-	length = 4;
-#endif
-	glVertexAttribPointer( std::to_underlying(Attrib::Position), length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
-
-	pos += length;
-	length = 3;
-	glVertexAttribPointer( std::to_underlying(Attrib::Normal), length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
-
-	pos += length;
-	length = 3;
-	glVertexAttribPointer( std::to_underlying(Attrib::Offset), length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
-	
-	pos += length;
-	length = 4;
-	glVertexAttribPointer( std::to_underlying(Attrib::Color), length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
-}
-
-void ProgramTriangle::upload_vertex_buffer ()
-{
-	const uint32_t n = this->triangle_buffer.get_vertex_buffer_used();
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * n, this->triangle_buffer.get_vertex_buffer(), GL_DYNAMIC_DRAW);
-}
-
-void ProgramTriangle::upload_uniforms (const Uniforms& uniforms)
-{
-	glUniformMatrix4fv( glGetUniformLocation(this->program_id, "u_projection_matrix"), 1, GL_TRUE, uniforms.projection_matrix.get_raw() );
-	glUniform4fv( glGetUniformLocation(this->program_id, "u_ambient_light_color"), 1, uniforms.ambient_light_color.get_raw() );
-	glUniform3fv( glGetUniformLocation(this->program_id, "u_point_light_pos"), 1, uniforms.point_light_pos.get_raw() );
-	glUniform4fv( glGetUniformLocation(this->program_id, "u_point_light_color"), 1, uniforms.point_light_color.get_raw() );
-	//dprintln( "projection matrix sent to GPU" )
-}
-
-void ProgramTriangle::draw ()
-{
-	const uint32_t n = this->triangle_buffer.get_vertex_buffer_used();
-	glDrawArrays(GL_TRIANGLES, 0, n);
-}
-
-void ProgramTriangle::debug ()
-{
-	const uint32_t n = this->triangle_buffer.get_vertex_buffer_used();
-
-	for (uint32_t i=0; i<n; i++) {
-		const Vertex& v = this->triangle_buffer.get_vertex(i);
-
-		if ((i % 3) == 0)
-			dprintln();
-
-		dprintln("vertex[", i,
-			"] x=", v.gvertex.pos.x,
-			" y=", v.gvertex.pos.y,
-			" z=", v.gvertex.pos.z,
-		#ifdef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
-			" w=", v->local_pos.w,
-		#endif
-			" offset_x=", v.offset.x,
-			" offset_y=", v.offset.y,
-			" offset_z=", v.offset.z,
-			" r=", v.color.r,
-			" g=", v.color.g,
-			" b=", v.color.b,
-			" a=", v.color.a
-		);
-	}
-}
-
-// ---------------------------------------------------
-
 Renderer::Renderer (const InitParams& params)
 	: Manager (params)
 {
@@ -306,25 +97,20 @@ Renderer::Renderer (const InitParams& params)
 
 void Renderer::load_opengl_programs ()
 {
-	this->program_triangle = new ProgramTriangle;
+	dprintln("loading opengl programs...");
 
-	dprintln("loaded opengl triangle program");
+	this->program_triangle_color = new ProgramTriangleColor;
+	this->program_triangle_texture = new ProgramTriangleTexture;
 
-	this->program_triangle->use_program();
-	
-	this->program_triangle->bind_vertex_array();
-	this->program_triangle->bind_vertex_buffer();
-
-	this->program_triangle->setup_vertex_array();
-
-	dprintln("generated and binded opengl world vertex array/buffer");
+	dprintln("all opengl programs loaded");
 }
 
 // ---------------------------------------------------
 
 Renderer::~Renderer ()
 {
-	delete this->program_triangle;
+	delete this->program_triangle_color;
+	delete this->program_triangle_texture;
 
 	SDL_GL_DeleteContext(this->sdl_gl_context);
 	SDL_DestroyWindow(this->sdl_window);
@@ -335,38 +121,13 @@ Renderer::~Renderer ()
 void Renderer::wait_next_frame ()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	this->program_triangle->clear();
+	this->clear_vertex_buffers();
 }
 
 // ---------------------------------------------------
 
 void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color)
 {
-#ifdef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
-	std::array<Point4, 8> points4;
-
-	Matrix4 proj;
-	proj.set_perspective(
-		Mylib::Math::degrees_to_radians(fp(45)),
-		static_cast<fp_t>(this->window_width_px),
-		static_cast<fp_t>(this->window_height_px),
-		fp(0.1),
-		fp(100),
-		fp(1)
-	);
-	dprintln("software projection matrix:", '\n', proj);
-	for (int i = 0; auto& p : points) {
-		Point translated = p + offset;
-		Point4 p4 (translated.x, translated.y, translated.z, 1);
-		//proj.set_identity();
-		Point4 trans = proj * p4;
-		//trans.w = 1;
-		points4[i++] = trans;
-		dprintln("trans ", trans);
-	}
-#endif
-	
 	constexpr uint32_t n_vertices = Cube3D::get_n_vertices();
 	//const Vector world_pos = Vector(4.0f, 4.0f);
 
@@ -379,7 +140,7 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const Color& col
 //exit(1);
 #endif
 
-	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
+	std::span<ProgramTriangleColor::Vertex> vertices = this->program_triangle_color->alloc_vertices(n_vertices);
 	std::span<Vertex> shape_vertices = cube.get_local_rotated_vertices();
 
 /*	dprintln("rendering cube with offset=", offset, " color=", color, " w=", cube.get_w(), " h=", cube.get_h(), " d=", cube.get_d());
@@ -408,7 +169,7 @@ void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Colo
 
 	//dprintln("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen, " n_triangles: ", n_vertices / 3);
 
-	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
+	std::span<ProgramTriangleColor::Vertex> vertices = this->program_triangle_color->alloc_vertices(n_vertices);
 
 	for (uint32_t i=0; i<n_vertices; i++) {
 		vertices[i].gvertex = shape_vertices[i];
@@ -437,7 +198,7 @@ void Renderer::draw_circle2D (Circle2D& circle, const Vector& offset, const Colo
 
 	//dprintln("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen, " n_triangles: ", n_vertices / 3);
 
-	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
+	std::span<ProgramTriangleColor::Vertex> vertices = this->program_triangle_color->alloc_vertices(n_vertices);
 
 	for (uint32_t i=0; i<n_vertices; i++) {
 		vertices[i].gvertex = shape_vertices[i];
@@ -462,7 +223,7 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& col
 //exit(1);
 #endif
 
-	std::span<ProgramTriangle::Vertex> vertices = this->program_triangle->alloc_vertices(n_vertices);
+	std::span<ProgramTriangleColor::Vertex> vertices = this->program_triangle_color->alloc_vertices(n_vertices);
 	std::span<Vertex> shape_vertices = rect.get_local_rotated_vertices();
 
 	mylib_assert_exception(shape_vertices.size() == n_vertices)
@@ -476,15 +237,14 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& col
 
 void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDescriptor& texture_desc)
 {
-	mylib_throw_exception_msg("not implemented");
+	//mylib_throw_exception_msg("not implemented");
 }
 
 // ---------------------------------------------------
 
 void Renderer::setup_render_3D (const RenderArgs3D& args)
 {
-#ifndef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
-	this->uniforms.projection_matrix = Mylib::Math::gen_perspective_matrix<fp_t>(
+	this->program_triangle_color_uniforms.projection_matrix = Mylib::Math::gen_perspective_matrix<fp_t>(
 			args.fov_y,
 			static_cast<fp_t>(this->window_width_px),
 			static_cast<fp_t>(this->window_height_px),
@@ -496,11 +256,11 @@ void Renderer::setup_render_3D (const RenderArgs3D& args)
 			args.world_camera_pos,
 			args.world_camera_target,
 			Vector(0, 1, 0));
-#else
-	this->projection_matrix = Mylib::Math::gen_identity_matrix<fp_t, 4>();
-#endif
 
-	this->uniforms.ambient_light_color = args.ambient_light_color;
+	this->program_triangle_color_uniforms.ambient_light_color = args.ambient_light_color;
+
+	this->program_triangle_texture_uniforms.projection_matrix = this->program_triangle_color_uniforms.projection_matrix;
+	this->program_triangle_texture_uniforms.ambient_light_color = this->program_triangle_color_uniforms.ambient_light_color;
 
 #if 0
 	dprintln("projection matrix:");
@@ -618,7 +378,7 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 	translate_camera.set_translate(-world_camera);
 //	dprintln( "translation matrix:" ) translate_camera.println();
 
-	this->uniforms.projection_matrix = 
+	this->program_triangle_color_uniforms.projection_matrix = 
 		(((translate_subtract_one
 		* opengl_scale_mirror)
 		* translate_to_normalized_clip_init)
@@ -627,9 +387,13 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 	//this->projection_matrix = scale * translate_camera;
 	//dprintln( "final matrix:" ) this->projection_matrix.println();
 
-	this->uniforms.ambient_light_color = {1, 1, 1, 1};
-	this->uniforms.point_light_pos = Vector3(0, 0, -1);
-	this->uniforms.point_light_color = {1, 1, 1, 0};
+	this->program_triangle_color_uniforms.ambient_light_color = {1, 1, 1, 1};
+
+	this->light_point_sources[0].pos = Vector3(0, 0, -1);
+	this->light_point_sources[0].color = {1, 1, 1, 0};
+
+	this->program_triangle_texture_uniforms.projection_matrix = this->program_triangle_color_uniforms.projection_matrix;
+	this->program_triangle_texture_uniforms.ambient_light_color = this->program_triangle_color_uniforms.ambient_light_color;
 #else
 	this->projection_matrix = Mylib::Math::gen_identity_matrix<fp_t, 4>();
 #endif
@@ -645,13 +409,21 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 
 void Renderer::render ()
 {
-	this->uniforms.point_light_pos = this->light_point_sources[0].pos;
-	this->uniforms.point_light_color = this->light_point_sources[0].color;
+	this->program_triangle_color_uniforms.point_light_pos = this->light_point_sources[0].pos;
+	this->program_triangle_color_uniforms.point_light_color = this->light_point_sources[0].color;
 
-	//this->program_triangle->debug();
-	this->program_triangle->upload_uniforms(this->uniforms);
-	this->program_triangle->upload_vertex_buffer();
-	this->program_triangle->draw();
+	this->program_triangle_texture_uniforms.point_light_pos = this->program_triangle_color_uniforms.point_light_pos;
+	this->program_triangle_texture_uniforms.point_light_color = this->program_triangle_color_uniforms.point_light_color;
+	
+	this->program_triangle_color->load();
+	this->program_triangle_color->upload_uniforms(this->program_triangle_color_uniforms);
+	this->program_triangle_color->upload_vertex_buffer();
+	this->program_triangle_color->draw();
+
+	this->program_triangle_texture->load();
+	this->program_triangle_texture->upload_uniforms(this->program_triangle_texture_uniforms);
+	this->program_triangle_texture->upload_vertex_buffer();
+	this->program_triangle_texture->draw();
 }
 
 // ---------------------------------------------------
@@ -665,7 +437,22 @@ void Renderer::update_screen ()
 
 void Renderer::clear_vertex_buffers ()
 {
-	this->program_triangle->clear();
+	this->program_triangle_color->clear();
+	this->program_triangle_texture->clear();
+}
+
+// ---------------------------------------------------
+
+void Renderer::begin_texture_loading ()
+{
+
+}
+
+// ---------------------------------------------------
+
+void Renderer::end_texture_loading ()
+{
+
 }
 
 // ---------------------------------------------------

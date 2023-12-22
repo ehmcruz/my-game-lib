@@ -1,5 +1,6 @@
 #include <chrono>
 #include <thread>
+#include <string_view>
 
 #include <my-game-lib/my-game-lib.h>
 
@@ -100,8 +101,8 @@ void setup ()
 
 	cube.rotate(Vector(0, 1, 0), 0);
 
-	samus_texture = renderer->load_texture("tests-assets/texture1.png");
-	samus_rect.set_size(1, 1);
+	samus_texture = renderer->load_texture("tests-assets/samus.png");
+	samus_rect.set_size(1.0, 1.0 / samus_texture.aspect_ratio);
 }
 
 static void process_keys (const Uint8 *keys, const fp_t dt)
@@ -158,6 +159,7 @@ void render ()
 	renderer->draw_rect2D(Rect2D(4, 2), Vector(3, 3, z_2d), Color::red());
 	renderer->draw_circle2D(Circle2D(3), Vector(5, 5, z_2d), Color::green());
 	renderer->draw_circle2D(Circle2D(0.5), Vector(8, 8, z_2d), Color::blue());
+	renderer->draw_rect2D(samus_rect, Vector(6, 3, z_2d), samus_texture);
 
 	renderer->render();
 
@@ -188,8 +190,27 @@ void quit_callback (const MyGlib::Event::Quit::Type& event)
 
 int main (int argc, char **argv)
 {
+	MyGlib::Graphics::Manager::Type graphics_type;
+
+	if (argc == 1)
+		graphics_type = MyGlib::Graphics::Manager::Type::Opengl;
+	else if (argc == 2) {
+		if (std::string_view(argv[1]) == "opengl")
+			graphics_type = MyGlib::Graphics::Manager::Type::Opengl;
+		else if (std::string_view(argv[1]) == "sdl")
+			graphics_type = MyGlib::Graphics::Manager::Type::SDL;
+		else {
+			std::cout << "Invalid graphics type: " << argv[1] << std::endl;
+			return 1;
+		}
+	}
+	else {
+		std::cout << "Usage: " << argv[0] << " [opengl|sdl]" << std::endl;
+		return 1;
+	}
+
 	lib = &MyGlib::Lib::init({
-		.graphics_type = MyGlib::Graphics::Manager::Type::SDL,
+		.graphics_type = graphics_type,
 		//.graphics_type = MyGlib::Graphics::Manager::Type::Opengl,
 		.window_name = "My Game Lib Test",
 		.window_width_px = 1200,

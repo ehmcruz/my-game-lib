@@ -343,6 +343,20 @@ void SDL_GraphicsDriver::clear_vertex_buffers ()
 
 // ---------------------------------------------------
 
+void SDL_GraphicsDriver::begin_texture_loading ()
+{
+
+}
+
+// ---------------------------------------------------
+
+void SDL_GraphicsDriver::end_texture_loading ()
+{
+
+}
+
+// ---------------------------------------------------
+
 TextureDescriptor SDL_GraphicsDriver::load_texture (SDL_Surface *surface)
 {
 	SDL_TextureDescriptor *desc = new(this->memory_manager.allocate_type<SDL_TextureDescriptor>(1)) SDL_TextureDescriptor;
@@ -353,7 +367,12 @@ TextureDescriptor SDL_GraphicsDriver::load_texture (SDL_Surface *surface)
 	desc->texture = SDL_CreateTextureFromSurface(this->renderer, desc->surface);
 	mylib_assert_exception_msg(desc->texture != nullptr, "error converting surface to texture", '\n', SDL_GetError())
 
-	return TextureDescriptor { .data = desc };
+	return TextureDescriptor {
+		.data = desc,
+		.width_px = desc->surface->w,
+		.height_px = desc->surface->h,
+		.aspect_ratio = static_cast<fp_t>(desc->surface->w) / static_cast<fp_t>(desc->surface->h)
+		};
 }
 
 // ---------------------------------------------------

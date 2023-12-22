@@ -29,7 +29,9 @@
 #include <my-lib/matrix.h>
 
 #include <my-game-lib/graphics.h>
+#include <my-game-lib/texture-atlas.h>
 
+// ---------------------------------------------------
 
 namespace MyGlib
 {
@@ -37,10 +39,6 @@ namespace Graphics
 {
 namespace Opengl
 {
-
-// ---------------------------------------------------
-
-//#define MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
 
 // ---------------------------------------------------
 
@@ -57,9 +55,8 @@ protected:
 
 public:
 	Shader (const GLenum shader_type_, const std::string_view fname_);
+	~Shader ();
 	void compile ();
-
-	friend class Program;
 };
 
 // ---------------------------------------------------
@@ -68,11 +65,12 @@ class Program
 {
 protected:
 	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, program_id)
-	OO_ENCAPSULATE_PTR(Shader*, vs)
-	OO_ENCAPSULATE_PTR(Shader*, fs)
+	OO_ENCAPSULATE_PTR_INIT(Shader*, vs, nullptr)
+	OO_ENCAPSULATE_PTR_INIT(Shader*, fs, nullptr)
 
-public:
+protected:
 	Program ();
+	~Program ();
 	void attach_shaders ();
 	void link_program ();
 	void use_program ();
@@ -80,10 +78,11 @@ public:
 
 // ---------------------------------------------------
 
-template <typename T, uint32_t grow_factor=4096>
+template <typename T>
 class VertexBuffer
 {
 protected:
+	OO_ENCAPSULATE_SCALAR_INIT(uint32_t, grow_factor, 8*1024)
 	OO_ENCAPSULATE_PTR_INIT(T*, vertex_buffer, nullptr)
 	OO_ENCAPSULATE_SCALAR_INIT_READONLY(uint32_t, vertex_buffer_used, 0)
 	OO_ENCAPSULATE_SCALAR_INIT_READONLY(uint32_t, vertex_buffer_capacity, 0)
@@ -93,7 +92,7 @@ protected:
 		uint32_t old_capacity = this->vertex_buffer_capacity;
 		T *old_buffer = this->vertex_buffer;
 
-		this->vertex_buffer_capacity += grow_factor;
+		this->vertex_buffer_capacity += this->grow_factor;
 
 		if (this->vertex_buffer_capacity < target_capacity)
 			this->vertex_buffer_capacity = target_capacity;
@@ -107,9 +106,7 @@ protected:
 public:
 	VertexBuffer ()
 	{
-		static_assert(grow_factor > 0);
-
-		this->vertex_buffer_capacity = grow_factor; // can't be zero
+		this->vertex_buffer_capacity = this->grow_factor; // can't be zero
 		this->vertex_buffer = new T[this->vertex_buffer_capacity];
 
 		this->vertex_buffer_used = 0;
@@ -149,14 +146,14 @@ public:
 
 // ---------------------------------------------------
 
-class ProgramTriangle: public Program
+class ProgramTriangleColor: public Program
 {
 protected:
-	enum class Attrib : uint32_t {
-		Position,
-		Normal,
-		Offset,
-		Color
+	enum AttribIndex {
+		iPosition,
+		iNormal,
+		iOffset,
+		iColor
 	};
 
 public:
@@ -168,11 +165,7 @@ public:
 	};
 
 	struct Vertex {
-	#ifndef MYGLIB_OPENGL_SOFTWARE_CALCULATE_MATRIX
 		Graphics::Vertex gvertex;
-	#else
-		Point4 local_pos; // local x,y,z coords
-	#endif
 		Vector offset; // global x,y,z coords, which are added to the local coords
 		Color color; // rgba
 	};
@@ -181,22 +174,18 @@ public:
 	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vbo) // vertex buffer id
 
 protected:
-	VertexBuffer<Vertex, 8192> triangle_buffer;
+	VertexBuffer<Vertex> triangle_buffer;
 
 public:
-	ProgramTriangle ();
-
-	/*consteval static uint32_t get_stride_in_floats ()
-	{
-		return (sizeof(Vertex) / sizeof(GLfloat));
-	}*/
+	ProgramTriangleColor ();
+	~ProgramTriangleColor ();
 
 	inline void clear ()
 	{
 		this->triangle_buffer.clear();
 	}
 
-	inline std::span<ProgramTriangle::Vertex> alloc_vertices (const uint32_t n)
+	inline std::span<Vertex> alloc_vertices (const uint32_t n)
 	{
 		return this->triangle_buffer.alloc_vertices(n);
 	}
@@ -206,9 +195,64 @@ public:
 	void setup_vertex_array ();
 	void upload_vertex_buffer ();
 	void upload_uniforms (const Uniforms& uniforms);
-
 	void draw ();
+	void load ();
+	void debug ();
+};
 
+// ---------------------------------------------------
+
+class ProgramTriangleTexture: public Program
+{
+protected:
+	enum AttribIndex {
+		iPosition,
+		iNormal,
+		iOffset,
+		iTexCoords
+	};
+
+public:
+	struct Uniforms {
+		Matrix4 projection_matrix;
+		Color ambient_light_color;
+		Point point_light_pos;
+		Color point_light_color;
+	};
+
+	struct Vertex {
+		Graphics::Vertex gvertex;
+		Vector offset; // global x,y,z coords, which are added to the local coords
+		Vector2f tex_coords;
+	};
+
+	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vao) // vertex array descriptor id
+	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vbo) // vertex buffer id
+
+protected:
+	VertexBuffer<Vertex> triangle_buffer;
+
+public:
+	ProgramTriangleTexture ();
+	~ProgramTriangleTexture ();
+
+	inline void clear ()
+	{
+		this->triangle_buffer.clear();
+	}
+
+	inline std::span<Vertex> alloc_vertices (const uint32_t n)
+	{
+		return this->triangle_buffer.alloc_vertices(n);
+	}
+
+	void bind_vertex_array ();
+	void bind_vertex_buffer ();
+	void setup_vertex_array ();
+	void upload_vertex_buffer ();
+	void upload_uniforms (const Uniforms& uniforms);
+	void draw ();
+	void load ();
 	void debug ();
 };
 
@@ -218,9 +262,13 @@ class Renderer : public Manager
 {
 protected:
 	SDL_GLContext sdl_gl_context;
-	ProgramTriangle::Uniforms uniforms;
 
-	ProgramTriangle *program_triangle;
+	ProgramTriangleColor::Uniforms program_triangle_color_uniforms;
+	ProgramTriangleColor *program_triangle_color;
+
+	ProgramTriangleTexture::Uniforms program_triangle_texture_uniforms;
+	ProgramTriangleTexture *program_triangle_texture;
+	std::vector<TextureDescriptor> textures;
 
 public:
 	Renderer (const InitParams& params);
@@ -237,6 +285,9 @@ public:
 	void render () override final;
 	void update_screen () override final;
 	void clear_vertex_buffers () override final;
+	
+	void begin_texture_loading () override final;
+	void end_texture_loading () override final;
 	TextureDescriptor load_texture (SDL_Surface *surface) override final;
 	void destroy_texture (TextureDescriptor& texture) override final;
 

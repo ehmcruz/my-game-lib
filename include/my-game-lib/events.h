@@ -13,6 +13,8 @@
 #include <my-lib/any.h>
 #include <my-lib/memory.h>
 
+// ---------------------------------------------------
+
 namespace MyGlib
 {
 namespace Event

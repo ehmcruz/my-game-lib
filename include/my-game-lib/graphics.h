@@ -118,8 +118,9 @@ std::ostream& operator << (std::ostream& out, const Color& color);
 
 struct TextureDescriptor {
 	Mylib::Any<sizeof(void*), sizeof(void*)> data; // used by backend driver
-	uint32_t width_px;
-	uint32_t height_px;
+	int32_t width_px;
+	int32_t height_px;
+	fp_t aspect_ratio;
 };
 
 // ---------------------------------------------------
@@ -579,6 +580,9 @@ public:
 	virtual void render () = 0;
 	virtual void update_screen () = 0;
 	virtual void clear_vertex_buffers () = 0;
+
+	virtual void begin_texture_loading () = 0;
+	virtual void end_texture_loading () = 0;
 	virtual TextureDescriptor load_texture (SDL_Surface *surface) = 0;
 	virtual void destroy_texture (TextureDescriptor& texture) = 0;
 

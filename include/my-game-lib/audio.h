@@ -2,7 +2,6 @@
 #define __MY_GAME_LIB_AUDIO_HEADER_H__
 
 #include <string_view>
-#include <string_view>
 
 #include <cstdint>
 
@@ -11,6 +10,8 @@
 #include <my-lib/trigger.h>
 #include <my-lib/any.h>
 #include <my-lib/memory.h>
+
+// ---------------------------------------------------
 
 namespace MyGlib
 {
