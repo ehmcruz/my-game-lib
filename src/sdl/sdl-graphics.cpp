@@ -371,7 +371,9 @@ TextureDescriptor SDL_GraphicsDriver::load_texture (SDL_Surface *surface)
 		.data = desc,
 		.width_px = desc->surface->w,
 		.height_px = desc->surface->h,
-		.aspect_ratio = static_cast<fp_t>(desc->surface->w) / static_cast<fp_t>(desc->surface->h)
+		.aspect_ratio = static_cast<fp_t>(desc->surface->w) / static_cast<fp_t>(desc->surface->h),
+		.pos_x_px = 0,
+		.pos_y_px = 0
 		};
 }
 

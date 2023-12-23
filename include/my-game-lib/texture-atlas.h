@@ -3,6 +3,7 @@
 
 #include <string_view>
 #include <vector>
+#include <list>
 
 #include <cstdint>
 
@@ -20,7 +21,7 @@ namespace Graphics
 
 // ---------------------------------------------------
 
-class TextureAtlas
+class TextureAtlasCreator
 {
 protected:
 	struct EmptyArea {
@@ -30,22 +31,17 @@ protected:
 		int32_t y_end;
 	};
 
-	const int32_t min_size;
-	const int32_t max_size;
-
-	std::vector<EmptyArea> empty_areas;
-	std::vector<TextureDescriptor> textures;
+	std::list<TextureDescriptor*> textures;
 
 public:
-	TextureAtlas (const int32_t min_size_, const int32_t max_size_);
+	TextureAtlasCreator () = default;
+	MYLIB_DELETE_COPY_MOVE_CONSTRUCTOR_ASSIGN(TextureAtlasCreator)
 
-	MYLIB_DELETE_COPY_MOVE_CONSTRUCTOR_ASSIGN(TextureAtlas)
-
-	void add_texture (const TextureDescriptor& texture);
-	bool process ();
+	void add_texture (TextureDescriptor& texture);
+	std::vector<TextureDescriptor> create_atlas (const int32_t atlas_size);
 
 protected:
-	EmptyArea* find_empty_area (const TextureDescriptor& texture);
+	std::list<EmptyArea>::iterator find_empty_area (std::list<EmptyArea>& empty_areas, const TextureDescriptor& texture);
 };
 
 // ---------------------------------------------------

@@ -121,6 +121,11 @@ struct TextureDescriptor {
 	int32_t width_px;
 	int32_t height_px;
 	fp_t aspect_ratio;
+
+	// pos_x and pos_y are used by backend driver
+	// don't trust these values
+	int32_t pos_x_px;
+	int32_t pos_y_px;
 };
 
 // ---------------------------------------------------

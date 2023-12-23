@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <cmath>
 
+#include <SDL_image.h>
+
 #include <my-lib/math.h>
 
 #include <my-game-lib/debug.h>
@@ -474,14 +476,46 @@ void Renderer::begin_texture_loading ()
 
 void Renderer::end_texture_loading ()
 {
-	for (auto& tex_desc : this->textures) {
-		this->texture_atlas.add_texture(tex_desc);
-//		if (!this->texture_atlas.process()) {
-//			mylib_throw_exception_msg("error processing texture atlas");
-//		}
-	}
+	TextureAtlasCreator atlas_creator;
 
-	this->texture_atlas.process();
+	for (auto& tex_desc : this->textures)
+		atlas_creator.add_texture(tex_desc);
+
+	while (true) {
+		std::vector<TextureDescriptor> atlas = atlas_creator.create_atlas(max_texture_size);
+
+		if (atlas.empty())
+			break;
+
+		constexpr int32_t bits = 32;
+		constexpr Uint32 rmask = 0x000000FF;
+		constexpr Uint32 gmask = 0x0000FF00;
+		constexpr Uint32 bmask = 0x00FF0000;
+		constexpr Uint32 amask = 0xFF000000;
+
+		SDL_Surface *atlas_surface = SDL_CreateRGBSurface(0, max_texture_size, max_texture_size, bits, rmask, gmask, bmask, amask);
+		mylib_assert_exception_msg(atlas_surface != nullptr, "error creating surface", '\n', SDL_GetError())
+
+		dprintln("Atlas created with ", atlas.size(), " textures");
+
+		for (auto& tex_desc : atlas) {
+			Opengl_TextureDescriptor *desc = tex_desc.data.get_value<Opengl_TextureDescriptor*>();
+
+			dprintln("\tTexture of size", tex_desc.width_px, "x", tex_desc.height_px, " allocated at position ", tex_desc.pos_x_px, "x", tex_desc.pos_y_px);
+
+			SDL_Rect rect = {
+				.x = tex_desc.pos_x_px,
+				.y = tex_desc.pos_y_px,
+				.w = tex_desc.width_px,
+				.h = tex_desc.height_px
+			};
+
+			SDL_BlitSurface(desc->surface, nullptr, atlas_surface, &rect);
+			SDL_FreeSurface(desc->surface);
+		}
+
+		{ static int i = 0; std::string fname = "atlas" + std::to_string(i++) + ".png"; IMG_SavePNG(atlas_surface, fname.data()); }
+	};
 }
 
 // ---------------------------------------------------
@@ -522,7 +556,9 @@ TextureDescriptor Renderer::load_texture (SDL_Surface *surface)
 		.data = desc,
 		.width_px = desc->width_px,
 		.height_px = desc->height_px,
-		.aspect_ratio = static_cast<fp_t>(desc->width_px) / static_cast<fp_t>(desc->height_px)
+		.aspect_ratio = static_cast<fp_t>(desc->width_px) / static_cast<fp_t>(desc->height_px),
+		.pos_x_px = -1, // the position will be known after the texture atlas is created
+		.pos_y_px = -1
 		};
 	
 	this->textures.push_back(user_desc);

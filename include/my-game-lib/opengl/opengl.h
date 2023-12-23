@@ -293,7 +293,6 @@ public:
 class Renderer : public Manager
 {
 protected:
-	static inline constexpr int32_t min_texture_size = 128;
 	static inline constexpr int32_t max_texture_size = 4096;
 
 	SDL_GLContext sdl_gl_context;
@@ -304,7 +303,6 @@ protected:
 	ProgramTriangleTexture::Uniforms program_triangle_texture_uniforms;
 	ProgramTriangleTexture *program_triangle_texture;
 	std::vector<TextureDescriptor> textures;
-	TextureAtlas texture_atlas = TextureAtlas(min_texture_size, max_texture_size);
 
 public:
 	Renderer (const InitParams& params);
