@@ -23,14 +23,14 @@ namespace Graphics
 
 class TextureAtlasCreator
 {
-protected:
-	struct EmptyArea {
+public:
+	struct AtlasTexture {
+		TextureDescriptor *texture;
 		int32_t x_ini;
 		int32_t y_ini;
-		int32_t x_end;
-		int32_t y_end;
 	};
 
+protected:
 	std::list<TextureDescriptor*> textures;
 
 public:
@@ -38,10 +38,7 @@ public:
 	MYLIB_DELETE_COPY_MOVE_CONSTRUCTOR_ASSIGN(TextureAtlasCreator)
 
 	void add_texture (TextureDescriptor& texture);
-	std::vector<TextureDescriptor> create_atlas (const int32_t atlas_size);
-
-protected:
-	std::list<EmptyArea>::iterator find_empty_area (std::list<EmptyArea>& empty_areas, const TextureDescriptor& texture);
+	std::vector<AtlasTexture> create_atlas (const int32_t atlas_size);
 };
 
 // ---------------------------------------------------

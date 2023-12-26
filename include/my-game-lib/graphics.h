@@ -121,11 +121,6 @@ struct TextureDescriptor {
 	int32_t width_px;
 	int32_t height_px;
 	fp_t aspect_ratio;
-
-	// pos_x and pos_y are used by backend driver
-	// don't trust these values
-	int32_t pos_x_px;
-	int32_t pos_y_px;
 };
 
 // ---------------------------------------------------
@@ -414,12 +409,12 @@ public:
 class Rect2D : public Shape
 {
 public:
-/*	enum PositionIndex {
+	enum PositionIndex {
 		LeftTop,
 		LeftBottom,
 		RightTop,
 		RightBottom
-	};*/
+	};
 
 	static consteval uint32_t get_n_vertices ()
 	{

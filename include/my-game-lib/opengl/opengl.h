@@ -48,6 +48,7 @@ struct Opengl_TextureDescriptor
 	GLuint texture_id;
 	int32_t width_px;
 	int32_t height_px;
+	Vector2f tex_coords[4];
 };
 
 // ---------------------------------------------------

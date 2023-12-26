@@ -15,6 +15,42 @@ namespace Graphics
 
 // ---------------------------------------------------
 
+struct EmptyArea {
+	int32_t x_ini;
+	int32_t y_ini;
+	int32_t x_end;
+	int32_t y_end;
+};
+
+// ---------------------------------------------------
+
+static std::list<EmptyArea>::iterator find_empty_area (std::list<EmptyArea>& empty_areas, const TextureDescriptor& texture)
+{
+	std::list<EmptyArea>::iterator best_it = empty_areas.end();
+	int32_t best_area = std::numeric_limits<int32_t>::max();
+
+	for (auto it = empty_areas.begin(); it != empty_areas.end(); it++) {
+		auto& empty_area = *it;
+		const int32_t w = empty_area.x_end - empty_area.x_ini;
+		const int32_t h = empty_area.y_end - empty_area.y_ini;
+		const int32_t area = w * h;
+
+		if (w >= texture.width_px && h >= texture.height_px) {
+			// If we arrive here, we have found an empty area that fits the texture.
+			// Now, let's check if it's the best empty area.
+
+			if (area < best_area) {
+				best_it = it;
+				best_area = area;
+			}
+		}
+	}
+
+	return best_it; // end() if no empty area fits the texture
+}
+
+// ---------------------------------------------------
+
 void TextureAtlasCreator::add_texture (TextureDescriptor& texture)
 {
 	this->textures.push_back(&texture);
@@ -22,9 +58,9 @@ void TextureAtlasCreator::add_texture (TextureDescriptor& texture)
 
 // ---------------------------------------------------
 
-std::vector<TextureDescriptor> TextureAtlasCreator::create_atlas (const int32_t atlas_size)
+std::vector<TextureAtlasCreator::AtlasTexture> TextureAtlasCreator::create_atlas (const int32_t atlas_size)
 {
-	std::vector<TextureDescriptor> atlas;
+	std::vector<AtlasTexture> atlas;
 
 	if (this->textures.empty())
 		return atlas;
@@ -57,7 +93,7 @@ std::vector<TextureDescriptor> TextureAtlasCreator::create_atlas (const int32_t 
 		auto *tex_desc_ptr = *it;
 		auto& tex_desc = *tex_desc_ptr;
 
-		auto empty_area_it = this->find_empty_area(empty_areas, tex_desc);
+		auto empty_area_it = find_empty_area(empty_areas, tex_desc);
 
 		if (empty_area_it == empty_areas.end()) // no space for the texture, try next one
 			continue;
@@ -67,11 +103,14 @@ std::vector<TextureDescriptor> TextureAtlasCreator::create_atlas (const int32_t 
 		// We have found an empty area that fits the texture.
 		
 		// set the position of the texture in the atlas
-		tex_desc.pos_x_px = empty_area.x_ini;
-		tex_desc.pos_y_px = empty_area.y_ini;
+		const AtlasTexture atlas_tex = {
+			.texture = tex_desc_ptr,
+			.x_ini = empty_area.x_ini,
+			.y_ini = empty_area.y_ini
+		};
 
 		// add texture to atlas
-		atlas.push_back(tex_desc);
+		atlas.push_back(atlas_tex);
 
 		//dprintln("Texture of size", tex_desc.width_px, "x", tex_desc.height_px, " allocated at position ", tex_desc.pos_x_px, "x", tex_desc.pos_y_px);
 
@@ -118,33 +157,6 @@ std::vector<TextureDescriptor> TextureAtlasCreator::create_atlas (const int32_t 
 	}
 
 	return atlas;
-}
-
-// ---------------------------------------------------
-
-std::list<TextureAtlasCreator::EmptyArea>::iterator TextureAtlasCreator::find_empty_area (std::list<EmptyArea>& empty_areas, const TextureDescriptor& texture)
-{
-	std::list<EmptyArea>::iterator best_it = empty_areas.end();
-	int32_t best_area = std::numeric_limits<int32_t>::max();
-
-	for (auto it = empty_areas.begin(); it != empty_areas.end(); it++) {
-		auto& empty_area = *it;
-		const int32_t w = empty_area.x_end - empty_area.x_ini;
-		const int32_t h = empty_area.y_end - empty_area.y_ini;
-		const int32_t area = w * h;
-
-		if (w >= texture.width_px && h >= texture.height_px) {
-			// If we arrive here, we have found an empty area that fits the texture.
-			// Now, let's check if it's the best empty area.
-
-			if (area < best_area) {
-				best_it = it;
-				best_area = area;
-			}
-		}
-	}
-
-	return best_it; // end() if no empty area fits the texture
 }
 
 // ---------------------------------------------------
