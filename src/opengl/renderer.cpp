@@ -627,6 +627,7 @@ void Renderer::end_texture_loading ()
 			ensure_no_error();
 #endif
 			SDL_FreeSurface(desc->surface);
+			desc->surface = nullptr;
 
 			desc->atlas = &atlas_desc;
 

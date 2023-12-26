@@ -83,11 +83,11 @@ LightPointDescriptor light;
 Cube3D cube (1);
 Vector cube_pos (-2, -2, -4);
 
-Cube3D cube_color (0.5);
+Cube3D cube_color (1.5);
 
 Sphere3D sphere(2);
 
-Point camera_pos(-2, -2, -10);
+Point camera_pos(-0.5, -0.5, -10);
 Point camera_vector(0, 0, 1);
 
 Rect2D samus_rect;
@@ -208,7 +208,7 @@ void render ()
 		} );
 	
 	renderer->draw_cube3D(cube, cube_pos, { .desc = box_texture });
-	renderer->draw_cube3D(cube_color, Vector(3, -5, 0), Color::red());
+	renderer->draw_cube3D(cube_color, Vector(3, -3, -1), Color::red());
 	renderer->draw_sphere3D(sphere, Vector(0, 0, 0), Color::green());
 
 	renderer->render();
