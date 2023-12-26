@@ -518,6 +518,7 @@ void Renderer::end_texture_loading ()
 
 		Opengl_AtlasDescriptor& atlas_desc = this->atlases.back();
 
+#if 0
 		constexpr int32_t bits = 32;
 		constexpr Uint32 rmask = 0x000000FF;
 		constexpr Uint32 gmask = 0x0000FF00;
@@ -526,6 +527,7 @@ void Renderer::end_texture_loading ()
 
 		SDL_Surface *atlas_surface = SDL_CreateRGBSurface(0, max_texture_size, max_texture_size, bits, rmask, gmask, bmask, amask);
 		mylib_assert_exception_msg(atlas_surface != nullptr, "error creating surface", '\n', SDL_GetError())
+#endif
 
 		dprintln("Atlas created with ", atlas.size(), " textures");
 
@@ -535,6 +537,7 @@ void Renderer::end_texture_loading ()
 
 			dprintln("\tTexture of size ", tex_desc.width_px, "x", tex_desc.height_px, " allocated at position ", atlas_tex_desc.x_ini, "x", atlas_tex_desc.y_ini);
 
+#if 0
 			SDL_Rect rect = {
 				.x = atlas_tex_desc.x_ini,
 				.y = atlas_tex_desc.y_ini,
@@ -543,6 +546,21 @@ void Renderer::end_texture_loading ()
 			};
 
 			SDL_BlitSurface(desc->surface, nullptr, atlas_surface, &rect);
+#else
+			glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+				0,
+				atlas_tex_desc.x_ini,
+				atlas_tex_desc.y_ini,
+				tex_depth,
+				tex_desc.width_px,
+				tex_desc.height_px,
+				1,
+				GL_RGBA,
+				GL_UNSIGNED_BYTE,
+				desc->surface->pixels);
+			
+			ensure_no_error();
+#endif
 			SDL_FreeSurface(desc->surface);
 
 			desc->atlas = &atlas_desc;
@@ -555,6 +573,7 @@ void Renderer::end_texture_loading ()
 			desc->tex_coords[RightBottom] = Vector2f(static_cast<fp_t>(atlas_tex_desc.x_ini + tex_desc.width_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(atlas_tex_desc.y_ini + tex_desc.height_px) / static_cast<fp_t>(max_texture_size));
 		}
 
+#if 0
 		{ static int i = 0; std::string fname = "atlas" + std::to_string(i++) + ".png"; IMG_SavePNG(atlas_surface, fname.data()); }
 
 		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
@@ -572,6 +591,7 @@ void Renderer::end_texture_loading ()
 		ensure_no_error();
 
 		SDL_FreeSurface(atlas_surface);
+#endif
 
 		tex_depth++;
 	};
