@@ -165,6 +165,71 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const Color& col
 
 // ---------------------------------------------------
 
+void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const std::array<TextureRenderOptions, 6>& texture_options)
+{
+	constexpr uint32_t n_vertices = Cube3D::get_n_vertices();
+	std::span<ProgramTriangleTexture::Vertex> vertices = this->program_triangle_texture->alloc_vertices(n_vertices);
+	std::span<Vertex> shape_vertices = cube.get_local_rotated_vertices();
+
+	mylib_assert_exception(shape_vertices.size() == n_vertices)
+
+	for (uint32_t i=0; i<n_vertices; i++) {
+		vertices[i].gvertex = shape_vertices[i];
+		vertices[i].offset = offset;
+	}
+
+	// Texture coordinates must be applied in the same order
+	// as the vertices are calculated in Cube3D::calculate_vertices
+
+	uint32_t i = 0;
+
+	using VertexPositionIndex = Cube3D::VertexPositionIndex;
+	using enum Cube3D::VertexPositionIndex;
+	using enum Cube3D::SurfacePositionIndex;
+
+	auto mount = [&i, vertices] (const VertexPositionIndex p, const Vector3f& v, const TextureRenderOptions& render_options) -> void {
+		const Opengl_TextureDescriptor *desc = render_options.desc.data.get_value<Opengl_TextureDescriptor*>();
+		const Opengl_AtlasDescriptor *atlas = desc->atlas;
+
+		vertices[i].tex_coords = Vector3f(v.x, v.y, atlas->texture_depth);
+		i++;
+	};
+
+	auto mount_triangle = [&mount] (const VertexPositionIndex p1, const VertexPositionIndex p2, const VertexPositionIndex p3, const Vector3f& v1, const Vector3f& v2, const Vector3f& v3, const TextureRenderOptions& render_options) -> void {
+		mount(p1, v1, render_options);
+		mount(p2, v2, render_options);
+		mount(p3, v3, render_options);
+	};
+
+	// p1 and p2 should be a diagonal of the rectangle
+	auto mount_surface = [&mount_triangle] (const VertexPositionIndex p1, const VertexPositionIndex p2, const VertexPositionIndex p3, const VertexPositionIndex p4, const TextureRenderOptions& render_options) -> void {
+		const Opengl_TextureDescriptor *desc = render_options.desc.data.get_value<Opengl_TextureDescriptor*>();
+
+		mount_triangle(p1, p2, p3, desc->tex_coords[Rect2D::LeftTop], desc->tex_coords[Rect2D::RightBottom], desc->tex_coords[Rect2D::RightTop], render_options);
+		mount_triangle(p1, p2, p4, desc->tex_coords[Rect2D::LeftTop], desc->tex_coords[Rect2D::RightBottom], desc->tex_coords[Rect2D::LeftBottom], render_options);
+	};
+
+	// bottom
+	mount_surface(LeftBottomFront, RightBottomBack, RightBottomFront, LeftBottomBack, texture_options[Bottom]);
+
+	// top
+	mount_surface(LeftTopFront, RightTopBack, RightTopFront, LeftTopBack, texture_options[Top]);
+
+	// front
+	mount_surface(LeftTopFront, RightBottomFront, RightTopFront, LeftBottomFront, texture_options[Front]);
+
+	// back
+	mount_surface(LeftTopBack, RightBottomBack, RightTopBack, LeftBottomBack, texture_options[Back]);
+
+	// left
+	mount_surface(LeftTopFront, LeftBottomBack, LeftTopBack, LeftBottomFront, texture_options[Left]);
+
+	// right
+	mount_surface(RightTopFront, RightBottomBack, RightTopBack, RightBottomFront, texture_options[Right]);
+}
+
+// ---------------------------------------------------
+
 void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color)
 {
 	const uint32_t n_vertices = sphere.get_n_vertices();
@@ -240,10 +305,10 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& col
 	}
 }
 
-void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDescriptor& texture_desc)
+void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRenderOptions& texture_options)
 {
-	Opengl_TextureDescriptor *desc = texture_desc.data.get_value<Opengl_TextureDescriptor*>();
-	Opengl_AtlasDescriptor *atlas = desc->atlas;
+	const Opengl_TextureDescriptor *desc = texture_options.desc.data.get_value<Opengl_TextureDescriptor*>();
+	const Opengl_AtlasDescriptor *atlas = desc->atlas;
 
 	constexpr uint32_t n_vertices = Rect2D::get_n_vertices();
 	std::span<ProgramTriangleTexture::Vertex> vertices = this->program_triangle_texture->alloc_vertices(n_vertices);
@@ -259,7 +324,7 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDes
 
 	// we have to follow the same order used in Rect2D::calculate_vertices
 
-	using enum Rect2D::PositionIndex;
+	using enum Rect2D::VertexPositionIndex;
 
 	vertices[0].tex_coords = Vector3f(desc->tex_coords[LeftTop].x, desc->tex_coords[LeftTop].y, atlas->texture_depth); // upper left
 	vertices[1].tex_coords = Vector3f(desc->tex_coords[RightBottom].x, desc->tex_coords[RightBottom].y, atlas->texture_depth); // down right
@@ -565,7 +630,7 @@ void Renderer::end_texture_loading ()
 
 			desc->atlas = &atlas_desc;
 
-			using enum Rect2D::PositionIndex;
+			using enum Rect2D::VertexPositionIndex;
 
 			desc->tex_coords[LeftTop] = Vector2f(static_cast<fp_t>(atlas_tex_desc.x_ini) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(atlas_tex_desc.y_ini) / static_cast<fp_t>(max_texture_size));
 			desc->tex_coords[LeftBottom] = Vector2f(static_cast<fp_t>(atlas_tex_desc.x_ini) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(atlas_tex_desc.y_ini + tex_desc.height_px) / static_cast<fp_t>(max_texture_size));

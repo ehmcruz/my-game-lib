@@ -83,6 +83,8 @@ LightPointDescriptor light;
 Cube3D cube (1);
 Vector cube_pos (-2, -2, -4);
 
+Cube3D cube_color (0.5);
+
 Sphere3D sphere(2);
 
 Point camera_pos(-2, -2, -10);
@@ -103,6 +105,7 @@ TextureDescriptor samus_texture;
 TextureDescriptor tree_texture;
 TextureDescriptor yoshi_texture;
 TextureDescriptor zelda_texture;
+TextureDescriptor box_texture;
 
 void setup ()
 {
@@ -128,6 +131,7 @@ void setup ()
 	tree_texture = renderer->load_texture("tests-assets/tree.png");
 	yoshi_texture = renderer->load_texture("tests-assets/yoshi.jpg");
 	zelda_texture = renderer->load_texture("tests-assets/zelda.jpg");
+	box_texture = renderer->load_texture("tests-assets/box.png");
 	renderer->end_texture_loading();
 	
 	samus_rect.set_size(1.0, 1.0 / samus_texture.aspect_ratio);
@@ -169,7 +173,7 @@ void render ()
 	constexpr float zoom = 1.0;
 	renderer->wait_next_frame();
 
-#if 1
+#if 0
 	const Vector2 ws = renderer->get_normalized_window_size();
 
 	renderer->setup_render_2D( MyGlib::Graphics::RenderArgs2D {
@@ -185,10 +189,10 @@ void render ()
 	const fp_t z_2d = 0.98;
 
 	renderer->draw_rect2D(Rect2D(4, 2), Vector(3, 3, z_2d), Color::red());
-	renderer->draw_rect2D(Rect2D(6, 3), Vector(5, 5, z_2d-0.05), earth_high_texture);
+	renderer->draw_rect2D(Rect2D(6, 3), Vector(5, 5, z_2d-0.05), { .desc = earth_high_texture });
 	renderer->draw_circle2D(Circle2D(3), Vector(5, 5, z_2d), Color::green());
 	renderer->draw_circle2D(Circle2D(0.5), Vector(8, 8, z_2d), Color::blue());
-	renderer->draw_rect2D(samus_rect, Vector(6, 3, z_2d-0.1), samus_texture);
+	renderer->draw_rect2D(samus_rect, Vector(6, 3, z_2d-0.1), { .desc = samus_texture });
 
 	renderer->render();
 
@@ -203,7 +207,8 @@ void render ()
 		.ambient_light_color = {1, 1, 1, 0.3},
 		} );
 	
-	renderer->draw_cube3D(cube, cube_pos, Color::red());
+	renderer->draw_cube3D(cube, cube_pos, { .desc = box_texture });
+	renderer->draw_cube3D(cube_color, Vector(3, -5, 0), Color::red());
 	renderer->draw_sphere3D(sphere, Vector(0, 0, 0), Color::green());
 
 	renderer->render();

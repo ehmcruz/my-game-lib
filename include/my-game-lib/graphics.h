@@ -220,7 +220,7 @@ public:
 		return 36; // 6 sides * 2 triangles * 3 vertices
 	}
 
-	enum PositionIndex {
+	enum VertexPositionIndex {
 		LeftTopFront,
 		LeftBottomFront,
 		RightTopFront,
@@ -229,6 +229,15 @@ public:
 		LeftBottomBack,
 		RightTopBack,
 		RightBottomBack
+	};
+
+	enum SurfacePositionIndex {
+		Front,
+		Back,
+		Left,
+		Right,
+		Top,
+		Bottom
 	};
 
 protected:
@@ -409,7 +418,7 @@ public:
 class Rect2D : public Shape
 {
 public:
-	enum PositionIndex {
+	enum VertexPositionIndex {
 		LeftTop,
 		LeftBottom,
 		RightTop,
@@ -489,6 +498,14 @@ struct RenderArgs2D {
 	*/
 	fp_t world_screen_width;
 	// world_screen_height will be calculated automatically from the aspect ratio
+};
+
+// ---------------------------------------------------
+
+struct TextureRenderOptions {
+	TextureDescriptor desc;
+//	bool flip_x = false;
+//	bool flip_y = false;
 };
 
 // ---------------------------------------------------
@@ -578,10 +595,11 @@ public:
 
 	virtual void wait_next_frame () = 0;
 	virtual void draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color) = 0;
+	virtual void draw_cube3D (Cube3D& cube, const Vector& offset, const std::array<TextureRenderOptions, 6>& texture_options) = 0;
 	virtual void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color) = 0;
 	virtual void draw_circle2D (Circle2D& circle, const Vector& offset, const Color& color) = 0;
 	virtual void draw_rect2D (Rect2D& rect, const Vector& offset, const Color& color) = 0;
-	virtual void draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDescriptor& texture_desc) = 0;
+	virtual void draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRenderOptions& texture_options) = 0;
 	virtual void setup_render_3D (const RenderArgs3D& args) = 0;
 	virtual void setup_render_2D (const RenderArgs2D& args) = 0;
 	virtual void render () = 0;
@@ -592,6 +610,22 @@ public:
 	virtual void end_texture_loading () = 0;
 	virtual TextureDescriptor load_texture (SDL_Surface *surface) = 0;
 	virtual void destroy_texture (TextureDescriptor& texture) = 0;
+
+	// 3D Wrappers
+
+	void draw_cube3D (Cube3D& cube, const Vector& offset, const TextureRenderOptions& texture_options)
+	{
+		const std::array<TextureRenderOptions, 6> texture_options_array = {
+			texture_options,
+			texture_options,
+			texture_options,
+			texture_options,
+			texture_options,
+			texture_options
+		};
+
+		this->draw_cube3D(cube, offset, texture_options_array);
+	}
 
 	// 2D Wrappers
 
@@ -615,9 +649,9 @@ public:
 		this->draw_rect2D(rect, Vector(offset.x, offset.y, 0), color);
 	}
 
-	void draw_rect2D (Rect2D&& rect, const Vector& offset, const TextureDescriptor& texture_desc)
+	void draw_rect2D (Rect2D&& rect, const Vector& offset, const TextureRenderOptions& texture_options)
 	{
-		this->draw_rect2D(rect, offset, texture_desc);
+		this->draw_rect2D(rect, offset, texture_options);
 	}
 
 	// Texture wrappers

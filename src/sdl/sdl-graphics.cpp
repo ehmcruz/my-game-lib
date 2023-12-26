@@ -23,7 +23,7 @@ namespace Graphics
 // ---------------------------------------------------
 
 struct SDL_TextureDescriptor {
-	SDL_Surface *surface;
+	//SDL_Surface *surface;
 	SDL_Texture *texture;
 };
 
@@ -163,6 +163,11 @@ void SDL_GraphicsDriver::draw_cube3D (Cube3D& cube, const Vector& offset, const 
 	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
 }
 
+void SDL_GraphicsDriver::draw_cube3D (Cube3D& cube, const Vector& offset, const std::array<TextureRenderOptions, 6>& texture_options)
+{
+	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
+}
+
 // ---------------------------------------------------
 
 void SDL_GraphicsDriver::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color)
@@ -226,10 +231,10 @@ void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const 
 	SDL_RenderFillRect(this->renderer, &sdl_rect);
 }
 
-void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDescriptor& texture_desc)
+void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRenderOptions& texture_options)
 {
 	const SDL_Rect sdl_rect = this->helper_calc_sdl_rect(rect, offset);
-	SDL_TextureDescriptor *desc = texture_desc.data.get_value<SDL_TextureDescriptor*>();
+	SDL_TextureDescriptor *desc = texture_options.desc.data.get_value<SDL_TextureDescriptor*>();
 
 	SDL_RenderCopy(this->renderer, desc->texture, nullptr, &sdl_rect);
 }
@@ -361,17 +366,17 @@ TextureDescriptor SDL_GraphicsDriver::load_texture (SDL_Surface *surface)
 {
 	SDL_TextureDescriptor *desc = new(this->memory_manager.allocate_type<SDL_TextureDescriptor>(1)) SDL_TextureDescriptor;
 
-	desc->surface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, 0);
-	mylib_assert_exception_msg(desc->surface != nullptr, "error converting surface format", '\n', SDL_GetError())
+//	desc->surface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, 0);
+//	mylib_assert_exception_msg(desc->surface != nullptr, "error converting surface format", '\n', SDL_GetError())
 
-	desc->texture = SDL_CreateTextureFromSurface(this->renderer, desc->surface);
+	desc->texture = SDL_CreateTextureFromSurface(this->renderer, surface);
 	mylib_assert_exception_msg(desc->texture != nullptr, "error converting surface to texture", '\n', SDL_GetError())
 
 	return TextureDescriptor {
 		.data = desc,
-		.width_px = desc->surface->w,
-		.height_px = desc->surface->h,
-		.aspect_ratio = static_cast<fp_t>(desc->surface->w) / static_cast<fp_t>(desc->surface->h)
+		.width_px = surface->w,
+		.height_px = surface->h,
+		.aspect_ratio = static_cast<fp_t>(surface->w) / static_cast<fp_t>(surface->h)
 		};
 }
 

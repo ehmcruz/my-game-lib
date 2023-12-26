@@ -127,20 +127,20 @@ void Cube3D::calculate_vertices () noexcept
 
 	uint32_t i = 0;
 
-	auto mount = [&i, this, &points] (const PositionIndex p, const Vector& normal) -> void {
+	auto mount = [&i, this, &points] (const VertexPositionIndex p, const Vector& normal) -> void {
 		this->vertices[i].pos = points[p];
 		this->vertices[i].normal = normal;
 		i++;
 	};
 
-	auto mount_triangle = [&mount] (const PositionIndex p1, const PositionIndex p2, const PositionIndex p3, const Vector& normal) -> void {
+	auto mount_triangle = [&mount] (const VertexPositionIndex p1, const VertexPositionIndex p2, const VertexPositionIndex p3, const Vector& normal) -> void {
 		mount(p1, normal);
 		mount(p2, normal);
 		mount(p3, normal);
 	};
 
 	// p1 and p2 should be a diagonal of the rectangle
-	auto mount_surface = [&mount_triangle] (const PositionIndex p1, const PositionIndex p2, const PositionIndex p3, const PositionIndex p4, const Vector& normal) -> void {
+	auto mount_surface = [&mount_triangle] (const VertexPositionIndex p1, const VertexPositionIndex p2, const VertexPositionIndex p3, const VertexPositionIndex p4, const Vector& normal) -> void {
 		mount_triangle(p1, p2, p3, normal);
 		mount_triangle(p1, p2, p4, normal);
 	};
