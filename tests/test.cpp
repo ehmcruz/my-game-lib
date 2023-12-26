@@ -185,6 +185,7 @@ void render ()
 	const fp_t z_2d = 0.98;
 
 	renderer->draw_rect2D(Rect2D(4, 2), Vector(3, 3, z_2d), Color::red());
+	renderer->draw_rect2D(Rect2D(6, 3), Vector(5, 5, z_2d-0.05), earth_high_texture);
 	renderer->draw_circle2D(Circle2D(3), Vector(5, 5, z_2d), Color::green());
 	renderer->draw_circle2D(Circle2D(0.5), Vector(8, 8, z_2d), Color::blue());
 	renderer->draw_rect2D(samus_rect, Vector(6, 3, z_2d-0.1), samus_texture);

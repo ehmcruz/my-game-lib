@@ -336,7 +336,7 @@ ProgramTriangleTexture::ProgramTriangleTexture ()
 	static_assert(sizeof(Vector) == sizeof(fp_t) * 3);
 	static_assert(sizeof(Vector) == sizeof(Point));
 	static_assert(sizeof(Color) == sizeof(float) * 4);
-	static_assert(sizeof(Vertex) == (sizeof(Graphics::Vertex) + sizeof(Vector) + sizeof(Vector2f)));
+	static_assert(sizeof(Vertex) == (sizeof(Graphics::Vertex) + sizeof(Vector) + sizeof(Vector3f)));
 
 	this->vs = new Shader(GL_VERTEX_SHADER, "shaders/triangles-texture.vert");
 	this->vs->compile();
@@ -402,7 +402,7 @@ void ProgramTriangleTexture::setup_vertex_arrays ()
 	glVertexAttribPointer(iOffset, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
 	
 	pos += length;
-	length = 2;
+	length = 3;
 	glVertexAttribPointer(iTexCoords, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
 
 	ensure_no_error();

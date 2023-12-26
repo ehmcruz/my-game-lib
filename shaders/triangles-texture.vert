@@ -3,11 +3,11 @@
 in vec3 i_position;
 in vec3 i_normal;
 in vec3 i_offset;
-in vec2 i_tex_coord;
+in vec3 i_tex_coord;
 
 out vec3 world_position;
 out vec3 normal;
-out vec2 tex_coord;
+out vec3 tex_coord;
 
 uniform mat4 u_projection_matrix;
 

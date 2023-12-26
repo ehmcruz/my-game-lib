@@ -16,7 +16,7 @@ precision mediump float;
 
 in vec3 world_position;
 in vec3 normal;
-in vec2 tex_coord;
+in vec3 tex_coord;
 
 out vec4 o_color;
 
@@ -25,7 +25,7 @@ uniform vec4 u_ambient_light_color;
 uniform vec3 u_point_light_pos;
 uniform vec4 u_point_light_color;
 
-uniform sampler2D u_tx_unit;
+uniform mediump sampler2DArray u_tx_unit;
 
 void main ()
 {

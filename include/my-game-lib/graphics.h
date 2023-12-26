@@ -615,6 +615,11 @@ public:
 		this->draw_rect2D(rect, Vector(offset.x, offset.y, 0), color);
 	}
 
+	void draw_rect2D (Rect2D&& rect, const Vector& offset, const TextureDescriptor& texture_desc)
+	{
+		this->draw_rect2D(rect, offset, texture_desc);
+	}
+
 	// Texture wrappers
 
 	TextureDescriptor load_texture (const std::string_view fname);

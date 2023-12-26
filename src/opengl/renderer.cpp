@@ -242,6 +242,9 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& col
 
 void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDescriptor& texture_desc)
 {
+	Opengl_TextureDescriptor *desc = texture_desc.data.get_value<Opengl_TextureDescriptor*>();
+	Opengl_AtlasDescriptor *atlas = desc->atlas;
+
 	constexpr uint32_t n_vertices = Rect2D::get_n_vertices();
 	std::span<ProgramTriangleTexture::Vertex> vertices = this->program_triangle_texture->alloc_vertices(n_vertices);
 	std::span<Vertex> shape_vertices = rect.get_local_rotated_vertices();
@@ -256,12 +259,14 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureDes
 
 	// we have to follow the same order used in Rect2D::calculate_vertices
 
-	vertices[0].tex_coords = Vector2f(0, 0); // upper left
-	vertices[1].tex_coords = Vector2f(1, 1); // down right
-	vertices[2].tex_coords = Vector2f(0, 1); // down left
-	vertices[3].tex_coords = Vector2f(0, 0); // upper left
-	vertices[4].tex_coords = Vector2f(1, 0); // upper right
-	vertices[5].tex_coords = Vector2f(1, 1); // down right
+	using enum Rect2D::PositionIndex;
+
+	vertices[0].tex_coords = Vector3f(desc->tex_coords[LeftTop].x, desc->tex_coords[LeftTop].y, atlas->texture_depth); // upper left
+	vertices[1].tex_coords = Vector3f(desc->tex_coords[RightBottom].x, desc->tex_coords[RightBottom].y, atlas->texture_depth); // down right
+	vertices[2].tex_coords = Vector3f(desc->tex_coords[LeftBottom].x, desc->tex_coords[LeftBottom].y, atlas->texture_depth); // down left
+	vertices[3].tex_coords = Vector3f(desc->tex_coords[LeftTop].x, desc->tex_coords[LeftTop].y, atlas->texture_depth); // upper left
+	vertices[4].tex_coords = Vector3f(desc->tex_coords[RightTop].x, desc->tex_coords[RightTop].y, atlas->texture_depth); // upper right
+	vertices[5].tex_coords = Vector3f(desc->tex_coords[RightBottom].x, desc->tex_coords[RightBottom].y, atlas->texture_depth); // down right
 }
 
 // ---------------------------------------------------
@@ -481,11 +486,37 @@ void Renderer::end_texture_loading ()
 	for (auto& tex_desc : this->textures)
 		atlas_creator.add_texture(tex_desc);
 
+	std::list< std::vector<TextureAtlasCreator::AtlasTexture> > atlas_list;
+
 	while (true) {
 		std::vector<TextureAtlasCreator::AtlasTexture> atlas = atlas_creator.create_atlas(max_texture_size);
 
 		if (atlas.empty())
 			break;
+		
+		atlas_list.push_back(std::move(atlas));
+	}
+
+	glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
+	ensure_no_error();
+
+	glGenTextures(1, &this->texture_array_id);
+	ensure_no_error();
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, this->texture_array_id);
+	ensure_no_error();
+
+	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, max_texture_size, max_texture_size, atlas_list.size());
+	ensure_no_error();
+
+	for (GLint tex_depth = 0; auto& atlas : atlas_list) {
+		this->atlases.push_back( Opengl_AtlasDescriptor {
+			.texture_depth = static_cast<float>(tex_depth),
+			.width_px = max_texture_size,
+			.height_px = max_texture_size
+		} );
+
+		Opengl_AtlasDescriptor& atlas_desc = this->atlases.back();
 
 		constexpr int32_t bits = 32;
 		constexpr Uint32 rmask = 0x000000FF;
@@ -514,6 +545,8 @@ void Renderer::end_texture_loading ()
 			SDL_BlitSurface(desc->surface, nullptr, atlas_surface, &rect);
 			SDL_FreeSurface(desc->surface);
 
+			desc->atlas = &atlas_desc;
+
 			using enum Rect2D::PositionIndex;
 
 			desc->tex_coords[LeftTop] = Vector2f(static_cast<fp_t>(atlas_tex_desc.x_ini) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(atlas_tex_desc.y_ini) / static_cast<fp_t>(max_texture_size));
@@ -523,6 +556,24 @@ void Renderer::end_texture_loading ()
 		}
 
 		{ static int i = 0; std::string fname = "atlas" + std::to_string(i++) + ".png"; IMG_SavePNG(atlas_surface, fname.data()); }
+
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+		                0,
+						0,
+						0,
+						tex_depth,
+						atlas_surface->w,
+						atlas_surface->h,
+						1,
+						GL_RGBA,
+						GL_UNSIGNED_BYTE,
+						atlas_surface->pixels);
+
+		ensure_no_error();
+
+		SDL_FreeSurface(atlas_surface);
+
+		tex_depth++;
 	};
 }
 
@@ -536,6 +587,7 @@ TextureDescriptor Renderer::load_texture (SDL_Surface *surface)
 	mylib_assert_exception_msg(treated_surface != nullptr, "error converting surface format", '\n', SDL_GetError())
 
 	desc->surface = treated_surface;
+	desc->atlas = nullptr;
 	desc->width_px = treated_surface->w;
 	desc->height_px = treated_surface->h;
 	

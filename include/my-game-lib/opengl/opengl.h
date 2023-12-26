@@ -23,6 +23,8 @@
 #include <string>
 #include <string_view>
 #include <span>
+#include <vector>
+#include <list>
 
 #include <my-lib/std.h>
 #include <my-lib/macros.h>
@@ -42,10 +44,20 @@ namespace Opengl
 
 // ---------------------------------------------------
 
+struct Opengl_AtlasDescriptor
+{
+	// This is actually an integer.
+	// It's used to store the texture id of the atlas.
+	// But we use a float because it is passed as a z-coordinate to the shaders.
+	float texture_depth;
+	int32_t width_px;
+	int32_t height_px;
+};
+
 struct Opengl_TextureDescriptor
 {
 	SDL_Surface *surface;
-	GLuint texture_id;
+	Opengl_AtlasDescriptor *atlas;
 	int32_t width_px;
 	int32_t height_px;
 	Vector2f tex_coords[4];
@@ -255,7 +267,7 @@ public:
 	struct Vertex {
 		Graphics::Vertex gvertex;
 		Vector offset; // global x,y,z coords, which are added to the local coords
-		Vector2f tex_coords;
+		Vector3f tex_coords;
 	};
 
 	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vao) // vertex array descriptor id
@@ -296,6 +308,7 @@ class Renderer : public Manager
 protected:
 	static inline constexpr int32_t max_texture_size = 4096;
 
+protected:
 	SDL_GLContext sdl_gl_context;
 
 	ProgramTriangleColor::Uniforms program_triangle_color_uniforms;
@@ -304,6 +317,8 @@ protected:
 	ProgramTriangleTexture::Uniforms program_triangle_texture_uniforms;
 	ProgramTriangleTexture *program_triangle_texture;
 	std::vector<TextureDescriptor> textures;
+	std::list<Opengl_AtlasDescriptor> atlases;
+	GLuint texture_array_id;
 
 public:
 	Renderer (const InitParams& params);
