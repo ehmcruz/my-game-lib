@@ -234,6 +234,8 @@ void Sphere3D::calculate_vertices ()
 			// For spheres, the normal is just the normalized
 			// version of each vertex point.
 
+			using Mylib::Math::normalize;
+
 			// Output the first triangle of this grid square
 
 			this->vertices[k].pos = p0;
