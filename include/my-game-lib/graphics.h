@@ -61,6 +61,10 @@ using Vector2f = Mylib::Math::Vector<float, 2>;
 using Vector3f = Mylib::Math::Vector<float, 3>;
 using Vector4f = Mylib::Math::Vector<float, 4>;
 
+using Point2f = Vector2f;
+using Point3f = Vector3f;
+using Point4f = Vector4f;
+
 // ---------------------------------------------------
 
 consteval fp_t fp (const auto v)
@@ -318,9 +322,14 @@ class Sphere3D : public Shape
 {
 protected:
 	OO_ENCAPSULATE_SCALAR_REACT(fp_t, radius, this->calculate_vertices();)
+	OO_ENCAPSULATE_SCALAR_INIT_READONLY(uint32_t, u_resolution, 100) // longitude
+	OO_ENCAPSULATE_SCALAR_INIT_READONLY(uint32_t, v_resolution, 50) // latitude
 
 private:
 	std::vector<Vertex> vertices;
+
+	// TODO: remove this after implementing rotation in the shader
+	std::vector<Vertex> rotated_vertices;
 
 	/*
 		We rotate Spheres3D in a shader, since rotating a sphere doesn't
@@ -366,6 +375,13 @@ public:
 	inline uint32_t get_n_vertices () const noexcept
 	{
 		return this->vertices.size();
+	}
+
+	void set_resolution (const uint32_t u_resolution, const uint32_t v_resolution) noexcept
+	{
+		this->u_resolution = u_resolution;
+		this->v_resolution = v_resolution;
+		this->calculate_vertices();
 	}
 };
 
@@ -597,6 +613,7 @@ public:
 	virtual void draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color) = 0;
 	virtual void draw_cube3D (Cube3D& cube, const Vector& offset, const std::array<TextureRenderOptions, 6>& texture_options) = 0;
 	virtual void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color) = 0;
+	virtual void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const TextureRenderOptions& texture_options) = 0;
 	virtual void draw_circle2D (Circle2D& circle, const Vector& offset, const Color& color) = 0;
 	virtual void draw_rect2D (Rect2D& rect, const Vector& offset, const Color& color) = 0;
 	virtual void draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRenderOptions& texture_options) = 0;

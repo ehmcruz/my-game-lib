@@ -336,7 +336,7 @@ ProgramTriangleTexture::ProgramTriangleTexture ()
 	static_assert(sizeof(Vector) == sizeof(fp_t) * 3);
 	static_assert(sizeof(Vector) == sizeof(Point));
 	static_assert(sizeof(Color) == sizeof(float) * 4);
-	static_assert(sizeof(Vertex) == (sizeof(Graphics::Vertex) + sizeof(Vector) + sizeof(Vector3f)));
+	static_assert(sizeof(Vertex) == (sizeof(Graphics::Vertex) + sizeof(Vector) + sizeof(Point3f)));
 
 	this->vs = new Shader(GL_VERTEX_SHADER, "shaders/triangles-texture.vert");
 	this->vs->compile();

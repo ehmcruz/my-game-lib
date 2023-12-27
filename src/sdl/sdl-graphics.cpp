@@ -175,6 +175,11 @@ void SDL_GraphicsDriver::draw_sphere3D (Sphere3D& sphere, const Vector& offset, 
 	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
 }
 
+void SDL_GraphicsDriver::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const TextureRenderOptions& texture_options)
+{
+	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
+}
+
 // ---------------------------------------------------
 
 void SDL_GraphicsDriver::draw_circle2D (Circle2D& circle, const Vector& offset, const Color& color)

@@ -187,26 +187,26 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const std::array
 	using enum Cube3D::VertexPositionIndex;
 	using enum Cube3D::SurfacePositionIndex;
 
-	auto mount = [&i, vertices] (const VertexPositionIndex p, const Vector3f& v, const TextureRenderOptions& render_options) -> void {
-		const Opengl_TextureDescriptor *desc = render_options.desc.data.get_value<Opengl_TextureDescriptor*>();
+	auto mount = [&i, vertices] (const VertexPositionIndex p, const Vector3f& v, const TextureRenderOptions& texture_options) -> void {
+		const Opengl_TextureDescriptor *desc = texture_options.desc.data.get_value<Opengl_TextureDescriptor*>();
 		const Opengl_AtlasDescriptor *atlas = desc->atlas;
 
 		vertices[i].tex_coords = Vector3f(v.x, v.y, atlas->texture_depth);
 		i++;
 	};
 
-	auto mount_triangle = [&mount] (const VertexPositionIndex p1, const VertexPositionIndex p2, const VertexPositionIndex p3, const Vector3f& v1, const Vector3f& v2, const Vector3f& v3, const TextureRenderOptions& render_options) -> void {
-		mount(p1, v1, render_options);
-		mount(p2, v2, render_options);
-		mount(p3, v3, render_options);
+	auto mount_triangle = [&mount] (const VertexPositionIndex p1, const VertexPositionIndex p2, const VertexPositionIndex p3, const Vector3f& v1, const Vector3f& v2, const Vector3f& v3, const TextureRenderOptions& texture_options) -> void {
+		mount(p1, v1, texture_options);
+		mount(p2, v2, texture_options);
+		mount(p3, v3, texture_options);
 	};
 
 	// p1 and p2 should be a diagonal of the rectangle
-	auto mount_surface = [&mount_triangle] (const VertexPositionIndex p1, const VertexPositionIndex p2, const VertexPositionIndex p3, const VertexPositionIndex p4, const TextureRenderOptions& render_options) -> void {
-		const Opengl_TextureDescriptor *desc = render_options.desc.data.get_value<Opengl_TextureDescriptor*>();
+	auto mount_surface = [&mount_triangle] (const VertexPositionIndex p1, const VertexPositionIndex p2, const VertexPositionIndex p3, const VertexPositionIndex p4, const TextureRenderOptions& texture_options) -> void {
+		const Opengl_TextureDescriptor *desc = texture_options.desc.data.get_value<Opengl_TextureDescriptor*>();
 
-		mount_triangle(p1, p2, p3, desc->tex_coords[Rect2D::LeftTop], desc->tex_coords[Rect2D::RightBottom], desc->tex_coords[Rect2D::RightTop], render_options);
-		mount_triangle(p1, p2, p4, desc->tex_coords[Rect2D::LeftTop], desc->tex_coords[Rect2D::RightBottom], desc->tex_coords[Rect2D::LeftBottom], render_options);
+		mount_triangle(p1, p2, p3, desc->tex_coords[Rect2D::LeftTop], desc->tex_coords[Rect2D::RightBottom], desc->tex_coords[Rect2D::RightTop], texture_options);
+		mount_triangle(p1, p2, p4, desc->tex_coords[Rect2D::LeftTop], desc->tex_coords[Rect2D::RightBottom], desc->tex_coords[Rect2D::LeftBottom], texture_options);
 	};
 
 	// bottom
@@ -245,6 +245,73 @@ void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Colo
 		vertices[i].gvertex = shape_vertices[i];
 		vertices[i].offset = offset;
 		vertices[i].color = color;
+	}
+}
+
+// ---------------------------------------------------
+
+void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const TextureRenderOptions& texture_options)
+{
+	const uint32_t n_vertices = sphere.get_n_vertices();
+	std::span<Vertex> shape_vertices = sphere.get_local_rotated_vertices();
+
+	mylib_assert_exception(shape_vertices.size() == n_vertices)
+
+	//dprintln("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen, " n_triangles: ", n_vertices / 3);
+
+	std::span<ProgramTriangleTexture::Vertex> vertices = this->program_triangle_texture->alloc_vertices(n_vertices);
+
+	for (uint32_t i=0; i<n_vertices; i++) {
+		vertices[i].gvertex = shape_vertices[i];
+		vertices[i].offset = offset;
+	}
+
+	// we have to follow the same order used in Sphere3D::calculate_vertices
+
+	const Opengl_TextureDescriptor *desc = texture_options.desc.data.get_value<Opengl_TextureDescriptor*>();
+	const Opengl_AtlasDescriptor *atlas = desc->atlas;
+
+	using enum Rect2D::VertexPositionIndex;
+
+	const uint32_t u_resolution = sphere.get_u_resolution(); // longitude
+	const uint32_t v_resolution = sphere.get_v_resolution(); // latitude
+
+	const fp_t start_u = desc->tex_coords[LeftTop].x;
+	const fp_t start_v = desc->tex_coords[LeftTop].y;
+
+	const fp_t end_u = desc->tex_coords[RightBottom].x;
+	const fp_t end_v = desc->tex_coords[RightBottom].y;
+
+	const fp_t step_u = (end_u - start_u) / static_cast<fp_t>(u_resolution);
+	const fp_t step_v = (end_v - start_v) / static_cast<fp_t>(v_resolution);
+
+	uint32_t k = 0;
+
+	for (uint32_t i = 0; i < u_resolution; i++) {
+		const fp_t u = static_cast<fp_t>(i) * step_u + start_u;
+		const fp_t un = u + step_u;
+
+		for (uint32_t j = 0; j < v_resolution; j++) {
+			const fp_t v = static_cast<fp_t>(j) * step_v + start_v;
+			const fp_t vn = v + step_v;
+
+			const Point3f p0 = Point3f(u, v, atlas->texture_depth);
+			const Point3f p1 = Point3f(u, vn, atlas->texture_depth);
+			const Point3f p2 = Point3f(un, v, atlas->texture_depth);
+			const Point3f p3 = Point3f(un, vn, atlas->texture_depth);
+
+			// Output the first triangle of this grid square
+			vertices[k].tex_coords = p0;
+			vertices[k + 1].tex_coords = p2;
+			vertices[k + 2].tex_coords = p1;
+
+			// Output the other triangle of this grid square
+			vertices[k + 3].tex_coords = p3;
+			vertices[k + 4].tex_coords = p1;
+			vertices[k + 5].tex_coords = p2;
+
+			k += 6;
+		}
 	}
 }
 

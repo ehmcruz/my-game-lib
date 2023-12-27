@@ -53,8 +53,8 @@ void Shape::calculate_rotation ()
 {
 	this->must_recalculate_rotation = false;
 
-	mylib_assert_exception_msg(this->type != Type::Sphere3D,
-		"We rotate Spheres3D in a shader");
+	// TODO:
+	//mylib_assert_exception_msg(this->type != Type::Sphere3D, "We rotate Spheres3D in a shader");
 
 	Matrix3 rotation_matrix = Mylib::Math::gen_rotation_matrix(this->rotation_axis, this->rotation_angle);
 
@@ -172,7 +172,8 @@ void Sphere3D::setup_vertices_buffer (const uint32_t n_vertices)
 {
 	if (this->vertices.size() != n_vertices) {
 		this->vertices.resize(n_vertices);
-		this->set_vertices_buffer(this->vertices, this->vertices);
+		this->rotated_vertices.resize(n_vertices);
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 	}
 }
 
@@ -185,17 +186,19 @@ void Sphere3D::calculate_vertices ()
 		and speed things up.
 	*/
 
-	constexpr uint32_t v_resolution = 50; // latitude
-	constexpr uint32_t u_resolution = v_resolution * 2; // longitude
+	const uint32_t u_resolution = this->u_resolution; // longitude
+	const uint32_t v_resolution = this->v_resolution; // latitude
+
+	constexpr fp_t pi = std::numbers::pi_v<fp_t>;
 
 	constexpr fp_t start_u = 0;
 	constexpr fp_t start_v = 0;
 
-	constexpr fp_t end_u = std::numbers::pi_v<fp_t> * fp(2);
-	constexpr fp_t end_v = std::numbers::pi_v<fp_t>;
+	constexpr fp_t end_u = pi * fp(2);
+	constexpr fp_t end_v = pi;
 
-	constexpr fp_t step_u = (end_u - start_u) / static_cast<fp_t>(u_resolution);
-	constexpr fp_t step_v = (end_v - start_v) / static_cast<fp_t>(v_resolution);
+	const fp_t step_u = (end_u - start_u) / static_cast<fp_t>(u_resolution);
+	const fp_t step_v = (end_v - start_v) / static_cast<fp_t>(v_resolution);
 
 	const fp_t radius = this->get_radius();
 
@@ -212,16 +215,21 @@ void Sphere3D::calculate_vertices ()
 	uint32_t k = 0;
 
 	for (uint32_t i = 0; i < u_resolution; i++) {
+		const fp_t u = static_cast<fp_t>(i) * step_u + start_u;
+		//const fp_t un = (i + 1 == u_resolution) ? end_u : static_cast<fp_t>(i + 1) * step_u + start_u;
+		const fp_t un = u + step_u;
+
 		for (uint32_t j = 0; j < v_resolution; j++) {
-			const fp_t u = static_cast<fp_t>(i) * step_u + start_u;
 			const fp_t v = static_cast<fp_t>(j) * step_v + start_v;
-			const fp_t un = (i + 1 == u_resolution) ? end_u : static_cast<fp_t>(i + 1) * step_u + start_u;
-			const fp_t vn = (j + 1 == v_resolution) ? end_v : static_cast<fp_t>(j + 1) * step_v + start_v;
+			//const fp_t vn = (j + 1 == v_resolution) ? end_v : static_cast<fp_t>(j + 1) * step_v + start_v;
+			const fp_t vn = v + step_v;
 
 			const Point p0 = f(u, v, radius);
 			const Point p1 = f(u, vn, radius);
 			const Point p2 = f(un, v, radius);
 			const Point p3 = f(un, vn, radius);
+
+			dprintln("\ti:", i, "(", u/pi, ") j:", j, "(", v/pi, ") p: ", p0 / radius);
 
 			// For spheres, the normal is just the normalized
 			// version of each vertex point.
@@ -250,10 +258,15 @@ void Sphere3D::calculate_vertices ()
 
 			k += 6;
 		}
+
+		dprintln();
 	}
 
+	// TODO:
 	// no need to force recalculate rotation
 	// we will rotate the sphere in a shader
+
+	this->force_recalculate_rotation();
 }
 
 // ---------------------------------------------------

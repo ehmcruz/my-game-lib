@@ -86,6 +86,7 @@ Vector cube_pos (-2, -2, -4);
 Cube3D cube_color (1.5);
 
 Sphere3D sphere(2);
+Sphere3D earth(2);
 
 Point camera_pos(-0.5, -0.5, -10);
 Point camera_vector(0, 0, 1);
@@ -116,6 +117,7 @@ void setup ()
 	std::cout << "Light id: " << light << std::endl;
 
 	cube.rotate(Vector(0, 1, 0), 0);
+	earth.rotate(Vector(0, 1, 0), 0);
 
 	renderer->begin_texture_loading();
 	chrono_texture = renderer->load_texture("tests-assets/chrono.png");
@@ -157,10 +159,14 @@ static void process_keys (const Uint8 *keys, const fp_t dt)
 	else if (keys[SDL_SCANCODE_COMMA])
 		cube_pos.z -= speed * dt;
 	
-	if (keys[SDL_SCANCODE_N])
+	if (keys[SDL_SCANCODE_N]) {
 		cube.rotate(cube.get_rotation_angle() + rot_speed * dt);
-	else if (keys[SDL_SCANCODE_M])
+		earth.rotate(earth.get_rotation_angle() + rot_speed * dt);
+	}
+	else if (keys[SDL_SCANCODE_M]) {
 		cube.rotate(cube.get_rotation_angle() - rot_speed * dt);
+		earth.rotate(earth.get_rotation_angle() - rot_speed * dt);
+	}
 }
 
 void update (const fp_t dt)
@@ -209,7 +215,8 @@ void render ()
 	
 	renderer->draw_cube3D(cube, cube_pos, { .desc = box_texture });
 	renderer->draw_cube3D(cube_color, Vector(3, -3, -1), Color::red());
-	renderer->draw_sphere3D(sphere, Vector(0, 0, 0), Color::green());
+	renderer->draw_sphere3D(sphere, Vector(1, 0, 0), Color::green());
+	renderer->draw_sphere3D(earth, Vector(-4, 0, 0), { .desc = earth_high_texture });
 
 	renderer->render();
 #endif
@@ -264,7 +271,7 @@ int main (int argc, char **argv)
 	event_manager->key_down().subscribe( Mylib::Trigger::make_callback_function<MyGlib::Event::KeyDown::Type>(&key_down_callback) );
 	event_manager->quit().subscribe( Mylib::Trigger::make_callback_function<MyGlib::Event::Quit::Type>(&quit_callback) );
 
-	constexpr fp_t dt = 1.0 / 30.0;
+	constexpr fp_t dt = 1.0 / 60.0;
 	int frame = 0;
 
 	while (alive)

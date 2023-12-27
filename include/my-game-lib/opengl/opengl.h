@@ -267,7 +267,7 @@ public:
 	struct Vertex {
 		Graphics::Vertex gvertex;
 		Vector offset; // global x,y,z coords, which are added to the local coords
-		Vector3f tex_coords;
+		Point3f tex_coords;
 	};
 
 	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vao) // vertex array descriptor id
@@ -328,6 +328,7 @@ public:
 	void draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color) override final;
 	void draw_cube3D (Cube3D& cube, const Vector& offset, const std::array<TextureRenderOptions, 6>& texture_options) override final;
 	void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color) override final;
+	void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const TextureRenderOptions& texture_options) override final;
 	void draw_circle2D (Circle2D& circle, const Vector& offset, const Color& color) override final;
 	void draw_rect2D (Rect2D& rect, const Vector& offset, const Color& color) override final;
 	void draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRenderOptions& texture_optionss) override final;
