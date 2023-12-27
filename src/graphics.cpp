@@ -229,7 +229,7 @@ void Sphere3D::calculate_vertices ()
 			const Point p2 = f(un, v, radius);
 			const Point p3 = f(un, vn, radius);
 
-			dprintln("\ti:", i, "(", u/pi, ") j:", j, "(", v/pi, ") p: ", p0 / radius);
+			//dprintln("\ti:", i, "(", u/pi, ") j:", j, "(", v/pi, ") p: ", p0 / radius);
 
 			// For spheres, the normal is just the normalized
 			// version of each vertex point.
@@ -259,7 +259,7 @@ void Sphere3D::calculate_vertices ()
 			k += 6;
 		}
 
-		dprintln();
+		//dprintln();
 	}
 
 	// TODO:

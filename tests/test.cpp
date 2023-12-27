@@ -95,12 +95,14 @@ Rect2D samus_rect;
 
 TextureDescriptor chrono_texture;
 TextureDescriptor earth_high_texture;
+TextureDescriptor earth_medium_texture;
 TextureDescriptor earth_low_texture;
 TextureDescriptor flowers_texture;
 TextureDescriptor fzero_texture;
 TextureDescriptor house_texture;
 TextureDescriptor mario_texture;
 TextureDescriptor moon_high_texture;
+TextureDescriptor moon_medium_texture;
 TextureDescriptor moon_low_texture;
 TextureDescriptor samus_texture;
 TextureDescriptor tree_texture;
@@ -122,12 +124,14 @@ void setup ()
 	renderer->begin_texture_loading();
 	chrono_texture = renderer->load_texture("tests-assets/chrono.png");
 	earth_high_texture = renderer->load_texture("tests-assets/earth-high.jpg");
+	earth_medium_texture = renderer->load_texture("tests-assets/earth-medium.jpg");
 	earth_low_texture = renderer->load_texture("tests-assets/earth-low.jpg");
 	flowers_texture = renderer->load_texture("tests-assets/flowers.jpg");
 	fzero_texture = renderer->load_texture("tests-assets/fzero.png");
 	house_texture = renderer->load_texture("tests-assets/house.png");
 	mario_texture = renderer->load_texture("tests-assets/mario.png");
 	moon_high_texture = renderer->load_texture("tests-assets/moon-high.jpg");
+	moon_medium_texture = renderer->load_texture("tests-assets/moon-medium.jpg");
 	moon_low_texture = renderer->load_texture("tests-assets/moon-low.jpg");
 	samus_texture = renderer->load_texture("tests-assets/samus.png");
 	tree_texture = renderer->load_texture("tests-assets/tree.png");
@@ -216,7 +220,7 @@ void render ()
 	renderer->draw_cube3D(cube, cube_pos, { .desc = box_texture });
 	renderer->draw_cube3D(cube_color, Vector(3, -3, -1), Color::red());
 	renderer->draw_sphere3D(sphere, Vector(1, 0, 0), Color::green());
-	renderer->draw_sphere3D(earth, Vector(-4, 0, 0), { .desc = earth_high_texture });
+	renderer->draw_sphere3D(earth, Vector(-4, 0, 0), { .desc = earth_medium_texture });
 
 	renderer->render();
 #endif
