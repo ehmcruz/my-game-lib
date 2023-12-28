@@ -56,7 +56,7 @@ void Shape::calculate_rotation ()
 	// TODO:
 	//mylib_assert_exception_msg(this->type != Type::Sphere3D, "We rotate Spheres3D in a shader");
 
-	Matrix3 rotation_matrix = Mylib::Math::gen_rotation_matrix(this->rotation_axis, this->rotation_angle);
+	Matrix3 rotation_matrix = Matrix3::rotation(this->rotation_axis, this->rotation_angle);
 
 	for (uint32_t i = 0; i < this->local_vertices_buffer__.size(); i++) {
 		this->local_rotated_vertices_buffer__[i].pos = rotation_matrix * this->local_vertices_buffer__[i].pos;

@@ -405,7 +405,7 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRen
 
 void Renderer::setup_render_3D (const RenderArgs3D& args)
 {
-	this->program_triangle_color_uniforms.projection_matrix = Mylib::Math::gen_perspective_matrix<fp_t>(
+	this->program_triangle_color_uniforms.projection_matrix = Matrix4::perspective(
 			args.fov_y,
 			static_cast<fp_t>(this->window_width_px),
 			static_cast<fp_t>(this->window_height_px),
@@ -413,7 +413,7 @@ void Renderer::setup_render_3D (const RenderArgs3D& args)
 			args.z_far,
 			fp(1)
 		)
-		* Mylib::Math::gen_look_at_matrix<fp_t>(
+		* Matrix4::look_at(
 			args.world_camera_pos,
 			args.world_camera_target,
 			Vector(0, 1, 0));
@@ -515,28 +515,23 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 #endif
 
 	// translate from (0, 2) to (-1, +1) opengl clip space
-	Matrix4 translate_subtract_one;
-	translate_subtract_one.set_translate( Vector2(-1, +1) );
+	const Matrix4 translate_subtract_one = Matrix4::translate( Vector2(-1, +1) );
 //	dprintln( "translation to clip init:" ) translate_to_clip_init.println();
 
 	// mirror y axis
 	// and also scale to (0, 2) coords
-	Matrix4 opengl_scale_mirror;
-	opengl_scale_mirror.set_scale(opengl_clip_scale_mirror);
+	const Matrix4 opengl_scale_mirror = Matrix4::scale(opengl_clip_scale_mirror);
 //	dprintln( "scale matrix:" ) Mylib::Math::println(scale);
 //exit(1);
 
-	Matrix4 translate_to_normalized_clip_init;
-	translate_to_normalized_clip_init.set_translate(normalized_clip_init);
+	const Matrix4 translate_to_normalized_clip_init = Matrix4::translate(normalized_clip_init);
 //	dprintln( "translation to clip init:" ) translate_to_clip_init.println();
 
-	Matrix4 scale_normalized;
-	scale_normalized.set_scale(Vector2(normalized_scale_factor, normalized_scale_factor));
+	const Matrix4 scale_normalized = Matrix4::scale(Vector2(normalized_scale_factor, normalized_scale_factor));
 //	dprintln( "scale matrix:" ) Mylib::Math::println(scale);
 //exit(1);
 
-	Matrix4 translate_camera;
-	translate_camera.set_translate(-world_camera);
+	const Matrix4 translate_camera = Matrix4::translate(-world_camera);
 //	dprintln( "translation matrix:" ) translate_camera.println();
 
 	this->program_triangle_color_uniforms.projection_matrix = 

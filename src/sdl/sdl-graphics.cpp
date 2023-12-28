@@ -304,17 +304,10 @@ void SDL_GraphicsDriver::setup_render_2D (const RenderArgs2D& args)
 //exit(1);
 #endif
 
-	Matrix4 translate_to_clip_init;
-	translate_to_clip_init.set_translate<2>(clip_init);
-//	dprintln( "translation to clip init:" ); dprintln( translate_to_clip_init );
+	const Matrix4 translate_to_clip_init = Matrix4::translate<2>(clip_init);
+	const Matrix4 scale = Matrix4::scale<2>(Vector(this->scale_factor, this->scale_factor));
+	const Matrix4 translate_camera = Matrix4::translate<2>(-world_camera);
 
-	Matrix4 scale;
-	scale.set_scale<2>(Vector(this->scale_factor, this->scale_factor));
-//	dprintln( "scale matrix:" ); dprintln( scale );
-//exit(1);
-
-	Matrix4 translate_camera;
-	translate_camera.set_translate<2>(-world_camera);
 //	dprintln( "translation matrix:" ); dprintln( translate_camera );
 
 	this->projection_matrix = (translate_to_clip_init * scale) * translate_camera;
