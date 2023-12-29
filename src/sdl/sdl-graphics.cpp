@@ -339,7 +339,7 @@ void SDL_GraphicsDriver::update_screen ()
 
 // ---------------------------------------------------
 
-void SDL_GraphicsDriver::clear_vertex_buffers ()
+void SDL_GraphicsDriver::clear_buffers (const uint32_t flags)
 {
 
 }

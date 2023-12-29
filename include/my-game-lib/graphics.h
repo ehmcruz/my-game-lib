@@ -95,27 +95,32 @@ struct Color {
 
 	static consteval Color black ()
 	{
-		return Color{0.0f, 0.0f, 0.0f, 1.0f};
+		return Color {0.0f, 0.0f, 0.0f, 1.0f};
 	}
 
 	static consteval Color white ()
 	{
-		return Color{1.0f, 1.0f, 1.0f, 1.0f};
+		return Color {1.0f, 1.0f, 1.0f, 1.0f};
 	}
 
 	static consteval Color red ()
 	{
-		return Color{1.0f, 0.0f, 0.0f, 1.0f};
+		return Color {1.0f, 0.0f, 0.0f, 1.0f};
 	}
 
 	static consteval Color green ()
 	{
-		return Color{0.0f, 1.0f, 0.0f, 1.0f};
+		return Color {0.0f, 1.0f, 0.0f, 1.0f};
 	}
 
 	static consteval Color blue ()
 	{
-		return Color{0.0f, 0.0f, 1.0f, 1.0f};
+		return Color {0.0f, 0.0f, 1.0f, 1.0f};
+	}
+
+	static consteval Color yellow ()
+	{
+		return Color {1.0f, 1.0f, 0.0f, 1.0f};
 	}
 };
 
@@ -564,6 +569,13 @@ public:
 		bool fullscreen;
 	};
 
+	enum ClearFlags : uint32_t {
+		ColorBufferBit        = 1,
+		DepthBufferBit        = 2,
+		StencilBufferBit      = 4,
+		VertexBufferBit      = 8,
+	};
+
 protected:
 	Mylib::Memory::Manager& memory_manager;
 	OO_ENCAPSULATE_SCALAR_READONLY(uint32_t, window_width_px)
@@ -626,7 +638,7 @@ public:
 	virtual void setup_render_2D (const RenderArgs2D& args) = 0;
 	virtual void render () = 0;
 	virtual void update_screen () = 0;
-	virtual void clear_vertex_buffers () = 0;
+	virtual void clear_buffers (const uint32_t flags) = 0;
 
 	virtual void begin_texture_loading () = 0;
 	virtual void end_texture_loading () = 0;
@@ -634,6 +646,11 @@ public:
 	virtual void destroy_texture (TextureDescriptor& texture) = 0;
 
 	// 3D Wrappers
+
+	void draw_cube3D (Cube3D&& cube, const Vector& offset, const Color& color)
+	{
+		this->draw_cube3D(cube, offset, color);
+	}
 
 	void draw_cube3D (Cube3D& cube, const Vector& offset, const TextureRenderOptions& texture_options)
 	{

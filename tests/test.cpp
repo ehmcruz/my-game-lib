@@ -85,6 +85,9 @@ Vector cube_pos (-2, -2, -4);
 
 Cube3D cube_color (1.5);
 
+Cube3D far_cube (40);
+fp_t far_cube_angular_vel = Mylib::Math::degrees_to_radians(fp(45));
+
 Sphere3D sphere(2);
 Sphere3D earth(2);
 
@@ -92,6 +95,8 @@ Point camera_pos(-0.5, -0.5, -10);
 Point camera_vector(0, 0, 1);
 
 Rect2D samus_rect;
+
+Color ambient_light_color {1, 1, 1, 0.3};
 
 TextureDescriptor chrono_texture;
 TextureDescriptor earth_high_texture;
@@ -120,6 +125,7 @@ void setup ()
 
 	cube.rotate(Vector(0, 1, 0), 0);
 	earth.rotate(Vector(0, 1, 0), 0);
+	far_cube.rotate(Vector(0.2, 1, 0.3), 0);
 
 	renderer->begin_texture_loading();
 	chrono_texture = renderer->load_texture("tests-assets/chrono.png");
@@ -176,6 +182,8 @@ static void process_keys (const Uint8 *keys, const fp_t dt)
 void update (const fp_t dt)
 {
 	process_keys(SDL_GetKeyboardState(NULL), dt);
+
+	far_cube.rotate(far_cube.get_rotation_angle() + far_cube_angular_vel * dt);
 }
 
 void render ()
@@ -212,17 +220,41 @@ void render ()
 		.world_camera_pos = camera_pos,
 		.world_camera_target = camera_pos + camera_vector,
 		.fov_y = Mylib::Math::degrees_to_radians(fp(45)),
-		.z_near = 0.1,
-		.z_far = 100,
-		.ambient_light_color = {1, 1, 1, 0.3},
+		.z_near = 100,
+		.z_far = 100000,
+		.ambient_light_color = ambient_light_color,
 		} );
 	
-	renderer->draw_cube3D(cube, cube_pos, { .desc = box_texture });
-	renderer->draw_cube3D(cube_color, Vector(3, -3, -1), Color::red());
-	renderer->draw_sphere3D(sphere, Vector(1, 0, 0), Color::green());
-	renderer->draw_sphere3D(earth, Vector(-4, 0, 0), { .desc = earth_medium_texture });
+	const Vector far_cube_pos = Vector(2, -3, 100);
+	const Color far_cube_color = Color::yellow();
+
+	renderer->draw_cube3D(far_cube, far_cube_pos, far_cube_color);
 
 	renderer->render();
+
+	#if 1
+		renderer->clear_buffers(MyGlib::Graphics::Manager::VertexBufferBit | MyGlib::Graphics::Manager::DepthBufferBit);
+
+		renderer->setup_render_3D( MyGlib::Graphics::RenderArgs3D {
+			.world_camera_pos = camera_pos,
+			.world_camera_target = camera_pos + camera_vector,
+			.fov_y = Mylib::Math::degrees_to_radians(fp(45)),
+			.z_near = 0.1,
+			.z_far = 100,
+			.ambient_light_color = ambient_light_color,
+			} );
+		
+		renderer->draw_cube3D(cube, cube_pos, { .desc = box_texture });
+		renderer->draw_cube3D(cube_color, Vector(3, -3, -1), Color::red());
+		renderer->draw_sphere3D(sphere, Vector(2.5, 1.5, 0), Color::green());
+		renderer->draw_sphere3D(earth, Vector(-4, 0, 0), { .desc = earth_medium_texture });
+
+		// we render the far cube twice because part of it is
+		// in the first frustum and part of it is in the second frustum
+		renderer->draw_cube3D(far_cube, far_cube_pos, far_cube_color);
+
+		renderer->render();
+	#endif
 #endif
 
 	renderer->update_screen();

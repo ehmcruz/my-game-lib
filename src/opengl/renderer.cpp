@@ -127,8 +127,7 @@ Renderer::~Renderer ()
 
 void Renderer::wait_next_frame ()
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	this->clear_vertex_buffers();
+	this->clear_buffers(ColorBufferBit | DepthBufferBit | VertexBufferBit);
 }
 
 // ---------------------------------------------------
@@ -616,11 +615,25 @@ void Renderer::update_screen ()
 
 // ---------------------------------------------------
 
-void Renderer::clear_vertex_buffers ()
+void Renderer::clear_buffers (const uint32_t flags)
 {
-	this->program_triangle_color->clear();
-	this->program_triangle_texture->clear();
-	this->program_triangle_texture_rotation->clear();
+	GLbitfield mask = 0;
+
+	if (flags & VertexBufferBit) {
+		this->program_triangle_color->clear();
+		this->program_triangle_texture->clear();
+		this->program_triangle_texture_rotation->clear();
+	}
+
+	if (flags & ColorBufferBit)
+		mask |= GL_COLOR_BUFFER_BIT;
+	if (flags & DepthBufferBit)
+		mask |= GL_DEPTH_BUFFER_BIT;
+	if (flags & StencilBufferBit)
+		mask |= GL_STENCIL_BUFFER_BIT;
+
+	if (mask)
+		glClear(mask);
 }
 
 // ---------------------------------------------------

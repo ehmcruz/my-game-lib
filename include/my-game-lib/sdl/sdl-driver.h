@@ -76,7 +76,7 @@ namespace Graphics
 		void setup_render_2D (const RenderArgs2D& args) override final;
 		void render () override final;
 		void update_screen () override final;
-		void clear_vertex_buffers () override final;
+		void clear_buffers (const uint32_t flags) override final;
 
 		void begin_texture_loading () override final;
 		void end_texture_loading () override final;
