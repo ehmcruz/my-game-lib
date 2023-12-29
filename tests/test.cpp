@@ -225,7 +225,7 @@ void render ()
 		.ambient_light_color = ambient_light_color,
 		} );
 	
-	const Vector far_cube_pos = Vector(2, -3, 100);
+	const Vector far_cube_pos = Vector(2, -3, 1000);
 	const Color far_cube_color = Color::yellow();
 
 	renderer->draw_cube3D(far_cube, far_cube_pos, far_cube_color);
