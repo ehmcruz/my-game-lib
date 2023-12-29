@@ -16,6 +16,7 @@
 #include <string_view>
 #include <span>
 #include <string_view>
+#include <random>
 
 #include <my-lib/std.h>
 #include <my-lib/macros.h>
@@ -121,6 +122,12 @@ struct Color {
 	static consteval Color yellow ()
 	{
 		return Color {1.0f, 1.0f, 0.0f, 1.0f};
+	}
+
+	static constexpr Color random (auto& gen)
+	{
+		std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+		return Color { dis(gen), dis(gen), dis(gen), 1.0f };
 	}
 };
 
