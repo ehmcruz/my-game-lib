@@ -51,16 +51,28 @@ std::ostream& operator << (std::ostream& out, const Color& color)
 
 void Shape::calculate_rotation ()
 {
+	static constexpr bool rotate_using_quaternion = true;
+
 	this->must_recalculate_rotation = false;
 
 	// TODO:
 	//mylib_assert_exception_msg(this->type != Type::Sphere3D, "We rotate Spheres3D in a shader");
 
-	Matrix3 rotation_matrix = Matrix3::rotation(this->rotation_axis, this->rotation_angle);
+	if constexpr (rotate_using_quaternion) {
+		Quaternion quaternion = Quaternion::rotation(this->rotation_axis, this->rotation_angle);
 
-	for (uint32_t i = 0; i < this->local_vertices_buffer__.size(); i++) {
-		this->local_rotated_vertices_buffer__[i].pos = rotation_matrix * this->local_vertices_buffer__[i].pos;
-		this->local_rotated_vertices_buffer__[i].normal = rotation_matrix * this->local_vertices_buffer__[i].normal;
+		for (uint32_t i = 0; i < this->local_vertices_buffer__.size(); i++) {
+			this->local_rotated_vertices_buffer__[i].pos = Mylib::Math::rotate(quaternion, this->local_vertices_buffer__[i].pos);
+			this->local_rotated_vertices_buffer__[i].normal = Mylib::Math::rotate(quaternion, this->local_vertices_buffer__[i].normal);
+		}
+	}
+	else {
+		Matrix3 rotation_matrix = Matrix3::rotation(this->rotation_axis, this->rotation_angle);
+
+		for (uint32_t i = 0; i < this->local_vertices_buffer__.size(); i++) {
+			this->local_rotated_vertices_buffer__[i].pos = rotation_matrix * this->local_vertices_buffer__[i].pos;
+			this->local_rotated_vertices_buffer__[i].normal = rotation_matrix * this->local_vertices_buffer__[i].normal;
+		}
 	}
 }
 

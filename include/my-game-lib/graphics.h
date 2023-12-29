@@ -22,8 +22,10 @@
 #include <my-lib/any.h>
 #include <my-lib/memory.h>
 #include <my-lib/math.h>
+#include <my-lib/math-vector.h>
 #include <my-lib/math-matrix.h>
 #include <my-lib/math-geometry.h>
+#include <my-lib/math-quaternion.h>
 
 #include <my-game-lib/debug.h>
 
@@ -56,6 +58,7 @@ using Point3 = Vector3;
 using Point4 = Vector4;
 using Vector = Vector3;
 using Point = Vector;
+using Quaternion = Mylib::Math::Quaternion<fp_t>;
 
 using Vector2f = Mylib::Math::Vector<float, 2>;
 using Vector3f = Mylib::Math::Vector<float, 3>;
