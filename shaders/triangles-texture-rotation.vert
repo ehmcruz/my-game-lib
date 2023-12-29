@@ -31,9 +31,11 @@ vec4 quaternion_conjugate (const vec4 q)
 
 vec3 rotate (const vec4 q, const vec3 v)
 {
-	vec4 r = (q * vec4(v, 0)) * quaternion_conjugate(q);
+	vec4 tmp = quaternion_mul(q, vec4(v, 0));
+	vec4 r = quaternion_mul(tmp, quaternion_conjugate(q));
 
 	return r.xyz;
+
 	//return v + 2.0 * cross(cross(v, q.xyz ) + q.w * v, q.xyz);
 }
 

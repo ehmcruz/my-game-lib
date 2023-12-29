@@ -189,6 +189,11 @@ public:
 		return this->local_rotated_vertices_buffer__;
 	}
 
+	inline std::span<Vertex> get_local_vertices () noexcept
+	{
+		return this->local_vertices_buffer__;
+	}
+
 	constexpr void rotate (const Vector& axis, const fp_t angle) noexcept
 	{
 		this->rotation_axis = axis;
@@ -330,9 +335,6 @@ protected:
 
 private:
 	std::vector<Vertex> vertices;
-
-	// TODO: remove this after implementing rotation in the shader
-	std::vector<Vertex> rotated_vertices;
 
 	/*
 		We rotate Spheres3D in a shader, since rotating a sphere doesn't

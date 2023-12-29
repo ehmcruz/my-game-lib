@@ -55,7 +55,6 @@ void Shape::calculate_rotation ()
 
 	this->must_recalculate_rotation = false;
 
-	// TODO:
 	mylib_assert_exception_msg(this->type != Type::Sphere3D, "We rotate Spheres3D in a shader");
 
 	if constexpr (rotate_using_quaternion) {
@@ -184,8 +183,7 @@ void Sphere3D::setup_vertices_buffer (const uint32_t n_vertices)
 {
 	if (this->vertices.size() != n_vertices) {
 		this->vertices.resize(n_vertices);
-		this->rotated_vertices.resize(n_vertices);
-		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+		this->set_vertices_buffer(this->vertices, this->vertices);
 	}
 }
 
@@ -276,11 +274,10 @@ void Sphere3D::calculate_vertices ()
 		//dprintln();
 	}
 
-	// TODO:
 	// no need to force recalculate rotation
 	// we will rotate the sphere in a shader
 
-	this->force_recalculate_rotation();
+	//this->force_recalculate_rotation();
 }
 
 // ---------------------------------------------------

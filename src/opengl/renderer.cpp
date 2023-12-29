@@ -255,66 +255,78 @@ void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Colo
 void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const TextureRenderOptions& texture_options)
 {
 	const uint32_t n_vertices = sphere.get_n_vertices();
-	std::span<Vertex> shape_vertices = sphere.get_local_rotated_vertices();
+	std::span<Vertex> shape_vertices = sphere.get_local_vertices();
 
 	mylib_assert_exception(shape_vertices.size() == n_vertices)
-
-	//dprintln("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen, " n_triangles: ", n_vertices / 3);
-
-	std::span<ProgramTriangleTexture::Vertex> vertices = this->program_triangle_texture->alloc_vertices(n_vertices);
-
-	for (uint32_t i=0; i<n_vertices; i++) {
-		vertices[i].gvertex = shape_vertices[i];
-		vertices[i].offset = offset;
-	}
-
-	// we have to follow the same order used in Sphere3D::calculate_vertices
 
 	const Opengl_TextureDescriptor *desc = texture_options.desc.data.get_value<Opengl_TextureDescriptor*>();
 	const Opengl_AtlasDescriptor *atlas = desc->atlas;
 
-	using enum Rect2D::VertexPositionIndex;
+	auto fill_vertices = [&sphere, &offset, &texture_options, n_vertices, shape_vertices, desc, atlas] (auto& program) -> void {
+		auto vertices = program.alloc_vertices(n_vertices);
 
-	const uint32_t u_resolution = sphere.get_u_resolution(); // longitude
-	const uint32_t v_resolution = sphere.get_v_resolution(); // latitude
-
-	const fp_t start_u = desc->tex_coords[LeftTop].x;
-	const fp_t start_v = desc->tex_coords[LeftTop].y;
-
-	const fp_t end_u = desc->tex_coords[RightBottom].x;
-	const fp_t end_v = desc->tex_coords[RightBottom].y;
-
-	const fp_t step_u = (end_u - start_u) / static_cast<fp_t>(u_resolution);
-	const fp_t step_v = (end_v - start_v) / static_cast<fp_t>(v_resolution);
-
-	uint32_t k = 0;
-
-	for (uint32_t i = 0; i < u_resolution; i++) {
-		const fp_t u = static_cast<fp_t>(i) * step_u + start_u;
-		const fp_t un = u + step_u;
-
-		for (uint32_t j = 0; j < v_resolution; j++) {
-			const fp_t v = static_cast<fp_t>(j) * step_v + start_v;
-			const fp_t vn = v + step_v;
-
-			const Point3f p0 = Point3f(u, v, atlas->texture_depth);
-			const Point3f p1 = Point3f(u, vn, atlas->texture_depth);
-			const Point3f p2 = Point3f(un, v, atlas->texture_depth);
-			const Point3f p3 = Point3f(un, vn, atlas->texture_depth);
-
-			// Output the first triangle of this grid square
-			vertices[k].tex_coords = p0;
-			vertices[k + 1].tex_coords = p2;
-			vertices[k + 2].tex_coords = p1;
-
-			// Output the other triangle of this grid square
-			vertices[k + 3].tex_coords = p3;
-			vertices[k + 4].tex_coords = p1;
-			vertices[k + 5].tex_coords = p2;
-
-			k += 6;
+		for (uint32_t i=0; i<n_vertices; i++) {
+			vertices[i].gvertex = shape_vertices[i];
+			vertices[i].offset = offset;
 		}
-	}
+
+		// we have to follow the same order used in Sphere3D::calculate_vertices
+
+		using enum Rect2D::VertexPositionIndex;
+
+		const uint32_t u_resolution = sphere.get_u_resolution(); // longitude
+		const uint32_t v_resolution = sphere.get_v_resolution(); // latitude
+
+		const fp_t start_u = desc->tex_coords[LeftTop].x;
+		const fp_t start_v = desc->tex_coords[LeftTop].y;
+
+		const fp_t end_u = desc->tex_coords[RightBottom].x;
+		const fp_t end_v = desc->tex_coords[RightBottom].y;
+
+		const fp_t step_u = (end_u - start_u) / static_cast<fp_t>(u_resolution);
+		const fp_t step_v = (end_v - start_v) / static_cast<fp_t>(v_resolution);
+
+		uint32_t k = 0;
+
+		for (uint32_t i = 0; i < u_resolution; i++) {
+			const fp_t u = static_cast<fp_t>(i) * step_u + start_u;
+			const fp_t un = u + step_u;
+
+			for (uint32_t j = 0; j < v_resolution; j++) {
+				const fp_t v = static_cast<fp_t>(j) * step_v + start_v;
+				const fp_t vn = v + step_v;
+
+				const Point3f p0 = Point3f(u, v, atlas->texture_depth);
+				const Point3f p1 = Point3f(u, vn, atlas->texture_depth);
+				const Point3f p2 = Point3f(un, v, atlas->texture_depth);
+				const Point3f p3 = Point3f(un, vn, atlas->texture_depth);
+
+				// Output the first triangle of this grid square
+				vertices[k].tex_coords = p0;
+				vertices[k + 1].tex_coords = p2;
+				vertices[k + 2].tex_coords = p1;
+
+				// Output the other triangle of this grid square
+				vertices[k + 3].tex_coords = p3;
+				vertices[k + 4].tex_coords = p1;
+				vertices[k + 5].tex_coords = p2;
+
+				k += 6;
+			}
+		}
+
+		if constexpr (std::is_same_v<decltype(program), ProgramTriangleTextureRotation&>) {
+			const Quaternion quaternion = Quaternion::rotation(sphere.get_ref_rotation_axis(), sphere.get_rotation_angle());
+
+			for (uint32_t i=0; i<n_vertices; i++)
+				vertices[i].rot_quat = quaternion;
+		}
+	};
+
+	if (sphere.get_rotation_angle() == fp(0))
+		fill_vertices(*this->program_triangle_texture);
+	else
+		fill_vertices(*this->program_triangle_texture_rotation);
 }
 
 // ---------------------------------------------------
