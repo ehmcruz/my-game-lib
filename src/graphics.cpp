@@ -59,7 +59,7 @@ void Shape::calculate_rotation ()
 	//mylib_assert_exception_msg(this->type != Type::Sphere3D, "We rotate Spheres3D in a shader");
 
 	if constexpr (rotate_using_quaternion) {
-		Quaternion quaternion = Quaternion::rotation(this->rotation_axis, this->rotation_angle);
+		const Quaternion quaternion = Quaternion::rotation(this->rotation_axis, this->rotation_angle);
 
 		for (uint32_t i = 0; i < this->local_vertices_buffer__.size(); i++) {
 			this->local_rotated_vertices_buffer__[i].pos = Mylib::Math::rotate(quaternion, this->local_vertices_buffer__[i].pos);
@@ -67,7 +67,7 @@ void Shape::calculate_rotation ()
 		}
 	}
 	else {
-		Matrix3 rotation_matrix = Matrix3::rotation(this->rotation_axis, this->rotation_angle);
+		const Matrix3 rotation_matrix = Matrix3::rotation(this->rotation_axis, this->rotation_angle);
 
 		for (uint32_t i = 0; i < this->local_vertices_buffer__.size(); i++) {
 			this->local_rotated_vertices_buffer__[i].pos = rotation_matrix * this->local_vertices_buffer__[i].pos;
