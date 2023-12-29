@@ -56,7 +56,7 @@ void Shape::calculate_rotation ()
 	this->must_recalculate_rotation = false;
 
 	// TODO:
-	//mylib_assert_exception_msg(this->type != Type::Sphere3D, "We rotate Spheres3D in a shader");
+	mylib_assert_exception_msg(this->type != Type::Sphere3D, "We rotate Spheres3D in a shader");
 
 	if constexpr (rotate_using_quaternion) {
 		const Quaternion quaternion = Quaternion::rotation(this->rotation_axis, this->rotation_angle);

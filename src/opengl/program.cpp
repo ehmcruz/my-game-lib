@@ -476,6 +476,160 @@ void ProgramTriangleTexture::debug ()
 
 // ---------------------------------------------------
 
+ProgramTriangleTextureRotation::ProgramTriangleTextureRotation ()
+	: Program ()
+{
+	static_assert(sizeof(Graphics::Vertex) == sizeof(Point) + sizeof(Vector));
+	static_assert(sizeof(Vector) == sizeof(fp_t) * 3);
+	static_assert(sizeof(Vector) == sizeof(Point));
+	static_assert(sizeof(Color) == sizeof(float) * 4);
+	static_assert(sizeof(Quaternion) == sizeof(float) * 4);
+	static_assert(sizeof(Vertex) == (sizeof(Graphics::Vertex) + sizeof(Vector) + sizeof(Point3f) + sizeof(Quaternion)));
+
+	this->vs = new Shader(GL_VERTEX_SHADER, "shaders/triangles-texture-rotation.vert");
+	this->vs->compile();
+
+	this->fs = new Shader(GL_FRAGMENT_SHADER, "shaders/triangles-texture.frag");
+	this->fs->compile();
+
+	this->attach_shaders();
+
+	this->bind_attrib_location(iPosition, "i_position");
+	this->bind_attrib_location(iNormal, "i_normal");
+	this->bind_attrib_location(iOffset, "i_offset");
+	this->bind_attrib_location(iTexCoords, "i_tex_coord");
+	this->bind_attrib_location(iRotQuat, "i_rot_quat");
+
+	this->link_program();
+
+	this->gen_vertex_arrays(1, &(this->vao));
+	this->gen_buffers(1, &(this->vbo));
+
+	this->use_program();
+	this->bind_vertex_arrays();
+	this->bind_vertex_buffers();
+	this->setup_vertex_arrays();
+	this->setup_uniforms();
+
+	dprintln("loaded opengl triangle texture rotation program");
+}
+
+ProgramTriangleTextureRotation::~ProgramTriangleTextureRotation ()
+{
+
+}
+
+void ProgramTriangleTextureRotation::bind_vertex_arrays ()
+{
+	this->bind_vertex_array(this->vao);
+}
+
+void ProgramTriangleTextureRotation::bind_vertex_buffers ()
+{
+	this->bind_buffer(GL_ARRAY_BUFFER, this->vbo);
+}
+
+void ProgramTriangleTextureRotation::setup_vertex_arrays ()
+{
+	uint32_t pos, length;
+
+	this->enable_vertex_attrib_array(iPosition);
+	this->enable_vertex_attrib_array(iNormal);
+	this->enable_vertex_attrib_array(iOffset);
+	this->enable_vertex_attrib_array(iTexCoords);
+	this->enable_vertex_attrib_array(iRotQuat);
+
+	pos = 0;
+	length = 3;
+	glVertexAttribPointer(iPosition, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
+
+	pos += length;
+	length = 3;
+	glVertexAttribPointer(iNormal, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
+
+	pos += length;
+	length = 3;
+	glVertexAttribPointer(iOffset, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
+	
+	pos += length;
+	length = 3;
+	glVertexAttribPointer(iTexCoords, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
+
+	pos += length;
+	length = 4;
+	glVertexAttribPointer(iRotQuat, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
+
+	ensure_no_error();
+}
+
+void ProgramTriangleTextureRotation::setup_uniforms ()
+{
+	this->u_projection_matrix = this->get_uniform_location("u_projection_matrix");
+	this->u_ambient_light_color = this->get_uniform_location("u_ambient_light_color");
+	this->u_point_light_pos = this->get_uniform_location("u_point_light_pos");
+	this->u_point_light_color = this->get_uniform_location("u_point_light_color");
+	this->u_tx_unit = this->get_uniform_location("u_tx_unit");
+}
+
+void ProgramTriangleTextureRotation::upload_vertex_buffers ()
+{
+	const uint32_t n = this->triangle_buffer.get_vertex_buffer_used();
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * n, this->triangle_buffer.get_vertex_buffer(), GL_DYNAMIC_DRAW);
+
+	ensure_no_error();
+}
+
+void ProgramTriangleTextureRotation::upload_uniforms (const Uniforms& uniforms)
+{
+	glUniformMatrix4fv(this->u_projection_matrix, 1, GL_TRUE, uniforms.projection_matrix.get_raw());
+	glUniform4fv(this->u_ambient_light_color, 1, uniforms.ambient_light_color.get_raw());
+	glUniform3fv(this->u_point_light_pos, 1, uniforms.point_light_pos.get_raw());
+	glUniform4fv(this->u_point_light_color, 1, uniforms.point_light_color.get_raw());
+	glUniform1i(this->u_tx_unit, 0); // set shader to use texture unit 0
+
+	ensure_no_error();
+}
+
+void ProgramTriangleTextureRotation::draw ()
+{
+	const uint32_t n = this->triangle_buffer.get_vertex_buffer_used();
+	glDrawArrays(GL_TRIANGLES, 0, n);
+
+	ensure_no_error();
+}
+
+void ProgramTriangleTextureRotation::load ()
+{
+	this->use_program();
+	this->bind_vertex_arrays();
+	this->bind_vertex_buffers();
+}
+
+void ProgramTriangleTextureRotation::debug ()
+{
+	const uint32_t n = this->triangle_buffer.get_vertex_buffer_used();
+
+	for (uint32_t i=0; i<n; i++) {
+		const Vertex& v = this->triangle_buffer.get_vertex(i);
+
+		if ((i % 3) == 0)
+			dprintln();
+
+		dprintln("vertex[", i,
+			"] x=", v.gvertex.pos.x,
+			" y=", v.gvertex.pos.y,
+			" z=", v.gvertex.pos.z,
+			" offset_x=", v.offset.x,
+			" offset_y=", v.offset.y,
+			" offset_z=", v.offset.z,
+			" tex_x=", v.tex_coords.x,
+			" tex_y=", v.tex_coords.y
+		);
+	}
+}
+
+// ---------------------------------------------------
+
 } // namespace Graphics
 } // namespace Opengl
 } // namespace MyGlib

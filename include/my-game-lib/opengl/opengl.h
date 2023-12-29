@@ -178,7 +178,7 @@ public:
 
 // ---------------------------------------------------
 
-class ProgramTriangleColor: public Program
+class ProgramTriangleColor : public Program
 {
 protected:
 	enum AttribIndex {
@@ -227,6 +227,11 @@ public:
 		return this->triangle_buffer.alloc_vertices(n);
 	}
 
+	inline bool has_vertices () const noexcept
+	{
+		return (this->triangle_buffer.get_vertex_buffer_used() > 0);
+	}
+
 	void bind_vertex_arrays ();
 	void bind_vertex_buffers ();
 	void setup_vertex_arrays ();
@@ -240,7 +245,7 @@ public:
 
 // ---------------------------------------------------
 
-class ProgramTriangleTexture: public Program
+class ProgramTriangleTexture : public Program
 {
 protected:
 	enum AttribIndex {
@@ -290,6 +295,76 @@ public:
 		return this->triangle_buffer.alloc_vertices(n);
 	}
 
+	inline bool has_vertices () const noexcept
+	{
+		return (this->triangle_buffer.get_vertex_buffer_used() > 0);
+	}
+
+	void bind_vertex_arrays ();
+	void bind_vertex_buffers ();
+	void setup_vertex_arrays ();
+	void setup_uniforms ();
+	void upload_vertex_buffers ();
+	void upload_uniforms (const Uniforms& uniforms);
+	void draw ();
+	void load ();
+	void debug ();
+};
+
+// ---------------------------------------------------
+
+class ProgramTriangleTextureRotation : public Program
+{
+protected:
+	enum AttribIndex {
+		iPosition,
+		iNormal,
+		iOffset,
+		iTexCoords,
+		iRotQuat
+	};
+
+	GLint u_projection_matrix;
+	GLint u_ambient_light_color;
+	GLint u_point_light_pos;
+	GLint u_point_light_color;
+	GLint u_tx_unit;
+
+public:
+	using Uniforms = ProgramTriangleTexture::Uniforms;
+
+	struct Vertex {
+		Graphics::Vertex gvertex;
+		Vector offset; // global x,y,z coords, which are added to the local coords
+		Point3f tex_coords;
+		Quaternion rot_quat;
+	};
+
+	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vao) // vertex array descriptor id
+	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vbo) // vertex buffer id
+
+protected:
+	VertexBuffer<Vertex> triangle_buffer;
+
+public:
+	ProgramTriangleTextureRotation ();
+	~ProgramTriangleTextureRotation ();
+
+	inline void clear ()
+	{
+		this->triangle_buffer.clear();
+	}
+
+	inline std::span<Vertex> alloc_vertices (const uint32_t n)
+	{
+		return this->triangle_buffer.alloc_vertices(n);
+	}
+
+	inline bool has_vertices () const noexcept
+	{
+		return (this->triangle_buffer.get_vertex_buffer_used() > 0);
+	}
+
 	void bind_vertex_arrays ();
 	void bind_vertex_buffers ();
 	void setup_vertex_arrays ();
@@ -316,6 +391,8 @@ protected:
 
 	ProgramTriangleTexture::Uniforms program_triangle_texture_uniforms;
 	ProgramTriangleTexture *program_triangle_texture;
+	ProgramTriangleTextureRotation *program_triangle_texture_rotation;
+	
 	std::vector<TextureDescriptor> textures;
 	std::list<Opengl_AtlasDescriptor> atlases;
 	GLuint texture_array_id;

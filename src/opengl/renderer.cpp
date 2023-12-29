@@ -106,6 +106,7 @@ void Renderer::load_opengl_programs ()
 
 	this->program_triangle_color = new ProgramTriangleColor;
 	this->program_triangle_texture = new ProgramTriangleTexture;
+	this->program_triangle_texture_rotation = new ProgramTriangleTextureRotation;
 
 	dprintln("all opengl programs loaded");
 }
@@ -116,6 +117,7 @@ Renderer::~Renderer ()
 {
 	delete this->program_triangle_color;
 	delete this->program_triangle_texture;
+	delete this->program_triangle_texture_rotation;
 
 	SDL_GL_DeleteContext(this->sdl_gl_context);
 	SDL_DestroyWindow(this->sdl_window);
@@ -571,15 +573,26 @@ void Renderer::render ()
 	this->program_triangle_texture_uniforms.point_light_pos = this->program_triangle_color_uniforms.point_light_pos;
 	this->program_triangle_texture_uniforms.point_light_color = this->program_triangle_color_uniforms.point_light_color;
 	
-	this->program_triangle_color->load();
-	this->program_triangle_color->upload_uniforms(this->program_triangle_color_uniforms);
-	this->program_triangle_color->upload_vertex_buffers();
-	this->program_triangle_color->draw();
+	if (this->program_triangle_color->has_vertices()) {
+		this->program_triangle_color->load();
+		this->program_triangle_color->upload_uniforms(this->program_triangle_color_uniforms);
+		this->program_triangle_color->upload_vertex_buffers();
+		this->program_triangle_color->draw();
+	}
 
-	this->program_triangle_texture->load();
-	this->program_triangle_texture->upload_uniforms(this->program_triangle_texture_uniforms);
-	this->program_triangle_texture->upload_vertex_buffers();
-	this->program_triangle_texture->draw();
+	if (this->program_triangle_texture->has_vertices()) {
+		this->program_triangle_texture->load();
+		this->program_triangle_texture->upload_uniforms(this->program_triangle_texture_uniforms);
+		this->program_triangle_texture->upload_vertex_buffers();
+		this->program_triangle_texture->draw();
+	}
+
+	if (this->program_triangle_texture_rotation->has_vertices()) {
+		this->program_triangle_texture_rotation->load();
+		this->program_triangle_texture_rotation->upload_uniforms(this->program_triangle_texture_uniforms);
+		this->program_triangle_texture_rotation->upload_vertex_buffers();
+		this->program_triangle_texture_rotation->draw();
+	}
 }
 
 // ---------------------------------------------------
@@ -595,6 +608,7 @@ void Renderer::clear_vertex_buffers ()
 {
 	this->program_triangle_color->clear();
 	this->program_triangle_texture->clear();
+	this->program_triangle_texture_rotation->clear();
 }
 
 // ---------------------------------------------------
