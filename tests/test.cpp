@@ -299,8 +299,8 @@ int main (int argc, char **argv)
 
 	setup();
 
-	music = audio_manager->load_music("music.mp3", MyGlib::Audio::Format::MP3);
-	audio_explosion = audio_manager->load_sound("hq-explosion-6288.wav", MyGlib::Audio::Format::Wav);
+	music = audio_manager->load_music("tests-assets/music.mp3", MyGlib::Audio::Format::MP3);
+	audio_explosion = audio_manager->load_sound("tests-assets/hq-explosion-6288.wav", MyGlib::Audio::Format::Wav);
 
 	audio_manager->play_audio(music, Mylib::Trigger::make_callback_function<MyGlib::Audio::Manager::Event>(&my_music_callback));
 
