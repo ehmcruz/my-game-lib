@@ -185,6 +185,7 @@ protected:
 	{
 		this->rotation_angle = other.rotation_angle;
 		this->rotation_axis = other.rotation_axis;
+		this->must_recalculate_rotation = true;
 	}
 
 public:
@@ -508,9 +509,10 @@ private:
 	std::array<Vertex, 6> rotated_vertices; // 2 triangles
 
 public:
+	// constructors
+
 	Rect2D (const fp_t w_, const fp_t h_) noexcept
-		: Shape (Type::Rect2D),
-		  w(w_), h(h_)
+		: Shape (Type::Rect2D), w(w_), h(h_)
 	{
 		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 		this->calculate_vertices();
@@ -520,6 +522,26 @@ public:
 		: Shape (Type::Rect2D)
 	{
 		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+	}
+
+	Rect2D (const Rect2D& other)
+		: Shape(Type::Rect2D), w(other.w), h(other.h)
+	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+		this->calculate_vertices();
+	}
+
+	// assignment operator
+
+	Rect2D& operator= (const Rect2D& other)
+	{
+		mylib_assert_exception(this->type == Type::Rect2D)
+		this->w = other.w;
+		this->h = other.h;
+		this->shape_copy(other);
+		this->calculate_vertices();
+
+		return *this;
 	}
 
 	inline void set_w (const fp_t w) noexcept
