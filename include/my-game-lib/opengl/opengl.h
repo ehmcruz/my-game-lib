@@ -74,9 +74,9 @@ class Program;
 class Shader
 {
 protected:
-	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, shader_id)
-	OO_ENCAPSULATE_SCALAR_READONLY(GLenum, shader_type)
-	OO_ENCAPSULATE_OBJ_READONLY(std::string, fname)
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(GLuint, shader_id)
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(GLenum, shader_type)
+	MYLIB_OO_ENCAPSULATE_OBJ_READONLY(std::string, fname)
 
 public:
 	Shader (const GLenum shader_type_, const std::string_view fname_);
@@ -89,9 +89,9 @@ public:
 class Program
 {
 protected:
-	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, program_id)
-	OO_ENCAPSULATE_PTR_INIT(Shader*, vs, nullptr)
-	OO_ENCAPSULATE_PTR_INIT(Shader*, fs, nullptr)
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(GLuint, program_id)
+	MYLIB_OO_ENCAPSULATE_PTR_INIT(Shader*, vs, nullptr)
+	MYLIB_OO_ENCAPSULATE_PTR_INIT(Shader*, fs, nullptr)
 
 protected:
 	Program ();
@@ -114,10 +114,10 @@ template <typename T>
 class VertexBuffer
 {
 protected:
-	OO_ENCAPSULATE_SCALAR_INIT(uint32_t, grow_factor, 8*1024)
-	OO_ENCAPSULATE_PTR_INIT(T*, vertex_buffer, nullptr)
-	OO_ENCAPSULATE_SCALAR_INIT_READONLY(uint32_t, vertex_buffer_used, 0)
-	OO_ENCAPSULATE_SCALAR_INIT_READONLY(uint32_t, vertex_buffer_capacity, 0)
+	MYLIB_OO_ENCAPSULATE_SCALAR_INIT(uint32_t, grow_factor, 8*1024)
+	MYLIB_OO_ENCAPSULATE_PTR_INIT(T*, vertex_buffer, nullptr)
+	MYLIB_OO_ENCAPSULATE_SCALAR_INIT_READONLY(uint32_t, vertex_buffer_used, 0)
+	MYLIB_OO_ENCAPSULATE_SCALAR_INIT_READONLY(uint32_t, vertex_buffer_capacity, 0)
 
 	void realloc (const uint32_t target_capacity)
 	{
@@ -207,8 +207,8 @@ public:
 		Color color; // rgba
 	};
 
-	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vao) // vertex array descriptor id
-	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vbo) // vertex buffer id
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vao) // vertex array descriptor id
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vbo) // vertex buffer id
 
 protected:
 	VertexBuffer<Vertex> triangle_buffer;
@@ -275,8 +275,8 @@ public:
 		Point3f tex_coords;
 	};
 
-	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vao) // vertex array descriptor id
-	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vbo) // vertex buffer id
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vao) // vertex array descriptor id
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vbo) // vertex buffer id
 
 protected:
 	VertexBuffer<Vertex> triangle_buffer;
@@ -340,8 +340,8 @@ public:
 		Quaternion rot_quat;
 	};
 
-	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vao) // vertex array descriptor id
-	OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vbo) // vertex buffer id
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vao) // vertex array descriptor id
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vbo) // vertex buffer id
 
 protected:
 	VertexBuffer<Vertex> triangle_buffer;

@@ -214,7 +214,7 @@ void render ()
 
 	renderer->render();
 
-	renderer->clear_vertex_buffers();
+	renderer->clear_buffers(MyGlib::Graphics::Manager::VertexBufferBit | MyGlib::Graphics::Manager::DepthBufferBit);
 #else
 	renderer->setup_render_3D( MyGlib::Graphics::RenderArgs3D {
 		.world_camera_pos = camera_pos,

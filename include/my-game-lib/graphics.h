@@ -163,10 +163,10 @@ public:
 	};
 
 protected:
-	OO_ENCAPSULATE_SCALAR_READONLY(Type, type)
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(Type, type)
 
-	OO_ENCAPSULATE_SCALAR_INIT_READONLY(fp_t, rotation_angle, 0)
-	OO_ENCAPSULATE_OBJ_INIT_READONLY(Vector, rotation_axis, Vector::zero())
+	MYLIB_OO_ENCAPSULATE_SCALAR_INIT_READONLY(fp_t, rotation_angle, 0)
+	MYLIB_OO_ENCAPSULATE_OBJ_INIT_READONLY(Vector, rotation_axis, Vector::zero())
 
 private:
 	std::span<Vertex> local_vertices_buffer__; // not rotated
@@ -265,9 +265,10 @@ public:
 	};
 
 protected:
-	OO_ENCAPSULATE_SCALAR_REACT(fp_t, w, this->calculate_vertices();) // width
-	OO_ENCAPSULATE_SCALAR_REACT(fp_t, h, this->calculate_vertices();) // height
-	OO_ENCAPSULATE_SCALAR_REACT(fp_t, d, this->calculate_vertices();) // depth
+	// write functions of these 3 variables are written bellow the constructor
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, w) // width
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, h) // height
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, d) // depth
 
 private:
 	std::array<Vertex, 36> vertices; // 6 sides * 2 triangles * 3 vertices
@@ -317,6 +318,24 @@ public:
 		return *this;
 	}
 
+	inline void set_w (const fp_t w) noexcept
+	{
+		this->w = w;
+		this->calculate_vertices();
+	}
+
+	inline void set_h (const fp_t h) noexcept
+	{
+		this->h = h;
+		this->calculate_vertices();
+	}
+
+	inline void set_d (const fp_t d) noexcept
+	{
+		this->d = d;
+		this->calculate_vertices();
+	}
+
 	void set_size (const fp_t w, const fp_t h, const fp_t d) noexcept
 	{
 		this->w = w;
@@ -341,9 +360,11 @@ public:
 class Sphere3D : public Shape
 {
 protected:
-	OO_ENCAPSULATE_SCALAR_REACT(fp_t, radius, this->calculate_vertices();)
-	OO_ENCAPSULATE_SCALAR_INIT_READONLY(uint32_t, u_resolution, 100) // longitude
-	OO_ENCAPSULATE_SCALAR_INIT_READONLY(uint32_t, v_resolution, 50) // latitude
+	// write functions of this variable is written bellow the constructor
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, radius)
+
+	MYLIB_OO_ENCAPSULATE_SCALAR_INIT_READONLY(uint32_t, u_resolution, 100) // longitude
+	MYLIB_OO_ENCAPSULATE_SCALAR_INIT_READONLY(uint32_t, v_resolution, 50) // latitude
 
 private:
 	std::vector<Vertex> vertices;
@@ -386,6 +407,12 @@ public:
 		return *this;
 	}
 
+	inline void set_radius (const fp_t radius)
+	{
+		this->radius = radius;
+		this->calculate_vertices();
+	}
+
 	void setup_vertices_buffer (const uint32_t n_vertices);
 	void calculate_vertices ();
 
@@ -409,7 +436,8 @@ class CircleFactory;
 class Circle2D : public Shape
 {
 protected:
-	OO_ENCAPSULATE_SCALAR_REACT(fp_t, radius, this->calculate_vertices();)
+	// write functions of this variable is written bellow the constructor
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, radius)
 
 private:
 	std::vector<Vertex> vertices;
@@ -433,6 +461,12 @@ public:
 	Circle2D ()
 		: Shape (Type::Circle2D)
 	{
+	}
+
+	inline void set_radius (const fp_t radius)
+	{
+		this->radius = radius;
+		this->calculate_vertices();
 	}
 
 	void setup_vertices_buffer (const uint32_t n_vertices);
@@ -464,8 +498,9 @@ public:
 	}
 
 protected:
-	OO_ENCAPSULATE_SCALAR_REACT(fp_t, w, this->calculate_vertices();)
-	OO_ENCAPSULATE_SCALAR_REACT(fp_t, h, this->calculate_vertices();)
+	// write functions of these 2 variables are written bellow the constructor
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, w)
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, h)
 	//OO_ENCAPSULATE_SCALAR_INIT(fp_t, z, 0)
 
 private:
@@ -485,6 +520,18 @@ public:
 		: Shape (Type::Rect2D)
 	{
 		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+	}
+
+	inline void set_w (const fp_t w) noexcept
+	{
+		this->w = w;
+		this->calculate_vertices();
+	}
+
+	inline void set_h (const fp_t h) noexcept
+	{
+		this->h = h;
+		this->calculate_vertices();
 	}
 
 	void set_size (const fp_t w, const fp_t h) noexcept
@@ -585,11 +632,11 @@ public:
 
 protected:
 	Mylib::Memory::Manager& memory_manager;
-	OO_ENCAPSULATE_SCALAR_READONLY(uint32_t, window_width_px)
-	OO_ENCAPSULATE_SCALAR_READONLY(uint32_t, window_height_px)
-	OO_ENCAPSULATE_SCALAR_READONLY(bool, fullscreen)
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(uint32_t, window_width_px)
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(uint32_t, window_height_px)
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(bool, fullscreen)
 	
-	OO_ENCAPSULATE_OBJ_INIT(Color, background_color, Color::black())
+	MYLIB_OO_ENCAPSULATE_OBJ_INIT(Color, background_color, Color::black())
 
 	struct LightPointSource {
 		Point pos;

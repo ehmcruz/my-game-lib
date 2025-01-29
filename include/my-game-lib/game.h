@@ -27,7 +27,7 @@ template <typename T>
 class Shape : public T
 {
 private:
-	OO_ENCAPSULATE_OBJ_INIT(Vector, pos, Vector::zero())
+	MYLIB_OO_ENCAPSULATE_OBJ_INIT(Vector, pos, Vector::zero())
 public:
 };
 
@@ -44,7 +44,7 @@ public:
 	};
 
 private:
-	OO_ENCAPSULATE_SCALAR_CONST_READONLY(Type, type)
+	MYLIB_OO_ENCAPSULATE_SCALAR_CONST_READONLY(Type, type)
 
 public:
 	Body (const Type type_) : type(type_) {}
@@ -56,7 +56,7 @@ public:
 class StaticBody : public Body
 {
 private:
-	OO_ENCAPSULATE_OBJ_INIT(Vector, pos, Vector::zero())
+	MYLIB_OO_ENCAPSULATE_OBJ_INIT(Vector, pos, Vector::zero())
 
 public:
 	StaticBody () : Body(Type::Static) {}
@@ -67,8 +67,8 @@ public:
 class RigidBody : public StaticBody
 {
 private:
-	OO_ENCAPSULATE_OBJ_INIT(Vector, vel, Vector::zero())
-	OO_ENCAPSULATE_OBJ_INIT(Vector, acc, Vector::zero())
+	MYLIB_OO_ENCAPSULATE_OBJ_INIT(Vector, vel, Vector::zero())
+	MYLIB_OO_ENCAPSULATE_OBJ_INIT(Vector, acc, Vector::zero())
 
 };
 
