@@ -258,6 +258,7 @@ void render ()
 
 		auto rect_samus = Rect2D(1, 1);
 		rect_samus.set_scale_y(-1);
+		rect_samus.calculate_vertices();
 
 		auto rect_half_samus = Rect2D(1, 1);
 		rect_half_samus.set_scale_y(-1);

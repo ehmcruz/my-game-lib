@@ -562,6 +562,7 @@ public:
 	Rect2D (const Rect2D& other)
 		: Shape(Type::Rect2D), w(other.w), h(other.h)
 	{
+		this->shape_copy(other);
 		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 		this->calculate_vertices();
 	}

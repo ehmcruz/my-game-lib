@@ -169,7 +169,7 @@ public:
 		T *vertices = this->vertex_buffer + this->vertex_buffer_used;
 		this->vertex_buffer_used += n;
 
-		return std::span<T>{vertices, n};
+		return std::span<T>(vertices, n);
 	}
 
 	inline void clear () noexcept
