@@ -732,12 +732,15 @@ void Renderer::end_texture_loading ()
 
 			desc->atlas = &atlas_desc;
 
+			desc->x_init_px = atlas_tex_desc.x_ini;
+			desc->y_init_px = atlas_tex_desc.y_ini;
+
 			using enum Rect2D::VertexPositionIndex;
 
-			desc->tex_coords[LeftTop] = Vector2f(static_cast<fp_t>(atlas_tex_desc.x_ini) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(atlas_tex_desc.y_ini) / static_cast<fp_t>(max_texture_size));
-			desc->tex_coords[LeftBottom] = Vector2f(static_cast<fp_t>(atlas_tex_desc.x_ini) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(atlas_tex_desc.y_ini + tex_desc.height_px) / static_cast<fp_t>(max_texture_size));
-			desc->tex_coords[RightTop] = Vector2f(static_cast<fp_t>(atlas_tex_desc.x_ini + tex_desc.width_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(atlas_tex_desc.y_ini) / static_cast<fp_t>(max_texture_size));
-			desc->tex_coords[RightBottom] = Vector2f(static_cast<fp_t>(atlas_tex_desc.x_ini + tex_desc.width_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(atlas_tex_desc.y_ini + tex_desc.height_px) / static_cast<fp_t>(max_texture_size));
+			desc->tex_coords[LeftTop] = Vector2f(static_cast<fp_t>(desc->x_init_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px) / static_cast<fp_t>(max_texture_size));
+			desc->tex_coords[LeftBottom] = Vector2f(static_cast<fp_t>(desc->x_init_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px + desc->height_px) / static_cast<fp_t>(max_texture_size));
+			desc->tex_coords[RightTop] = Vector2f(static_cast<fp_t>(desc->x_init_px + desc->width_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px) / static_cast<fp_t>(max_texture_size));
+			desc->tex_coords[RightBottom] = Vector2f(static_cast<fp_t>(desc->x_init_px + desc->width_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px + desc->height_px) / static_cast<fp_t>(max_texture_size));
 		}
 
 #if 0
@@ -816,6 +819,43 @@ TextureDescriptor Renderer::load_texture (SDL_Surface *surface)
 void Renderer::destroy_texture (TextureDescriptor& texture)
 {
 	mylib_throw_exception_msg("OpenGl Renderer does not support texture destruction");
+}
+
+// ---------------------------------------------------
+
+TextureDescriptor Renderer::create_sub_texture (const TextureDescriptor& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h)
+{
+	Opengl_TextureDescriptor *desc = new(this->memory_manager.allocate_type<Opengl_TextureDescriptor>(1)) Opengl_TextureDescriptor;
+	const Opengl_TextureDescriptor *parent_desc = parent.data.get_value<Opengl_TextureDescriptor*>();
+
+	desc->surface = nullptr;
+	desc->atlas = parent_desc->atlas;
+	desc->x_init_px = parent_desc->x_init_px + x_ini;
+	desc->y_init_px = parent_desc->y_init_px + y_ini;
+	desc->width_px = w;
+	desc->height_px = h;
+
+	mylib_assert_exception(parent_desc->atlas != nullptr)
+	mylib_assert_exception((desc->x_init_px + desc->width_px) <= parent_desc->atlas->width_px)
+	mylib_assert_exception((desc->y_init_px + desc->height_px) <= parent_desc->atlas->height_px)
+
+	using enum Rect2D::VertexPositionIndex;
+
+	desc->tex_coords[LeftTop] = Vector2f(static_cast<fp_t>(desc->x_init_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px) / static_cast<fp_t>(max_texture_size));
+	desc->tex_coords[LeftBottom] = Vector2f(static_cast<fp_t>(desc->x_init_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px + desc->height_px) / static_cast<fp_t>(max_texture_size));
+	desc->tex_coords[RightTop] = Vector2f(static_cast<fp_t>(desc->x_init_px + desc->width_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px) / static_cast<fp_t>(max_texture_size));
+	desc->tex_coords[RightBottom] = Vector2f(static_cast<fp_t>(desc->x_init_px + desc->width_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px + desc->height_px) / static_cast<fp_t>(max_texture_size));
+
+	TextureDescriptor user_desc = {
+		.data = desc,
+		.width_px = desc->width_px,
+		.height_px = desc->height_px,
+		.aspect_ratio = static_cast<fp_t>(desc->width_px) / static_cast<fp_t>(desc->height_px)
+		};
+	
+	this->textures.push_back(user_desc);
+	
+	return user_desc;
 }
 
 // ---------------------------------------------------

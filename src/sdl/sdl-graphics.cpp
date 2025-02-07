@@ -387,5 +387,12 @@ void SDL_GraphicsDriver::destroy_texture (TextureDescriptor& texture)
 
 // ---------------------------------------------------
 
+TextureDescriptor SDL_GraphicsDriver::create_sub_texture (const TextureDescriptor& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h)
+{
+	mylib_throw_exception_msg("SDL Renderer does not support the creation of sub textures");
+}
+
+// ---------------------------------------------------
+
 } // namespace Graphics
 } // namespace MyGlib

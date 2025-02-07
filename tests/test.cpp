@@ -110,6 +110,7 @@ TextureDescriptor moon_high_texture;
 TextureDescriptor moon_medium_texture;
 TextureDescriptor moon_low_texture;
 TextureDescriptor samus_texture;
+TextureDescriptor half_samus_texture;
 TextureDescriptor tree_texture;
 TextureDescriptor yoshi_texture;
 TextureDescriptor zelda_texture;
@@ -145,6 +146,8 @@ void setup ()
 	zelda_texture = renderer->load_texture("tests-assets/zelda.jpg");
 	box_texture = renderer->load_texture("tests-assets/box.png");
 	renderer->end_texture_loading();
+
+	half_samus_texture = renderer->create_sub_texture(samus_texture, 0, 0, samus_texture.width_px / 2, samus_texture.height_px);
 	
 	samus_rect.set_size(1.0, 1.0 / samus_texture.aspect_ratio);
 }
@@ -252,6 +255,9 @@ void render ()
 		// we render the far cube twice because part of it is
 		// in the first frustum and part of it is in the second frustum
 		renderer->draw_cube3D(far_cube, far_cube_pos, far_cube_color);
+
+		renderer->draw_rect2D(Rect2D(1, 1, 1.0, -1.0), Vector(-1, 0, 1), { .desc = samus_texture });
+		renderer->draw_rect2D(Rect2D(1, 1, 1.0, -1.0), Vector(0, 0, 1), { .desc = half_samus_texture });
 
 		renderer->render();
 	#endif

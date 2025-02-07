@@ -58,6 +58,8 @@ struct Opengl_TextureDescriptor
 {
 	SDL_Surface *surface;
 	Opengl_AtlasDescriptor *atlas;
+	int32_t x_init_px;
+	int32_t y_init_px;
 	int32_t width_px;
 	int32_t height_px;
 	Vector2f tex_coords[4];
@@ -419,6 +421,7 @@ public:
 	void end_texture_loading () override final;
 	TextureDescriptor load_texture (SDL_Surface *surface) override final;
 	void destroy_texture (TextureDescriptor& texture) override final;
+	TextureDescriptor create_sub_texture (const TextureDescriptor& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h) override final;
 
 	void load_opengl_programs ();
 };

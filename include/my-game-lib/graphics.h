@@ -503,6 +503,8 @@ protected:
 	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, w)
 	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, h)
 	//OO_ENCAPSULATE_SCALAR_INIT(fp_t, z, 0)
+	fp_t flip_x = 1;
+	fp_t flip_y = 1;
 
 private:
 	std::array<Vertex, 6> vertices; // 2 triangles
@@ -518,6 +520,13 @@ public:
 		this->calculate_vertices();
 	}
 
+	Rect2D (const fp_t w_, const fp_t h_, const fp_t flip_x_, const fp_t flip_y_) noexcept
+		: Shape (Type::Rect2D), w(w_), h(h_), flip_x(flip_x_), flip_y(flip_y_)
+	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+		this->calculate_vertices();
+	}
+
 	Rect2D () noexcept
 		: Shape (Type::Rect2D)
 	{
@@ -525,7 +534,7 @@ public:
 	}
 
 	Rect2D (const Rect2D& other)
-		: Shape(Type::Rect2D), w(other.w), h(other.h)
+		: Shape(Type::Rect2D), w(other.w), h(other.h), flip_x(other.flip_x), flip_y(other.flip_y)
 	{
 		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 		this->calculate_vertices();
@@ -538,6 +547,8 @@ public:
 		mylib_assert_exception(this->type == Type::Rect2D)
 		this->w = other.w;
 		this->h = other.h;
+		this->flip_x = other.flip_x;
+		this->flip_y = other.flip_y;
 		this->shape_copy(other);
 		this->calculate_vertices();
 
@@ -720,6 +731,7 @@ public:
 	virtual void end_texture_loading () = 0;
 	virtual TextureDescriptor load_texture (SDL_Surface *surface) = 0;
 	virtual void destroy_texture (TextureDescriptor& texture) = 0;
+	virtual TextureDescriptor create_sub_texture (const TextureDescriptor& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h) = 0;
 
 	// 3D Wrappers
 

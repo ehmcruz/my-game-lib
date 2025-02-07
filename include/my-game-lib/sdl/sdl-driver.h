@@ -82,6 +82,7 @@ namespace Graphics
 		void end_texture_loading () override final;
 		TextureDescriptor load_texture (SDL_Surface *surface) override final;
 		void destroy_texture (TextureDescriptor& texture) override final;
+		TextureDescriptor create_sub_texture (const TextureDescriptor& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h) override final;
 	
 	private:
 		SDL_Rect helper_calc_sdl_rect (Rect2D& rect, const Vector& world_pos);
