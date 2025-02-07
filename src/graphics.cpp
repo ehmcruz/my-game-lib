@@ -329,8 +329,8 @@ void Circle2D::calculate_vertices ()
 
 void Rect2D::calculate_vertices () noexcept
 {
-	const fp_t half_w = this->get_w() * fp(0.5) * this->flip_x;
-	const fp_t half_h = this->get_h() * fp(0.5) * this->flip_y;
+	const fp_t half_w = this->get_w() * fp(0.5) * this->scale.x;
+	const fp_t half_h = this->get_h() * fp(0.5) * this->scale.y;
 	constexpr fp_t z = 0;
 
 	// draw first triangle
@@ -480,6 +480,31 @@ TextureDescriptor Manager::load_texture (const std::string_view fname)
 	TextureDescriptor d = this->load_texture(surface);
 	SDL_FreeSurface(surface);
 	return d;
+}
+
+// ---------------------------------------------------
+
+Mylib::Matrix<TextureDescriptor> Manager::split_texture (const TextureDescriptor& texture, const uint32_t n_rows, const uint32_t n_cols)
+{
+	mylib_assert_exception((texture.width_px % n_cols) == 0)
+	mylib_assert_exception((texture.height_px % n_rows) == 0)
+
+	const uint32_t w = texture.width_px / n_cols;
+	const uint32_t h = texture.height_px / n_rows;
+
+	Mylib::Matrix<TextureDescriptor> matrix(n_rows, n_cols);
+
+	for (uint32_t i=0; i<n_rows; i++) {
+		const uint32_t y_ini = i * h;
+
+		for (uint32_t j=0; j<n_cols; j++) {
+			const uint32_t x_ini = j * w;
+			
+			matrix[i, j] = this->create_sub_texture(texture, x_ini, y_ini, w, h);
+		}
+	}
+
+	return matrix;
 }
 
 // ---------------------------------------------------

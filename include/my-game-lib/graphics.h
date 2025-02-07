@@ -27,6 +27,7 @@
 #include <my-lib/math-matrix.h>
 #include <my-lib/math-geometry.h>
 #include <my-lib/math-quaternion.h>
+#include <my-lib/matrix.h>
 
 #include <my-game-lib/debug.h>
 
@@ -167,6 +168,7 @@ protected:
 
 	MYLIB_OO_ENCAPSULATE_SCALAR_INIT_READONLY(fp_t, rotation_angle, 0)
 	MYLIB_OO_ENCAPSULATE_OBJ_INIT_READONLY(Vector, rotation_axis, Vector::zero())
+	MYLIB_OO_ENCAPSULATE_OBJ_INIT_READONLY(Vector, scale, Vector(1, 1, 1))
 
 private:
 	std::span<Vertex> local_vertices_buffer__; // not rotated
@@ -185,6 +187,7 @@ protected:
 	{
 		this->rotation_angle = other.rotation_angle;
 		this->rotation_axis = other.rotation_axis;
+		this->scale = other.scale;
 		this->must_recalculate_rotation = true;
 	}
 
@@ -220,6 +223,43 @@ public:
 		this->must_recalculate_rotation = true;
 	}
 
+	// for 3D shapes
+	inline void set_scale (const Vector& scale) noexcept
+	{
+		this->scale = scale;
+		this->must_recalculate_rotation = true;
+	}
+
+	// for 2D shapes
+	inline void set_scale (const Vector2 scale) noexcept
+	{
+		this->scale = Vector(scale.x, scale.y, 0);
+		this->must_recalculate_rotation = true;
+	}
+
+	inline void set_scale_x (const fp_t scale) noexcept
+	{
+		this->scale.x = scale;
+		this->must_recalculate_rotation = true;
+	}
+
+	inline void set_scale_y (const fp_t scale) noexcept
+	{
+		this->scale.y = scale;
+		this->must_recalculate_rotation = true;
+	}
+
+	inline void set_scale_z (const fp_t scale) noexcept
+	{
+		this->scale.z = scale;
+		this->must_recalculate_rotation = true;
+	}
+
+	inline void force_recalculate_rotation () noexcept
+	{
+		this->must_recalculate_rotation = true;
+	}
+
 protected:
 	inline void set_vertices_buffer (const std::span<Vertex> local_vertices_buffer,
 	                                 const std::span<Vertex> local_rotated_vertices_buffer
@@ -227,11 +267,6 @@ protected:
 	{
 		this->local_vertices_buffer__ = local_vertices_buffer;
 		this->local_rotated_vertices_buffer__ = local_rotated_vertices_buffer;
-	}
-
-	inline void force_recalculate_rotation () noexcept
-	{
-		this->must_recalculate_rotation = true;
 	}
 };
 
@@ -503,8 +538,6 @@ protected:
 	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, w)
 	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, h)
 	//OO_ENCAPSULATE_SCALAR_INIT(fp_t, z, 0)
-	fp_t flip_x = 1;
-	fp_t flip_y = 1;
 
 private:
 	std::array<Vertex, 6> vertices; // 2 triangles
@@ -520,13 +553,6 @@ public:
 		this->calculate_vertices();
 	}
 
-	Rect2D (const fp_t w_, const fp_t h_, const fp_t flip_x_, const fp_t flip_y_) noexcept
-		: Shape (Type::Rect2D), w(w_), h(h_), flip_x(flip_x_), flip_y(flip_y_)
-	{
-		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
-		this->calculate_vertices();
-	}
-
 	Rect2D () noexcept
 		: Shape (Type::Rect2D)
 	{
@@ -534,7 +560,7 @@ public:
 	}
 
 	Rect2D (const Rect2D& other)
-		: Shape(Type::Rect2D), w(other.w), h(other.h), flip_x(other.flip_x), flip_y(other.flip_y)
+		: Shape(Type::Rect2D), w(other.w), h(other.h)
 	{
 		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 		this->calculate_vertices();
@@ -547,8 +573,6 @@ public:
 		mylib_assert_exception(this->type == Type::Rect2D)
 		this->w = other.w;
 		this->h = other.h;
-		this->flip_x = other.flip_x;
-		this->flip_y = other.flip_y;
 		this->shape_copy(other);
 		this->calculate_vertices();
 
@@ -784,6 +808,7 @@ public:
 	// Texture wrappers
 
 	TextureDescriptor load_texture (const std::string_view fname);
+	Mylib::Matrix<TextureDescriptor> split_texture (const TextureDescriptor& texture, const uint32_t n_rows, const uint32_t n_cols);
 
 	// light functions
 

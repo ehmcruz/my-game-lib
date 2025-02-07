@@ -256,8 +256,14 @@ void render ()
 		// in the first frustum and part of it is in the second frustum
 		renderer->draw_cube3D(far_cube, far_cube_pos, far_cube_color);
 
-		renderer->draw_rect2D(Rect2D(1, 1, 1.0, -1.0), Vector(-1, 0, 1), { .desc = samus_texture });
-		renderer->draw_rect2D(Rect2D(1, 1, 1.0, -1.0), Vector(0, 0, 1), { .desc = half_samus_texture });
+		auto rect_samus = Rect2D(1, 1);
+		rect_samus.set_scale_y(-1);
+
+		auto rect_half_samus = Rect2D(1, 1);
+		rect_half_samus.set_scale_y(-1);
+
+		renderer->draw_rect2D(rect_samus, Vector(-1, 0, 1), { .desc = samus_texture });
+		renderer->draw_rect2D(rect_half_samus, Vector(0, 0, 1), { .desc = half_samus_texture });
 
 		renderer->render();
 	#endif
