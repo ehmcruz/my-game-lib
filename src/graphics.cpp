@@ -517,7 +517,7 @@ std::string Manager::find_unused_texture_id ()
 	decltype(this->textures)::iterator it;
 
 	do {
-		id = "texture" + std::to_string(this->next_random_tex_id);
+		id = "texture_" + std::to_string(this->next_random_tex_id);
 		it = this->textures.find(id);
 
 		if (it == this->textures.end())
@@ -556,8 +556,8 @@ TextureDescriptor Manager::create_sub_texture (std::string id, const TextureDesc
 Mylib::Matrix<TextureDescriptor> Manager::split_texture (const TextureDescriptor& texture__, const uint32_t n_rows, const uint32_t n_cols)
 {
 	const TextureInfo& texture = *texture__.info;
-	mylib_assert_exception((texture.width_px % n_cols) == 0)
-	mylib_assert_exception((texture.height_px % n_rows) == 0)
+	mylib_assert_exception_msg((texture.width_px % n_cols) == 0, "texture width is not divisible by n_cols id: ", texture.id, " n_cols: ", n_cols, " width: ", texture.width_px);
+	mylib_assert_exception_msg((texture.height_px % n_rows) == 0, "texture height is not divisible by n_rows id: ", texture.id, " n_rows: ", n_rows, " height: ", texture.height_px);
 
 	const uint32_t w = texture.width_px / n_cols;
 	const uint32_t h = texture.height_px / n_rows;

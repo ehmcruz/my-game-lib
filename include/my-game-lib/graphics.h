@@ -30,6 +30,7 @@
 #include <my-lib/math-geometry.h>
 #include <my-lib/math-quaternion.h>
 #include <my-lib/matrix.h>
+#include <my-lib/utils.h>
 
 #include <my-game-lib/debug.h>
 
@@ -718,7 +719,7 @@ protected:
 
 	SDL_Window *sdl_window;
 
-	std::unordered_map<std::string, TextureInfo> textures;
+	Mylib::unordered_map_string_key<TextureInfo> textures;
 
 private:
 	uint64_t next_random_tex_id = 0;
@@ -844,6 +845,13 @@ public:
 	TextureDescriptor create_sub_texture (const TextureDescriptor& parent__, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h)
 	{
 		return this->create_sub_texture(this->find_unused_texture_id(), parent__, x_ini, y_ini, w, h);
+	}
+
+	TextureDescriptor find_texture (const std::string_view id)
+	{
+		auto it = this->textures.find(id);
+		mylib_assert_exception_msg(it != this->textures.end(), "texture not found: ", id);
+		return TextureDescriptor { .info = &it->second };
 	}
 
 	// light functions

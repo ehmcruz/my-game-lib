@@ -140,7 +140,10 @@ void setup ()
 	moon_high_texture = renderer->load_texture("tests-assets/moon-high.jpg");
 	moon_medium_texture = renderer->load_texture("tests-assets/moon-medium.jpg");
 	moon_low_texture = renderer->load_texture("tests-assets/moon-low.jpg");
-	samus_texture = renderer->load_texture("tests-assets/samus.png");
+	
+	renderer->load_texture("samus", "tests-assets/samus.png");
+	samus_texture = renderer->find_texture("samus");
+	
 	tree_texture = renderer->load_texture("tests-assets/tree.png");
 	yoshi_texture = renderer->load_texture("tests-assets/yoshi.jpg");
 	zelda_texture = renderer->load_texture("tests-assets/zelda.jpg");
