@@ -29,13 +29,17 @@ uniform mediump sampler2DArray u_tx_unit;
 
 void main ()
 {
+	vec4 color = texture(u_tx_unit, tex_coord);
+
+	if (color.a < 0.1)
+		discard;
+
 	vec3 light_dir = normalize(u_point_light_pos - world_position);
 	float diff = max(dot(normal, light_dir), 0.0);
 	vec3 diffuse_light = u_point_light_color.rgb * diff * u_point_light_color.a;
 
 	vec3 ambient_light = u_ambient_light_color.rgb * u_ambient_light_color.a;
 
-	vec4 color = texture(u_tx_unit, tex_coord);
 	vec3 result = (ambient_light + diffuse_light) * color.rgb;
 	o_color = vec4(result, color.a);
 }
