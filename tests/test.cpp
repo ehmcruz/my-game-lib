@@ -225,6 +225,7 @@ void render ()
 	renderer->setup_render_3D( MyGlib::Graphics::RenderArgs3D {
 		.world_camera_pos = camera_pos,
 		.world_camera_target = camera_pos + camera_vector,
+		.world_camera_up = Vector(0, 1, 0),
 		.fov_y = Mylib::Math::degrees_to_radians(fp(45)),
 		.z_near = 100,
 		.z_far = 100000,
@@ -244,6 +245,7 @@ void render ()
 		renderer->setup_render_3D( MyGlib::Graphics::RenderArgs3D {
 			.world_camera_pos = camera_pos,
 			.world_camera_target = camera_pos + camera_vector,
+			.world_camera_up = Vector(0, 1, 0),
 			.fov_y = Mylib::Math::degrees_to_radians(fp(45)),
 			.z_near = 0.1,
 			.z_far = 100,

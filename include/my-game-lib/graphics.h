@@ -620,6 +620,7 @@ public:
 struct RenderArgs3D {
 	Point world_camera_pos;
 	Point world_camera_target;
+	Vector world_camera_up;
 	fp_t fov_y;
 	fp_t z_near;
 	fp_t z_far;

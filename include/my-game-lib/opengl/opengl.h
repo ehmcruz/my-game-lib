@@ -389,11 +389,11 @@ protected:
 	SDL_GLContext sdl_gl_context;
 
 	ProgramTriangleColor::Uniforms program_triangle_color_uniforms;
-	ProgramTriangleColor *program_triangle_color;
+	MYLIB_OO_ENCAPSULATE_PTR(ProgramTriangleColor*, program_triangle_color)
 
 	ProgramTriangleTexture::Uniforms program_triangle_texture_uniforms;
-	ProgramTriangleTexture *program_triangle_texture;
-	ProgramTriangleTextureRotation *program_triangle_texture_rotation;
+	MYLIB_OO_ENCAPSULATE_PTR(ProgramTriangleTexture*, program_triangle_texture)
+	MYLIB_OO_ENCAPSULATE_PTR(ProgramTriangleTextureRotation*, program_triangle_texture_rotation)
 	
 	std::list<Opengl_AtlasDescriptor> atlases;
 	GLuint texture_array_id;

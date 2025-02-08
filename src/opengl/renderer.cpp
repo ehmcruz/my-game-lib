@@ -429,7 +429,7 @@ void Renderer::setup_render_3D (const RenderArgs3D& args)
 		* Matrix4::look_at(
 			args.world_camera_pos,
 			args.world_camera_target,
-			Vector(0, 1, 0));
+			args.world_camera_up);
 
 	this->program_triangle_color_uniforms.ambient_light_color = args.ambient_light_color;
 
