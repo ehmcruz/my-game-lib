@@ -147,9 +147,9 @@ void setup ()
 	box_texture = renderer->load_texture("tests-assets/box.png");
 	renderer->end_texture_loading();
 
-	half_samus_texture = renderer->create_sub_texture(samus_texture, 0, 0, samus_texture.width_px / 2, samus_texture.height_px);
+	half_samus_texture = renderer->create_sub_texture(samus_texture, 0, 0, samus_texture.info->width_px / 2, samus_texture.info->height_px);
 	
-	samus_rect.set_size(1.0, 1.0 / samus_texture.aspect_ratio);
+	samus_rect.set_size(1.0, 1.0 / samus_texture.info->aspect_ratio);
 }
 
 static void process_keys (const Uint8 *keys, const fp_t dt)

@@ -473,19 +473,89 @@ CircleFactoryManager::CircleFactoryManager (const uint32_t n_cats, const uint32_
 
 // ---------------------------------------------------
 
-TextureDescriptor Manager::load_texture (const std::string_view fname)
+TextureInfo& Manager::add_texture (std::string id, const TextureInfo& texture__)
+{
+	auto [it, success] = this->textures.insert({id, texture__});
+	mylib_assert_exception_msg(success, "unable to add texture ", id);
+
+	TextureInfo& texture = it->second;
+	texture.id = std::move(id);
+
+	return texture;
+}
+
+// ---------------------------------------------------
+
+TextureDescriptor Manager::load_texture (std::string id, SDL_Surface *surface)
+{
+	TextureInfo texture__ = this->load_texture__(surface);
+	TextureInfo& texture = this->add_texture(std::move(id), texture__);
+
+	return TextureDescriptor {
+		.info = &texture,
+	};
+}
+
+// ---------------------------------------------------
+
+TextureDescriptor Manager::load_texture (std::string id, const std::string_view fname)
 {
 	SDL_Surface *surface = IMG_Load(fname.data());
 	mylib_assert_exception_msg(surface != nullptr, "unable to load image ", fname, '\n', IMG_GetError());
-	TextureDescriptor d = this->load_texture(surface);
+
+	TextureDescriptor d = this->load_texture(std::move(id), surface);
 	SDL_FreeSurface(surface);
+
 	return d;
 }
 
 // ---------------------------------------------------
 
-Mylib::Matrix<TextureDescriptor> Manager::split_texture (const TextureDescriptor& texture, const uint32_t n_rows, const uint32_t n_cols)
+std::string Manager::find_unused_texture_id ()
 {
+	std::string id;
+	decltype(this->textures)::iterator it;
+
+	do {
+		id = "texture" + std::to_string(this->next_random_tex_id);
+		it = this->textures.find(id);
+
+		if (it == this->textures.end())
+			break;
+		else
+			this->next_random_tex_id++;
+	} while (true);
+
+	return id;
+}
+
+// ---------------------------------------------------
+
+void Manager::destroy_texture (TextureDescriptor& texture__)
+{
+	TextureInfo& texture = *texture__.info;
+	this->destroy_texture__(texture);
+	this->textures.erase(texture.id);
+}
+
+// ---------------------------------------------------
+
+TextureDescriptor Manager::create_sub_texture (std::string id, const TextureDescriptor& parent__, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h)
+{
+	const TextureInfo& parent = *parent__.info;
+	TextureInfo texture__ = this->create_sub_texture__(parent, x_ini, y_ini, w, h);
+	TextureInfo& texture = this->add_texture(std::move(id), texture__);
+
+	return TextureDescriptor {
+		.info = &texture,
+	};
+}
+
+// ---------------------------------------------------
+
+Mylib::Matrix<TextureDescriptor> Manager::split_texture (const TextureDescriptor& texture__, const uint32_t n_rows, const uint32_t n_cols)
+{
+	const TextureInfo& texture = *texture__.info;
 	mylib_assert_exception((texture.width_px % n_cols) == 0)
 	mylib_assert_exception((texture.height_px % n_rows) == 0)
 
@@ -499,8 +569,9 @@ Mylib::Matrix<TextureDescriptor> Manager::split_texture (const TextureDescriptor
 
 		for (uint32_t j=0; j<n_cols; j++) {
 			const uint32_t x_ini = j * w;
+			std::string id = texture.id + "[" + std::to_string(i) + "," + std::to_string(j) + "]";
 			
-			matrix[i, j] = this->create_sub_texture(texture, x_ini, y_ini, w, h);
+			matrix[i, j] = this->create_sub_texture(std::move(id), texture__, x_ini, y_ini, w, h);
 		}
 	}
 

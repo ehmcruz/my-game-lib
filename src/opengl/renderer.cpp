@@ -189,7 +189,7 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const std::array
 	using enum Cube3D::SurfacePositionIndex;
 
 	auto mount = [&i, vertices] (const VertexPositionIndex p, const Vector3f& v, const TextureRenderOptions& texture_options) -> void {
-		const Opengl_TextureDescriptor *desc = texture_options.desc.data.get_value<Opengl_TextureDescriptor*>();
+		const Opengl_TextureDescriptor *desc = texture_options.desc.info->data.get_value<Opengl_TextureDescriptor*>();
 		const Opengl_AtlasDescriptor *atlas = desc->atlas;
 
 		vertices[i].tex_coords = Vector3f(v.x, v.y, atlas->texture_depth);
@@ -204,7 +204,7 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const std::array
 
 	// p1 and p2 should be a diagonal of the rectangle
 	auto mount_surface = [&mount_triangle] (const VertexPositionIndex p1, const VertexPositionIndex p2, const VertexPositionIndex p3, const VertexPositionIndex p4, const TextureRenderOptions& texture_options) -> void {
-		const Opengl_TextureDescriptor *desc = texture_options.desc.data.get_value<Opengl_TextureDescriptor*>();
+		const Opengl_TextureDescriptor *desc = texture_options.desc.info->data.get_value<Opengl_TextureDescriptor*>();
 
 		mount_triangle(p1, p2, p3, desc->tex_coords[Rect2D::LeftTop], desc->tex_coords[Rect2D::RightBottom], desc->tex_coords[Rect2D::RightTop], texture_options);
 		mount_triangle(p1, p2, p4, desc->tex_coords[Rect2D::LeftTop], desc->tex_coords[Rect2D::RightBottom], desc->tex_coords[Rect2D::LeftBottom], texture_options);
@@ -258,7 +258,7 @@ void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Text
 
 	mylib_assert_exception(shape_vertices.size() == n_vertices)
 
-	const Opengl_TextureDescriptor *desc = texture_options.desc.data.get_value<Opengl_TextureDescriptor*>();
+	const Opengl_TextureDescriptor *desc = texture_options.desc.info->data.get_value<Opengl_TextureDescriptor*>();
 	const Opengl_AtlasDescriptor *atlas = desc->atlas;
 
 	auto fill_vertices = [&sphere, &offset, &texture_options, n_vertices, shape_vertices, desc, atlas] (auto& program) -> void {
@@ -387,7 +387,7 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& col
 
 void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRenderOptions& texture_options)
 {
-	const Opengl_TextureDescriptor *desc = texture_options.desc.data.get_value<Opengl_TextureDescriptor*>();
+	const Opengl_TextureDescriptor *desc = texture_options.desc.info->data.get_value<Opengl_TextureDescriptor*>();
 	const Opengl_AtlasDescriptor *atlas = desc->atlas;
 
 	constexpr uint32_t n_vertices = Rect2D::get_n_vertices();
@@ -649,8 +649,10 @@ void Renderer::end_texture_loading ()
 {
 	TextureAtlasCreator atlas_creator;
 
-	for (auto& tex_desc : this->textures)
+	for (auto& pair : this->textures) {
+		TextureInfo& tex_desc = pair.second;
 		atlas_creator.add_texture(tex_desc);
+	}
 
 	std::list< std::vector<TextureAtlasCreator::AtlasTexture> > atlas_list;
 
@@ -698,7 +700,7 @@ void Renderer::end_texture_loading ()
 		dprintln("Atlas created with ", atlas.size(), " textures");
 
 		for (auto& atlas_tex_desc : atlas) {
-			TextureDescriptor& tex_desc = *atlas_tex_desc.texture;
+			TextureInfo& tex_desc = *atlas_tex_desc.texture;
 			Opengl_TextureDescriptor *desc = tex_desc.data.get_value<Opengl_TextureDescriptor*>();
 
 			dprintln("\tTexture of size ", tex_desc.width_px, "x", tex_desc.height_px, " allocated at position ", atlas_tex_desc.x_ini, "x", atlas_tex_desc.y_ini);
@@ -769,7 +771,7 @@ void Renderer::end_texture_loading ()
 
 // ---------------------------------------------------
 
-TextureDescriptor Renderer::load_texture (SDL_Surface *surface)
+TextureInfo Renderer::load_texture__ (SDL_Surface *surface)
 {
 	Opengl_TextureDescriptor *desc = new(this->memory_manager.allocate_type<Opengl_TextureDescriptor>(1)) Opengl_TextureDescriptor;
 
@@ -802,28 +804,26 @@ TextureDescriptor Renderer::load_texture (SDL_Surface *surface)
 
 	//SDL_FreeSurface(treated_surface);*/
 
-	TextureDescriptor user_desc = {
+	TextureInfo tex_info = {
 		.data = desc,
 		.width_px = desc->width_px,
 		.height_px = desc->height_px,
 		.aspect_ratio = static_cast<fp_t>(desc->width_px) / static_cast<fp_t>(desc->height_px)
 		};
-	
-	this->textures.push_back(user_desc);
-	
-	return user_desc;
+		
+	return tex_info;
 }
 
 // ---------------------------------------------------
 
-void Renderer::destroy_texture (TextureDescriptor& texture)
+void Renderer::destroy_texture__ (TextureInfo& texture)
 {
 	mylib_throw_exception_msg("OpenGl Renderer does not support texture destruction");
 }
 
 // ---------------------------------------------------
 
-TextureDescriptor Renderer::create_sub_texture (const TextureDescriptor& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h)
+TextureInfo Renderer::create_sub_texture__ (const TextureInfo& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h)
 {
 	Opengl_TextureDescriptor *desc = new(this->memory_manager.allocate_type<Opengl_TextureDescriptor>(1)) Opengl_TextureDescriptor;
 	const Opengl_TextureDescriptor *parent_desc = parent.data.get_value<Opengl_TextureDescriptor*>();
@@ -846,16 +846,14 @@ TextureDescriptor Renderer::create_sub_texture (const TextureDescriptor& parent,
 	desc->tex_coords[RightTop] = Vector2f(static_cast<fp_t>(desc->x_init_px + desc->width_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px) / static_cast<fp_t>(max_texture_size));
 	desc->tex_coords[RightBottom] = Vector2f(static_cast<fp_t>(desc->x_init_px + desc->width_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px + desc->height_px) / static_cast<fp_t>(max_texture_size));
 
-	TextureDescriptor user_desc = {
+	TextureInfo tex_info = {
 		.data = desc,
 		.width_px = desc->width_px,
 		.height_px = desc->height_px,
 		.aspect_ratio = static_cast<fp_t>(desc->width_px) / static_cast<fp_t>(desc->height_px)
 		};
 	
-	this->textures.push_back(user_desc);
-	
-	return user_desc;
+	return tex_info;
 }
 
 // ---------------------------------------------------

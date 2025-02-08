@@ -25,19 +25,19 @@ class TextureAtlasCreator
 {
 public:
 	struct AtlasTexture {
-		TextureDescriptor *texture;
+		TextureInfo *texture;
 		int32_t x_ini;
 		int32_t y_ini;
 	};
 
 protected:
-	std::list<TextureDescriptor*> textures;
+	std::list<TextureInfo*> textures;
 
 public:
 	TextureAtlasCreator () = default;
 	MYLIB_DELETE_COPY_MOVE_CONSTRUCTOR_ASSIGN(TextureAtlasCreator)
 
-	void add_texture (TextureDescriptor& texture);
+	void add_texture (TextureInfo& texture);
 	std::vector<AtlasTexture> create_atlas (const int32_t atlas_size);
 };
 

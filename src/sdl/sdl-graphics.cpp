@@ -239,7 +239,7 @@ void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const 
 void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRenderOptions& texture_options)
 {
 	const SDL_Rect sdl_rect = this->helper_calc_sdl_rect(rect, offset);
-	SDL_TextureDescriptor *desc = texture_options.desc.data.get_value<SDL_TextureDescriptor*>();
+	SDL_TextureDescriptor *desc = texture_options.desc.info->data.get_value<SDL_TextureDescriptor*>();
 
 	SDL_RenderCopy(this->renderer, desc->texture, nullptr, &sdl_rect);
 }
@@ -360,7 +360,7 @@ void SDL_GraphicsDriver::end_texture_loading ()
 
 // ---------------------------------------------------
 
-TextureDescriptor SDL_GraphicsDriver::load_texture (SDL_Surface *surface)
+TextureInfo SDL_GraphicsDriver::load_texture__ (SDL_Surface *surface)
 {
 	SDL_TextureDescriptor *desc = new(this->memory_manager.allocate_type<SDL_TextureDescriptor>(1)) SDL_TextureDescriptor;
 
@@ -370,7 +370,7 @@ TextureDescriptor SDL_GraphicsDriver::load_texture (SDL_Surface *surface)
 	desc->texture = SDL_CreateTextureFromSurface(this->renderer, surface);
 	mylib_assert_exception_msg(desc->texture != nullptr, "error converting surface to texture", '\n', SDL_GetError())
 
-	return TextureDescriptor {
+	return TextureInfo {
 		.data = desc,
 		.width_px = surface->w,
 		.height_px = surface->h,
@@ -380,14 +380,14 @@ TextureDescriptor SDL_GraphicsDriver::load_texture (SDL_Surface *surface)
 
 // ---------------------------------------------------
 
-void SDL_GraphicsDriver::destroy_texture (TextureDescriptor& texture)
+void SDL_GraphicsDriver::destroy_texture__ (TextureInfo& texture)
 {
 	mylib_throw_exception_msg("SDL Renderer does not support texture destruction");
 }
 
 // ---------------------------------------------------
 
-TextureDescriptor SDL_GraphicsDriver::create_sub_texture (const TextureDescriptor& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h)
+TextureInfo SDL_GraphicsDriver::create_sub_texture__ (const TextureInfo& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h)
 {
 	mylib_throw_exception_msg("SDL Renderer does not support the creation of sub textures");
 }

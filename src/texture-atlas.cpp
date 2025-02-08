@@ -24,7 +24,7 @@ struct EmptyArea {
 
 // ---------------------------------------------------
 
-static std::list<EmptyArea>::iterator find_empty_area (std::list<EmptyArea>& empty_areas, const TextureDescriptor& texture)
+static std::list<EmptyArea>::iterator find_empty_area (std::list<EmptyArea>& empty_areas, const TextureInfo& texture)
 {
 	std::list<EmptyArea>::iterator best_it = empty_areas.end();
 	int32_t best_area = std::numeric_limits<int32_t>::max();
@@ -51,7 +51,7 @@ static std::list<EmptyArea>::iterator find_empty_area (std::list<EmptyArea>& emp
 
 // ---------------------------------------------------
 
-void TextureAtlasCreator::add_texture (TextureDescriptor& texture)
+void TextureAtlasCreator::add_texture (TextureInfo& texture)
 {
 	this->textures.push_back(&texture);
 }
@@ -66,7 +66,7 @@ std::vector<TextureAtlasCreator::AtlasTexture> TextureAtlasCreator::create_atlas
 		return atlas;
 
 	// sort textures by area
-	this->textures.sort([](const TextureDescriptor *a, const TextureDescriptor *b) -> bool {
+	this->textures.sort([](const TextureInfo *a, const TextureInfo *b) -> bool {
 		return (a->width_px * a->height_px) > (b->width_px * b->height_px);
 	});
 

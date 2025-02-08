@@ -395,7 +395,6 @@ protected:
 	ProgramTriangleTexture *program_triangle_texture;
 	ProgramTriangleTextureRotation *program_triangle_texture_rotation;
 	
-	std::vector<TextureDescriptor> textures;
 	std::list<Opengl_AtlasDescriptor> atlases;
 	GLuint texture_array_id;
 
@@ -419,11 +418,13 @@ public:
 	
 	void begin_texture_loading () override final;
 	void end_texture_loading () override final;
-	TextureDescriptor load_texture (SDL_Surface *surface) override final;
-	void destroy_texture (TextureDescriptor& texture) override final;
-	TextureDescriptor create_sub_texture (const TextureDescriptor& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h) override final;
 
 	void load_opengl_programs ();
+
+protected:
+	TextureInfo load_texture__ (SDL_Surface *surface) override final;
+	void destroy_texture__ (TextureInfo& texture) override final;
+	TextureInfo create_sub_texture__ (const TextureInfo& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h) override final;
 };
 
 // ---------------------------------------------------

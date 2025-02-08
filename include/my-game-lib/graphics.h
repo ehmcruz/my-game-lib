@@ -18,6 +18,7 @@
 #include <string_view>
 #include <random>
 #include <unordered_map>
+#include <string>
 
 #include <my-lib/std.h>
 #include <my-lib/macros.h>
@@ -137,11 +138,21 @@ std::ostream& operator << (std::ostream& out, const Color& color);
 
 // ---------------------------------------------------
 
-struct TextureDescriptor {
-	Mylib::Any<sizeof(void*), sizeof(void*)> data; // used by backend driver
+struct TextureInfo {
+	// filled by the backend driver
+	Mylib::Any<sizeof(void*), sizeof(void*)> data;
 	int32_t width_px;
 	int32_t height_px;
 	fp_t aspect_ratio;
+
+	// filled by the frontend
+	std::string id;
+};
+
+// ---------------------------------------------------
+
+struct TextureDescriptor {
+	TextureInfo *info;
 };
 
 // ---------------------------------------------------
@@ -689,10 +700,6 @@ public:
 		VertexBufferBit      = 8,
 	};
 
-	struct TextureInfo {
-
-	};
-
 protected:
 	Mylib::Memory::Manager& memory_manager;
 	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(uint32_t, window_width_px)
@@ -711,8 +718,10 @@ protected:
 
 	SDL_Window *sdl_window;
 
-private:
+	std::unordered_map<std::string, TextureInfo> textures;
 
+private:
+	uint64_t next_random_tex_id = 0;
 
 public:
 	Manager (const InitParams& params)
@@ -762,9 +771,6 @@ public:
 
 	virtual void begin_texture_loading () = 0;
 	virtual void end_texture_loading () = 0;
-	virtual TextureDescriptor load_texture (SDL_Surface *surface) = 0;
-	virtual void destroy_texture (TextureDescriptor& texture) = 0;
-	virtual TextureDescriptor create_sub_texture (const TextureDescriptor& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h) = 0;
 
 	// 3D Wrappers
 
@@ -816,8 +822,29 @@ public:
 
 	// Texture wrappers
 
-	TextureDescriptor load_texture (const std::string_view fname);
-	Mylib::Matrix<TextureDescriptor> split_texture (const TextureDescriptor& texture, const uint32_t n_rows, const uint32_t n_cols);
+	// To create and destroy textures, we always use these wrappers,
+	// because the frontend manages the textures in a map, to allow
+	// searching by the id.
+	// We don't need to worry about passing a TextureDescriptor to the
+	// backend in the render functions, because they don't change the map.
+
+	TextureDescriptor load_texture (std::string id, SDL_Surface *surface);
+	TextureDescriptor load_texture (std::string id, const std::string_view fname);
+	void destroy_texture (TextureDescriptor& texture__);
+	TextureDescriptor create_sub_texture (std::string id, const TextureDescriptor& parent__, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h);
+	Mylib::Matrix<TextureDescriptor> split_texture (const TextureDescriptor& texture__, const uint32_t n_rows, const uint32_t n_cols);
+
+	// the following will generate an id randomly
+
+	TextureDescriptor load_texture (const std::string_view fname)
+	{
+		return this->load_texture(this->find_unused_texture_id(), fname);
+	}
+
+	TextureDescriptor create_sub_texture (const TextureDescriptor& parent__, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h)
+	{
+		return this->create_sub_texture(this->find_unused_texture_id(), parent__, x_ini, y_ini, w, h);
+	}
 
 	// light functions
 
@@ -828,6 +855,15 @@ public:
 		LightPointSource& light_source = this->light_point_sources[desc];
 		light_source.pos = pos;
 	}
+
+protected:
+	virtual TextureInfo load_texture__ (SDL_Surface *surface) = 0;
+	virtual void destroy_texture__ (TextureInfo& texture) = 0;
+	virtual TextureInfo create_sub_texture__ (const TextureInfo& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h) = 0;
+
+private:
+	TextureInfo& add_texture (std::string id, const TextureInfo& texture__);
+	std::string find_unused_texture_id ();
 };
 
 // ---------------------------------------------------
