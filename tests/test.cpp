@@ -81,7 +81,7 @@ void key_down_callback (const MyGlib::Event::KeyDown::Type& event)
 LightPointDescriptor light;
 
 Cube3D cube (1);
-Vector cube_pos (-2, -2, -4);
+Vector cube_pos (-2, -2, 4);
 
 Cube3D cube_color (1.5);
 
@@ -91,8 +91,8 @@ fp_t far_cube_angular_vel = Mylib::Math::degrees_to_radians(fp(45));
 Sphere3D sphere(2);
 Sphere3D earth(2);
 
-Point camera_pos(-0.5, -0.5, -10);
-Point camera_vector(0, 0, 1);
+Point camera_pos(-0.5, -0.5, 10);
+Point camera_vector(0, 0, -1);
 
 Rect2D samus_rect;
 
@@ -168,9 +168,9 @@ static void process_keys (const Uint8 *keys, const fp_t dt)
 		cube_pos.x += speed * dt;
 
 	if (keys[SDL_SCANCODE_PERIOD])
-		cube_pos.z += speed * dt;
-	else if (keys[SDL_SCANCODE_COMMA])
 		cube_pos.z -= speed * dt;
+	else if (keys[SDL_SCANCODE_COMMA])
+		cube_pos.z += speed * dt;
 	
 	if (keys[SDL_SCANCODE_N]) {
 		cube.rotate(cube.get_rotation_angle() + rot_speed * dt);
@@ -228,7 +228,7 @@ void render ()
 		.ambient_light_color = ambient_light_color,
 		} );
 	
-	const Vector far_cube_pos = Vector(2, -3, 100);
+	const Vector far_cube_pos = Vector(2, -3, -100);
 	const Color far_cube_color = Color::yellow();
 
 	renderer->draw_cube3D(far_cube, far_cube_pos, far_cube_color);

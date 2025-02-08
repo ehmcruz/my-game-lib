@@ -17,6 +17,7 @@
 #include <span>
 #include <string_view>
 #include <random>
+#include <unordered_map>
 
 #include <my-lib/std.h>
 #include <my-lib/macros.h>
@@ -688,6 +689,10 @@ public:
 		VertexBufferBit      = 8,
 	};
 
+	struct TextureInfo {
+
+	};
+
 protected:
 	Mylib::Memory::Manager& memory_manager;
 	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(uint32_t, window_width_px)
@@ -705,6 +710,9 @@ protected:
 	std::array<LightPointSource, max_points_light_source> light_point_sources;
 
 	SDL_Window *sdl_window;
+
+private:
+
 
 public:
 	Manager (const InitParams& params)
