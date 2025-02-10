@@ -247,6 +247,68 @@ public:
 
 // ---------------------------------------------------
 
+class ProgramLineColor : public Program
+{
+protected:
+	enum AttribIndex {
+		iPosition,
+		iDirection,
+		iOffset,
+		iColor
+	};
+
+	GLint u_projection_matrix;
+	GLint u_ambient_light_color;
+	GLint u_point_light_pos;
+	GLint u_point_light_color;
+
+public:
+	using Uniforms = ProgramTriangleColor::Uniforms;
+
+	struct Vertex {
+		Graphics::Vertex gvertex;
+		Vector offset; // global x,y,z coords, which are added to the local coords
+		Color color; // rgba
+	};
+
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vao) // vertex array descriptor id
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(GLuint, vbo) // vertex buffer id
+
+protected:
+	VertexBuffer<Vertex> vertex_buffer;
+
+public:
+	ProgramLineColor ();
+	~ProgramLineColor ();
+
+	inline void clear ()
+	{
+		this->vertex_buffer.clear();
+	}
+
+	inline std::span<Vertex> alloc_vertices (const uint32_t n)
+	{
+		return this->vertex_buffer.alloc_vertices(n);
+	}
+
+	inline bool has_vertices () const noexcept
+	{
+		return (this->vertex_buffer.get_vertex_buffer_used() > 0);
+	}
+
+	void bind_vertex_arrays ();
+	void bind_vertex_buffers ();
+	void setup_vertex_arrays ();
+	void setup_uniforms ();
+	void upload_vertex_buffers ();
+	void upload_uniforms (const Uniforms& uniforms);
+	void draw ();
+	void load ();
+	void debug ();
+};
+
+// ---------------------------------------------------
+
 class ProgramTriangleTexture : public Program
 {
 protected:
@@ -390,6 +452,7 @@ protected:
 
 	ProgramTriangleColor::Uniforms program_triangle_color_uniforms;
 	MYLIB_OO_ENCAPSULATE_PTR(ProgramTriangleColor*, program_triangle_color)
+	MYLIB_OO_ENCAPSULATE_PTR(ProgramLineColor*, program_line_color)
 
 	ProgramTriangleTexture::Uniforms program_triangle_texture_uniforms;
 	MYLIB_OO_ENCAPSULATE_PTR(ProgramTriangleTexture*, program_triangle_texture)
@@ -403,6 +466,7 @@ public:
 	~Renderer ();
 
 	void wait_next_frame () override final;
+	void draw_line3D (Line3D& line, const Vector& offset, const Color& color) override final;
 	void draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color) override final;
 	void draw_cube3D (Cube3D& cube, const Vector& offset, const std::array<TextureRenderOptions, 6>& texture_options) override final;
 	void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color) override final;

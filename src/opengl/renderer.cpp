@@ -105,6 +105,7 @@ void Renderer::load_opengl_programs ()
 	dprintln("loading opengl programs...");
 
 	this->program_triangle_color = new ProgramTriangleColor;
+	this->program_line_color = new ProgramLineColor;
 	this->program_triangle_texture = new ProgramTriangleTexture;
 	this->program_triangle_texture_rotation = new ProgramTriangleTextureRotation;
 
@@ -116,6 +117,7 @@ void Renderer::load_opengl_programs ()
 Renderer::~Renderer ()
 {
 	delete this->program_triangle_color;
+	delete this->program_line_color;
 	delete this->program_triangle_texture;
 	delete this->program_triangle_texture_rotation;
 
@@ -128,6 +130,40 @@ Renderer::~Renderer ()
 void Renderer::wait_next_frame ()
 {
 	this->clear_buffers(ColorBufferBit | DepthBufferBit | VertexBufferBit);
+}
+
+// ---------------------------------------------------
+
+void Renderer::draw_line3D (Line3D& line, const Vector& offset, const Color& color)
+{
+	constexpr uint32_t n_vertices = Line3D::get_n_vertices();
+	//const Vector world_pos = Vector(4.0f, 4.0f);
+
+#if 0
+	dprint( "local_pos:" )
+	Mylib::Math::println(world_pos);
+
+	//dprint( "clip_pos:" )
+	//Mylib::Math::println(clip_pos);
+//exit(1);
+#endif
+
+	std::span<ProgramLineColor::Vertex> vertices = this->program_line_color->alloc_vertices(n_vertices);
+	std::span<Vertex> shape_vertices = line.get_local_rotated_vertices();
+
+/*	dprintln("rendering cube with offset=", offset, " color=", color, " w=", cube.get_w(), " h=", cube.get_h(), " d=", cube.get_d());
+	for (const auto& v : shape_vertices) { Vector4 trans = this->uniforms.projection_matrix * Vector4(v.pos.x+offset.x, v.pos.y+offset.y, v.pos.z+offset.z, 1); trans /= trans.w;
+		dprintln("\tvertex.pos: ", v.pos, " transformed.pos: ", trans);
+		//dprintln("\tvertex.normal: ", v.normal);
+		}*/
+
+	mylib_assert_exception(shape_vertices.size() == n_vertices)
+
+	for (uint32_t i = 0; i < n_vertices; i++) {
+		vertices[i].gvertex = shape_vertices[i];
+		vertices[i].offset = offset;
+		vertices[i].color = color;
+	}
 }
 
 // ---------------------------------------------------
@@ -609,6 +645,13 @@ void Renderer::render ()
 		this->program_triangle_color->draw();
 	}
 
+	if (this->program_line_color->has_vertices()) {
+		this->program_line_color->load();
+		this->program_line_color->upload_uniforms(this->program_triangle_color_uniforms);
+		this->program_line_color->upload_vertex_buffers();
+		this->program_line_color->draw();
+	}
+
 	if (this->program_triangle_texture->has_vertices()) {
 		this->program_triangle_texture->load();
 		this->program_triangle_texture->upload_uniforms(this->program_triangle_texture_uniforms);
@@ -639,6 +682,7 @@ void Renderer::clear_buffers (const uint32_t flags)
 
 	if (flags & VertexBufferBit) {
 		this->program_triangle_color->clear();
+		this->program_line_color->clear();
 		this->program_triangle_texture->clear();
 		this->program_triangle_texture_rotation->clear();
 	}

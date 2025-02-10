@@ -18,6 +18,7 @@ using MyGlib::Graphics::Cube3D;
 using MyGlib::Graphics::Sphere3D;
 using MyGlib::Graphics::Rect2D;
 using MyGlib::Graphics::Circle2D;
+using MyGlib::Graphics::Line3D;
 using MyGlib::Graphics::TextureDescriptor;
 
 using Clock = std::chrono::steady_clock;
@@ -264,6 +265,8 @@ void render ()
 		// we render the far cube twice because part of it is
 		// in the first frustum and part of it is in the second frustum
 		renderer->draw_cube3D(far_cube, far_cube_pos, far_cube_color);
+
+		renderer->draw_line3D(Line3D(Vector(5, 0, 1)), Vector(-1, 0, 2), Color::blue());
 
 		auto rect_samus = Rect2D(1, 1);
 		rect_samus.set_scale_y(-1);

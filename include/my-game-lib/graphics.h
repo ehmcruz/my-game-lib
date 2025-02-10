@@ -99,32 +99,32 @@ struct Color {
 		return &this->r;
 	}
 
-	static consteval Color black ()
+	static consteval Color black () noexcept
 	{
 		return Color {0.0f, 0.0f, 0.0f, 1.0f};
 	}
 
-	static consteval Color white ()
+	static consteval Color white () noexcept
 	{
 		return Color {1.0f, 1.0f, 1.0f, 1.0f};
 	}
 
-	static consteval Color red ()
+	static consteval Color red () noexcept
 	{
 		return Color {1.0f, 0.0f, 0.0f, 1.0f};
 	}
 
-	static consteval Color green ()
+	static consteval Color green () noexcept
 	{
 		return Color {0.0f, 1.0f, 0.0f, 1.0f};
 	}
 
-	static consteval Color blue ()
+	static consteval Color blue () noexcept
 	{
 		return Color {0.0f, 0.0f, 1.0f, 1.0f};
 	}
 
-	static consteval Color yellow ()
+	static consteval Color yellow () noexcept
 	{
 		return Color {1.0f, 1.0f, 0.0f, 1.0f};
 	}
@@ -161,7 +161,10 @@ struct TextureDescriptor {
 
 struct Vertex {
 	Point pos; // local x,y,z coords
-	Vector normal; // normal vector used for lighting
+	union {
+		Vector normal; // normal vector used for lighting
+		Vector direction; // line direction vector
+	};
 };
 
 // ---------------------------------------------------
@@ -174,7 +177,8 @@ public:
 		Circle2D,
 		Cube3D,
 		Sphere3D,
-		Undefined // very usefull for library users
+		Line3D,
+		Undefined // may be useful
 	};
 
 protected:
@@ -185,6 +189,7 @@ protected:
 	MYLIB_OO_ENCAPSULATE_OBJ_INIT_READONLY(Vector, scale, Vector(1, 1, 1))
 
 private:
+	// vertices are in local coords
 	std::span<Vertex> local_vertices_buffer__; // not rotated
 	std::span<Vertex> local_rotated_vertices_buffer__;
 	bool must_recalculate_rotation = false;
@@ -289,7 +294,7 @@ protected:
 class Cube3D : public Shape
 {
 public:
-	static consteval uint32_t get_n_vertices ()
+	static consteval uint32_t get_n_vertices () noexcept
 	{
 		return 36; // 6 sides * 2 triangles * 3 vertices
 	}
@@ -618,6 +623,66 @@ public:
 
 // ---------------------------------------------------
 
+class Line3D : public Shape
+{
+public:
+	static consteval uint32_t get_n_vertices () noexcept
+	{
+		return 2;
+	}
+
+private:
+	std::array<Vertex, 2> vertices;
+	std::array<Vertex, 2> rotated_vertices;
+
+public:
+	// constructors
+
+	// This constructor assumes that the first vertex is in the origin
+	Line3D (const Vector& direction) noexcept
+		: Shape (Type::Line3D)
+	{
+		this->vertices[0].pos = Point::zero();
+		this->vertices[1].pos = direction;
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+	}
+
+	Line3D () noexcept
+		: Shape (Type::Line3D)
+	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+	}
+
+	Line3D (const Line3D& other)
+		: Shape(Type::Line3D)
+	{
+		this->shape_copy(other);
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+		this->vertices = other.vertices;
+	}
+
+	// assignment operator
+
+	Line3D& operator= (const Line3D& other)
+	{
+		mylib_assert_exception(this->type == Type::Line3D)
+		this->shape_copy(other);
+		this->vertices = other.vertices;
+
+		return *this;
+	}
+
+	Line3D& operator= (const Vector& direction)
+	{
+		this->vertices[0].pos = Point::zero();
+		this->vertices[1].pos = direction;
+		this->force_recalculate_rotation();
+		return *this;
+	}
+};
+
+// ---------------------------------------------------
+
 struct PerspectiveProjectionInfo {
 	fp_t fov_y;
 	fp_t z_near;
@@ -769,6 +834,7 @@ public:
 	*/
 
 	virtual void wait_next_frame () = 0;
+	virtual void draw_line3D (Line3D& line, const Vector& offset, const Color& color) = 0;
 	virtual void draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color) = 0;
 	virtual void draw_cube3D (Cube3D& cube, const Vector& offset, const std::array<TextureRenderOptions, 6>& texture_options) = 0;
 	virtual void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color) = 0;
@@ -786,6 +852,11 @@ public:
 	virtual void end_texture_loading () = 0;
 
 	// 3D Wrappers
+
+	void draw_line3D (Line3D&& line, const Vector& offset, const Color& color)
+	{
+		this->draw_line3D(line, offset, color);
+	}
 
 	void draw_cube3D (Cube3D&& cube, const Vector& offset, const Color& color)
 	{

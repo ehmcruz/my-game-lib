@@ -26,7 +26,7 @@ namespace Opengl
 void ensure_no_error ()
 {
 	const GLenum error = glGetError();
-	mylib_assert_exception_msg(error == GL_NO_ERROR, "glGetError() returned ", error);
+	mylib_assert_exception_msg(error == GL_NO_ERROR, "\tglGetError() returned ", error);
 }
 
 // ---------------------------------------------------
@@ -36,7 +36,7 @@ Shader::Shader (const GLenum shader_type_, const std::string_view fname_)
   fname(fname_)
 {
 	this->shader_id = glCreateShader(this->shader_type);
-	mylib_assert_exception_msg(this->shader_id != 0, "glCreateShader failed");
+	mylib_assert_exception_msg(this->shader_id != 0, "\tglCreateShader failed");
 }
 
 Shader::~Shader ()
@@ -50,18 +50,18 @@ void Shader::compile ()
 	// handles platform-specific file paths, specially on Android.
 
 	SDL_RWops *fp = SDL_RWFromFile(this->fname.data(), "rb");
-	mylib_assert_exception_msg(fp != nullptr, "SDL_RWFromFile failed");
+	mylib_assert_exception_msg(fp != nullptr, "\tSDL_RWFromFile failed");
 
 	const Sint64 fsize = SDL_RWseek(fp, 0, RW_SEEK_END);
-	mylib_assert_exception_msg(fsize != -1, "SDL_RWseek failed");
+	mylib_assert_exception_msg(fsize != -1, "\tSDL_RWseek failed");
 
 	const Sint64 fseekerror = SDL_RWseek(fp, 0, RW_SEEK_SET);
-	mylib_assert_exception_msg(fseekerror != -1, "SDL_RWseek failed on returnign to start of file");
+	mylib_assert_exception_msg(fseekerror != -1, "\tSDL_RWseek failed on returnign to start of file");
 
 	std::vector<char> buffer(fsize + 1);
 
 	const size_t nread = SDL_RWread(fp, buffer.data(), sizeof(char), fsize);
-	mylib_assert_exception_msg(static_cast<Sint64>(nread) == fsize, "SDL_RWread failed nread=", nread, " fsize=", fsize);
+	mylib_assert_exception_msg(static_cast<Sint64>(nread) == fsize, "\tSDL_RWread failed nread=", nread, " fsize=", fsize);
 
 	buffer[fsize] = 0;
 
@@ -76,7 +76,7 @@ void Shader::compile ()
 	std::string buffer = str_stream.str();
 #endif
 
-	dprintln("loaded shader (", this->fname, ")");
+	dprintln("\tloaded shader (", this->fname, ")");
 	//dprint( buffer )
 	
 	const char *c_str = buffer.data();
@@ -93,7 +93,7 @@ void Shader::compile ()
 
 		std::vector<char> berror(log_size);
 		glGetShaderInfoLog(this->shader_id, log_size, nullptr, berror.data());
-		mylib_throw_exception_msg(this->fname, " shader compilation failed", '\n', berror.data());
+		mylib_throw_exception_msg("\t", this->fname, " shader compilation failed", '\n', berror.data());
 	}
 }
 
@@ -104,7 +104,7 @@ Program::Program ()
 	this->vs = nullptr;
 	this->fs = nullptr;
 	this->program_id = glCreateProgram();
-	mylib_assert_exception_msg(this->program_id != 0, "glCreateProgram failed");
+	mylib_assert_exception_msg(this->program_id != 0, "\tglCreateProgram failed");
 }
 
 Program::~Program ()
@@ -140,7 +140,7 @@ void Program::use_program ()
 GLint Program::get_uniform_location (const std::string_view name) const
 {
 	const GLint location = glGetUniformLocation(this->program_id, name.data());
-	mylib_assert_exception_msg(location != -1, "uniform ", name, " not found");
+	mylib_assert_exception_msg(location != -1, "\tuniform ", name, " not found");
 	return location;
 }
 
@@ -190,6 +190,8 @@ ProgramTriangleColor::ProgramTriangleColor ()
 	static_assert(sizeof(Vector) == sizeof(Point));
 	static_assert(sizeof(Color) == sizeof(float) * 4);
 	static_assert(sizeof(Vertex) == (sizeof(Graphics::Vertex) + sizeof(Vector) + sizeof(Color)));
+
+	dprintln("loading opengl triangle color program...");
 
 	this->vs = new Shader(GL_VERTEX_SHADER, "shaders/triangles-color.vert");
 	this->vs->compile();
@@ -329,6 +331,155 @@ void ProgramTriangleColor::debug ()
 
 // ---------------------------------------------------
 
+ProgramLineColor::ProgramLineColor ()
+	: Program ()
+{
+	static_assert(sizeof(Graphics::Vertex) == sizeof(Point) + sizeof(Vector));
+	static_assert(sizeof(Vector) == sizeof(fp_t) * 3);
+	static_assert(sizeof(Vector) == sizeof(Point));
+	static_assert(sizeof(Color) == sizeof(float) * 4);
+	static_assert(sizeof(Vertex) == (sizeof(Graphics::Vertex) + sizeof(Vector) + sizeof(Color)));
+
+	dprintln("loading opengl line color program...");
+
+	this->vs = new Shader(GL_VERTEX_SHADER, "shaders/lines-color.vert");
+	this->vs->compile();
+
+	this->fs = new Shader(GL_FRAGMENT_SHADER, "shaders/lines-color.frag");
+	this->fs->compile();
+
+	this->attach_shaders();
+
+	this->bind_attrib_location(iPosition, "i_position");
+	this->bind_attrib_location(iDirection, "i_direction");
+	this->bind_attrib_location(iOffset, "i_offset");
+	this->bind_attrib_location(iColor, "i_color");
+
+	this->link_program();
+
+	this->gen_vertex_arrays(1, &(this->vao));
+	this->gen_buffers(1, &(this->vbo));
+
+	this->use_program();
+	this->bind_vertex_arrays();
+	this->bind_vertex_buffers();
+	this->setup_vertex_arrays();
+	this->setup_uniforms();
+
+	dprintln("loaded opengl line color program");
+}
+
+ProgramLineColor::~ProgramLineColor ()
+{
+
+}
+
+void ProgramLineColor::bind_vertex_arrays ()
+{
+	this->bind_vertex_array(this->vao);
+}
+
+void ProgramLineColor::bind_vertex_buffers ()
+{
+	this->bind_buffer(GL_ARRAY_BUFFER, this->vbo);
+}
+
+void ProgramLineColor::setup_vertex_arrays ()
+{
+	uint32_t pos, length;
+
+	this->enable_vertex_attrib_array(iPosition);
+	this->enable_vertex_attrib_array(iDirection);
+	this->enable_vertex_attrib_array(iOffset);
+	this->enable_vertex_attrib_array(iColor);
+
+	pos = 0;
+	length = 3;
+	glVertexAttribPointer(iPosition, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
+
+	pos += length;
+	length = 3;
+	glVertexAttribPointer(iDirection, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
+
+	pos += length;
+	length = 3;
+	glVertexAttribPointer(iOffset, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
+	
+	pos += length;
+	length = 4;
+	glVertexAttribPointer(iColor, length, GL_FLOAT, GL_FALSE, sizeof(Vertex), ( void * )(pos * sizeof(float)) );
+
+	ensure_no_error();
+}
+
+void ProgramLineColor::setup_uniforms ()
+{
+	this->u_projection_matrix = this->get_uniform_location("u_projection_matrix");
+	this->u_ambient_light_color = this->get_uniform_location("u_ambient_light_color");
+	//this->u_point_light_pos = this->get_uniform_location("u_point_light_pos");
+	this->u_point_light_color = this->get_uniform_location("u_point_light_color");
+}
+
+void ProgramLineColor::upload_vertex_buffers ()
+{
+	const uint32_t n = this->vertex_buffer.get_vertex_buffer_used();
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * n, this->vertex_buffer.get_vertex_buffer(), GL_DYNAMIC_DRAW);
+
+	ensure_no_error();
+}
+
+void ProgramLineColor::upload_uniforms (const Uniforms& uniforms)
+{
+	glUniformMatrix4fv(this->u_projection_matrix, 1, GL_TRUE, uniforms.projection_matrix.get_raw());
+	glUniform4fv(this->u_ambient_light_color, 1, uniforms.ambient_light_color.get_raw());
+	//glUniform3fv(this->u_point_light_pos, 1, uniforms.point_light_pos.get_raw());
+	glUniform4fv(this->u_point_light_color, 1, uniforms.point_light_color.get_raw());
+
+	ensure_no_error();
+}
+
+void ProgramLineColor::draw ()
+{
+	const uint32_t n = this->vertex_buffer.get_vertex_buffer_used();
+	glDrawArrays(GL_LINES, 0, n);
+
+	ensure_no_error();
+}
+
+void ProgramLineColor::load ()
+{
+	this->use_program();
+	this->bind_vertex_arrays();
+	this->bind_vertex_buffers();
+}
+
+void ProgramLineColor::debug ()
+{
+	const uint32_t n = this->vertex_buffer.get_vertex_buffer_used();
+
+	for (uint32_t i=0; i<n; i++) {
+		const Vertex& v = this->vertex_buffer.get_vertex(i);
+
+		if ((i % 3) == 0)
+			dprintln();
+
+		dprintln("vertex[", i,
+			"] x=", v.gvertex.pos.x,
+			" y=", v.gvertex.pos.y,
+			" z=", v.gvertex.pos.z,
+			" offset_x=", v.offset.x,
+			" offset_y=", v.offset.y,
+			" offset_z=", v.offset.z,
+			" r=", v.color.r,
+			" g=", v.color.g,
+			" b=", v.color.b,
+			" a=", v.color.a
+		);
+	}
+}
+
+// ---------------------------------------------------
+
 ProgramTriangleTexture::ProgramTriangleTexture ()
 	: Program ()
 {
@@ -337,6 +488,8 @@ ProgramTriangleTexture::ProgramTriangleTexture ()
 	static_assert(sizeof(Vector) == sizeof(Point));
 	static_assert(sizeof(Color) == sizeof(float) * 4);
 	static_assert(sizeof(Vertex) == (sizeof(Graphics::Vertex) + sizeof(Vector) + sizeof(Point3f)));
+
+	dprintln("loading opengl triangle texture program...");
 
 	this->vs = new Shader(GL_VERTEX_SHADER, "shaders/triangles-texture.vert");
 	this->vs->compile();
@@ -485,6 +638,8 @@ ProgramTriangleTextureRotation::ProgramTriangleTextureRotation ()
 	static_assert(sizeof(Color) == sizeof(float) * 4);
 	static_assert(sizeof(Quaternion) == sizeof(float) * 4);
 	static_assert(sizeof(Vertex) == (sizeof(Graphics::Vertex) + sizeof(Vector) + sizeof(Point3f) + sizeof(Quaternion)));
+
+	dprintln("loading opengl triangle texture rotation program...");
 
 	this->vs = new Shader(GL_VERTEX_SHADER, "shaders/triangles-texture-rotation.vert");
 	this->vs->compile();

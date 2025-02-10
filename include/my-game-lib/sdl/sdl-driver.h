@@ -65,6 +65,7 @@ namespace Graphics
 		~SDL_GraphicsDriver ();
 
 		void wait_next_frame () override final;
+		void draw_line3D (Line3D& line, const Vector& offset, const Color& color) override final;
 		void draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color) override final;
 		void draw_cube3D (Cube3D& cube, const Vector& offset, const std::array<TextureRenderOptions, 6>& texture_options) override final;
 		void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color) override final;

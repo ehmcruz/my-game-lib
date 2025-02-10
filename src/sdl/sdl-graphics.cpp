@@ -158,6 +158,11 @@ void SDL_GraphicsDriver::wait_next_frame ()
 
 // ---------------------------------------------------
 
+void SDL_GraphicsDriver::draw_line3D (Line3D& line, const Vector& offset, const Color& color)
+{
+	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
+}
+
 void SDL_GraphicsDriver::draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color)
 {
 	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
