@@ -19,6 +19,7 @@
 #include <random>
 #include <unordered_map>
 #include <string>
+#include <variant>
 
 #include <my-lib/std.h>
 #include <my-lib/macros.h>
@@ -617,13 +618,23 @@ public:
 
 // ---------------------------------------------------
 
+struct PerspectiveProjectionInfo {
+	fp_t fov_y;
+	fp_t z_near;
+	fp_t z_far;
+};
+
+struct OrthogonalProjectionInfo {
+	fp_t view_width; // the height will be calculated automatically from the aspect ratio
+	fp_t z_near;
+	fp_t z_far;
+};
+
 struct RenderArgs3D {
 	Point world_camera_pos;
 	Point world_camera_target;
 	Vector world_camera_up;
-	fp_t fov_y;
-	fp_t z_near;
-	fp_t z_far;
+	std::variant<PerspectiveProjectionInfo, OrthogonalProjectionInfo> projection;
 	Color ambient_light_color;
 };
 

@@ -226,9 +226,11 @@ void render ()
 		.world_camera_pos = camera_pos,
 		.world_camera_target = camera_pos + camera_vector,
 		.world_camera_up = Vector(0, 1, 0),
-		.fov_y = Mylib::Math::degrees_to_radians(fp(45)),
-		.z_near = 100,
-		.z_far = 100000,
+		.projection = MyGlib::Graphics::PerspectiveProjectionInfo {
+				.fov_y = Mylib::Math::degrees_to_radians(fp(45)),
+				.z_near = 100,
+				.z_far = 100000,
+			},
 		.ambient_light_color = ambient_light_color,
 		} );
 	
@@ -246,9 +248,11 @@ void render ()
 			.world_camera_pos = camera_pos,
 			.world_camera_target = camera_pos + camera_vector,
 			.world_camera_up = Vector(0, 1, 0),
-			.fov_y = Mylib::Math::degrees_to_radians(fp(45)),
-			.z_near = 0.1,
-			.z_far = 100,
+			.projection = MyGlib::Graphics::PerspectiveProjectionInfo {
+				.fov_y = Mylib::Math::degrees_to_radians(fp(45)),
+				.z_near = 0.1,
+				.z_far = 100,
+			},
 			.ambient_light_color = ambient_light_color,
 			} );
 		

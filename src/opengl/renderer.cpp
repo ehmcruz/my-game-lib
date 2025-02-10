@@ -418,14 +418,32 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRen
 
 void Renderer::setup_render_3D (const RenderArgs3D& args)
 {
-	this->program_triangle_color_uniforms.projection_matrix = Matrix4::perspective(
-			args.fov_y,
+	Matrix4 projection_matrix;
+
+	if (std::holds_alternative<PerspectiveProjectionInfo>(args.projection)) {
+		const PerspectiveProjectionInfo& perspective_info = std::get<PerspectiveProjectionInfo>(args.projection);
+
+		projection_matrix.set_perspective(
+			perspective_info.fov_y,
 			static_cast<fp_t>(this->window_width_px),
 			static_cast<fp_t>(this->window_height_px),
-			args.z_near,
-			args.z_far,
-			fp(1)
-		)
+			perspective_info.z_near,
+			perspective_info.z_far
+		);
+	}
+	else if (std::holds_alternative<OrthogonalProjectionInfo>(args.projection)) {
+		const OrthogonalProjectionInfo& orthogonal_info = std::get<OrthogonalProjectionInfo>(args.projection);
+
+		projection_matrix.set_orthogonal(
+			orthogonal_info.view_width,
+			static_cast<fp_t>(this->window_width_px),
+			static_cast<fp_t>(this->window_height_px),
+			orthogonal_info.z_near,
+			orthogonal_info.z_far
+		);
+	}
+
+	this->program_triangle_color_uniforms.projection_matrix = projection_matrix
 		* Matrix4::look_at(
 			args.world_camera_pos,
 			args.world_camera_target,
