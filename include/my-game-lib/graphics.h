@@ -76,7 +76,7 @@ using Point4f = Vector4f;
 
 // ---------------------------------------------------
 
-consteval fp_t fp (const auto v)
+consteval fp_t fp (const auto v) noexcept
 {
 	return static_cast<fp_t>(v);
 }
@@ -443,6 +443,13 @@ public:
 
 	WireCube3D (const fp_t w_, const fp_t h_, const fp_t d_) noexcept
 		: Shape(Type::WireCube3D), w(w_), h(h_), d(d_)
+	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+		this->calculate_vertices();
+	}
+
+	WireCube3D (const Vector& size) noexcept
+		: Shape(Type::WireCube3D), w(size.x), h(size.y), d(size.z)
 	{
 		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 		this->calculate_vertices();

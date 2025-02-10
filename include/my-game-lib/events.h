@@ -75,6 +75,7 @@ class Manager
 {
 protected:
 	Mylib::Memory::Manager& memory_manager;
+	const Uint8 *sdl_key_state;
 	KeyDown event_key_down;
 	TouchScreenMove event_touch_screen_move;
 	Quit event_quit;
@@ -111,6 +112,11 @@ public:
 	Mylib::Trigger::EventHandler<SDL_Event>& sdl ()
 	{
 		return this->event_sdl;
+	}
+
+	Uint8 is_key_down (const SDL_Scancode scan_code) const noexcept
+	{
+		return this->sdl_key_state[scan_code];
 	}
 };
 

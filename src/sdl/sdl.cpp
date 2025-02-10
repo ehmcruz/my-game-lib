@@ -82,6 +82,7 @@ static uint64_t global_touch_id = 0;
 SDL_EventDriver::SDL_EventDriver (Mylib::Memory::Manager& memory_manager_)
 	: Manager(memory_manager_)
 {
+	this->sdl_key_state = SDL_GetKeyboardState(nullptr);
 }
 
 // ---------------------------------------------------
