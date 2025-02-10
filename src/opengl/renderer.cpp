@@ -267,6 +267,24 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const std::array
 
 // ---------------------------------------------------
 
+void Renderer::draw_wire_cube3D (WireCube3D& cube, const Vector& offset, const Color& color)
+{
+	constexpr uint32_t n_vertices = WireCube3D::get_n_vertices();
+
+	std::span<ProgramLineColor::Vertex> vertices = this->program_line_color->alloc_vertices(n_vertices);
+	std::span<Vertex> shape_vertices = cube.get_local_rotated_vertices();
+
+	mylib_assert_exception(shape_vertices.size() == n_vertices)
+
+	for (uint32_t i=0; i<n_vertices; i++) {
+		vertices[i].gvertex = shape_vertices[i];
+		vertices[i].offset = offset;
+		vertices[i].color = color;
+	}
+}
+
+// ---------------------------------------------------
+
 void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color)
 {
 	const uint32_t n_vertices = sphere.get_n_vertices();

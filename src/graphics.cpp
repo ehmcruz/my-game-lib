@@ -77,12 +77,14 @@ void Shape::calculate_rotation ()
 
 // ---------------------------------------------------
 
-void Cube3D::calculate_vertices () noexcept
+static std::array<Point, 8> calculate_cube_points (const fp_t w, const fp_t h, const fp_t d, const Vector& scale) noexcept
 {
 	std::array<Point, 8> points;
-	const fp_t half_w = this->get_w() * fp(0.5);
-	const fp_t half_h = this->get_h() * fp(0.5);
-	const fp_t half_d = this->get_d() * fp(0.5);
+	const fp_t half_w = w * fp(0.5) * scale.x;
+	const fp_t half_h = h * fp(0.5) * scale.y;
+	const fp_t half_d = d * fp(0.5) * scale.z;
+
+	using enum Cube3D::VertexPositionIndex;
 
 	// front side
 
@@ -136,6 +138,15 @@ void Cube3D::calculate_vertices () noexcept
 		half_d
 		);
 
+	return points;
+}
+
+// ---------------------------------------------------
+
+void Cube3D::calculate_vertices () noexcept
+{
+	std::array<Point, 8> points = calculate_cube_points(this->w, this->h, this->d, this->scale);
+
 	uint32_t i = 0;
 
 	auto mount = [&i, this, &points] (const VertexPositionIndex p, const Vector& normal) -> void {
@@ -173,6 +184,49 @@ void Cube3D::calculate_vertices () noexcept
 
 	// right
 	mount_surface(RightTopFront, RightBottomBack, RightTopBack, RightBottomFront, Vector(1, 0, 0));
+
+	this->force_recalculate_rotation();
+}
+
+// ---------------------------------------------------
+
+void WireCube3D::calculate_vertices () noexcept
+{
+	std::array<Point, 8> points = calculate_cube_points(this->w, this->h, this->d, this->scale);
+
+	using VertexPositionIndex = Cube3D::VertexPositionIndex;
+
+	uint32_t i = 0;
+
+	auto mount = [&i, this, &points] (const VertexPositionIndex p, const Vector& direction) -> void {
+		this->vertices[i].pos = points[p];
+		this->vertices[i].direction = direction;
+		i++;
+	};
+
+	auto mount_line = [&mount, &points] (const VertexPositionIndex p1, const VertexPositionIndex p2) -> void {
+		const Vector direction = points[p2] - points[p1];
+		mount(p1, direction);
+		mount(p2, direction);
+	};
+
+	// front surface - counter clockwise
+	mount_line(LeftTopFront, RightTopFront);
+	mount_line(RightTopFront, RightBottomFront);
+	mount_line(RightBottomFront, LeftBottomFront);
+	mount_line(LeftBottomFront, LeftTopFront);
+
+	// back surface - counter clockwise
+	mount_line(LeftTopBack, RightTopBack);
+	mount_line(RightTopBack, RightBottomBack);
+	mount_line(RightBottomBack, LeftBottomBack);
+	mount_line(LeftBottomBack, LeftTopBack);
+
+	// now, connect the front and back surfaces
+	mount_line(LeftTopFront, LeftTopBack);
+	mount_line(RightTopFront, RightTopBack);
+	mount_line(RightBottomFront, RightBottomBack);
+	mount_line(LeftBottomFront, LeftBottomBack);
 
 	this->force_recalculate_rotation();
 }

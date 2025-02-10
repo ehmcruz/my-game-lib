@@ -176,6 +176,7 @@ public:
 		Rect2D,
 		Circle2D,
 		Cube3D,
+		WireCube3D,
 		Sphere3D,
 		Line3D,
 		Undefined // may be useful
@@ -363,6 +364,108 @@ public:
 	Cube3D& operator= (const Cube3D& other)
 	{
 		this->type = Type::Cube3D;
+		this->w = other.w;
+		this->h = other.h;
+		this->d = other.d;
+		this->shape_copy(other);
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+		this->calculate_vertices();
+
+		return *this;
+	}
+
+	inline void set_w (const fp_t w) noexcept
+	{
+		this->w = w;
+		this->calculate_vertices();
+	}
+
+	inline void set_h (const fp_t h) noexcept
+	{
+		this->h = h;
+		this->calculate_vertices();
+	}
+
+	inline void set_d (const fp_t d) noexcept
+	{
+		this->d = d;
+		this->calculate_vertices();
+	}
+
+	void set_size (const fp_t w, const fp_t h, const fp_t d) noexcept
+	{
+		this->w = w;
+		this->h = h;
+		this->d = d;
+		this->calculate_vertices();
+	}
+
+	void set_size (const fp_t w) noexcept
+	{
+		this->w = w;
+		this->h = w;
+		this->d = w;
+		this->calculate_vertices();
+	}
+
+	void calculate_vertices () noexcept;
+};
+
+// ---------------------------------------------------
+
+class WireCube3D : public Shape
+{
+public:
+	static consteval uint32_t get_n_vertices () noexcept
+	{
+		return 24; // 12 lines * 2 vertices_per_line
+	}
+
+	using enum Cube3D::VertexPositionIndex;
+
+protected:
+	// write functions of these 3 variables are written bellow the constructor
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, w) // width
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, h) // height
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, d) // depth
+
+private:
+	std::array<Vertex, 24> vertices;
+	std::array<Vertex, 24> rotated_vertices;
+
+public:
+	WireCube3D (const fp_t w_) noexcept
+		: Shape(Type::WireCube3D), w(w_), h(w_), d(w_)
+	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+		this->calculate_vertices();
+	}
+
+	WireCube3D (const fp_t w_, const fp_t h_, const fp_t d_) noexcept
+		: Shape(Type::WireCube3D), w(w_), h(h_), d(d_)
+	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+		this->calculate_vertices();
+	}
+
+	WireCube3D () noexcept
+		: Shape(Type::WireCube3D)
+	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+	}
+
+	// copy constructor
+	WireCube3D (const WireCube3D& other)
+		: Shape(Type::WireCube3D), w(other.w), h(other.h), d(other.d)
+	{
+		this->shape_copy(other);
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+		this->calculate_vertices();
+	}
+
+	// copy-assign operator
+	WireCube3D& operator= (const WireCube3D& other)
+	{
 		this->w = other.w;
 		this->h = other.h;
 		this->d = other.d;
@@ -643,7 +746,9 @@ public:
 		: Shape (Type::Line3D)
 	{
 		this->vertices[0].pos = Point::zero();
+		this->vertices[0].direction = direction;
 		this->vertices[1].pos = direction;
+		this->vertices[1].direction = direction;
 		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 	}
 
@@ -675,7 +780,9 @@ public:
 	Line3D& operator= (const Vector& direction)
 	{
 		this->vertices[0].pos = Point::zero();
+		this->vertices[0].direction = direction;
 		this->vertices[1].pos = direction;
+		this->vertices[1].direction = direction;
 		this->force_recalculate_rotation();
 		return *this;
 	}
@@ -837,6 +944,7 @@ public:
 	virtual void draw_line3D (Line3D& line, const Vector& offset, const Color& color) = 0;
 	virtual void draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color) = 0;
 	virtual void draw_cube3D (Cube3D& cube, const Vector& offset, const std::array<TextureRenderOptions, 6>& texture_options) = 0;
+	virtual void draw_wire_cube3D (WireCube3D& cube, const Vector& offset, const Color& color) = 0;
 	virtual void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color) = 0;
 	virtual void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const TextureRenderOptions& texture_options) = 0;
 	virtual void draw_circle2D (Circle2D& circle, const Vector& offset, const Color& color) = 0;
@@ -875,6 +983,11 @@ public:
 		};
 
 		this->draw_cube3D(cube, offset, texture_options_array);
+	}
+
+	void draw_wire_cube3D (WireCube3D&& cube, const Vector& offset, const Color& color)
+	{
+		this->draw_wire_cube3D(cube, offset, color);
 	}
 
 	// 2D Wrappers

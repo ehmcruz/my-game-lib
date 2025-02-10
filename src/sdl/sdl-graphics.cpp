@@ -173,6 +173,11 @@ void SDL_GraphicsDriver::draw_cube3D (Cube3D& cube, const Vector& offset, const 
 	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
 }
 
+void SDL_GraphicsDriver::draw_wire_cube3D (WireCube3D& cube, const Vector& offset, const Color& color)
+{
+	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
+}
+
 // ---------------------------------------------------
 
 void SDL_GraphicsDriver::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color)

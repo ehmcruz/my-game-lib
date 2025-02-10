@@ -68,6 +68,7 @@ namespace Graphics
 		void draw_line3D (Line3D& line, const Vector& offset, const Color& color) override final;
 		void draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color) override final;
 		void draw_cube3D (Cube3D& cube, const Vector& offset, const std::array<TextureRenderOptions, 6>& texture_options) override final;
+		void draw_wire_cube3D (WireCube3D& cube, const Vector& offset, const Color& color) override final;
 		void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color) override final;
 		void draw_sphere3D (Sphere3D& sphere, const Vector& offset, const TextureRenderOptions& texture_options) override final;
 		void draw_circle2D (Circle2D& circle, const Vector& offset, const Color& color) override final;

@@ -19,6 +19,7 @@ using MyGlib::Graphics::Sphere3D;
 using MyGlib::Graphics::Rect2D;
 using MyGlib::Graphics::Circle2D;
 using MyGlib::Graphics::Line3D;
+using MyGlib::Graphics::WireCube3D;
 using MyGlib::Graphics::TextureDescriptor;
 
 using Clock = std::chrono::steady_clock;
@@ -259,6 +260,7 @@ void render ()
 		
 		renderer->draw_cube3D(cube, cube_pos, { .desc = box_texture });
 		renderer->draw_cube3D(cube_color, Vector(3, -3, -1), Color::red());
+		renderer->draw_wire_cube3D(WireCube3D(1), cube_pos+Vector(2, 0, 0), Color::white());
 		renderer->draw_sphere3D(sphere, Vector(2.5, 1.5, 0), Color::green());
 		renderer->draw_sphere3D(earth, Vector(-4, 0, 0), { .desc = earth_medium_texture });
 
