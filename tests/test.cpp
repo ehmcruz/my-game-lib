@@ -8,6 +8,7 @@
 
 using MyGlib::Graphics::Vector;
 using MyGlib::Graphics::Point;
+using MyGlib::Graphics::Quaternion;
 using MyGlib::Graphics::Vector2;
 using MyGlib::Graphics::Vector4f;
 using MyGlib::Graphics::fp_t;
@@ -273,6 +274,10 @@ void render ()
 		auto rect_samus = Rect2D(1, 1);
 		rect_samus.set_scale_y(-1);
 		rect_samus.calculate_vertices();
+
+		Quaternion q = Quaternion::rotation(Vector(1, 0, 0), Vector(0, 1, 0));
+		auto [axis, angle] = q.to_axis_angle();
+		rect_samus.rotate(axis, angle);
 
 		auto rect_half_samus = Rect2D(1, 1);
 		rect_half_samus.set_scale_y(-1);
