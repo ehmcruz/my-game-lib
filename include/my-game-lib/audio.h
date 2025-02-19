@@ -7,7 +7,7 @@
 
 #include <my-lib/macros.h>
 #include <my-lib/std.h>
-#include <my-lib/trigger.h>
+#include <my-lib/event.h>
 #include <my-lib/any.h>
 #include <my-lib/memory.h>
 
@@ -51,7 +51,7 @@ public:
 		bool repeat;
 	};
 
-	using Callback = Mylib::Trigger::Callback<Event>;
+	using Callback = Mylib::Event::Callback<Event>;
 
 private:
 	static Manager *instance;

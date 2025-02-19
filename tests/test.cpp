@@ -4,7 +4,7 @@
 
 #include <my-game-lib/my-game-lib.h>
 
-#include <my-lib/trigger.h>
+#include <my-lib/event.h>
 
 using MyGlib::Graphics::Vector;
 using MyGlib::Graphics::Point;
@@ -22,6 +22,8 @@ using MyGlib::Graphics::Circle2D;
 using MyGlib::Graphics::Line3D;
 using MyGlib::Graphics::WireCube3D;
 using MyGlib::Graphics::TextureDescriptor;
+
+using Colors = MyGlib::Graphics::Colors;
 
 using Clock = std::chrono::steady_clock;
 using ClockDuration = Clock::duration;
@@ -63,7 +65,7 @@ void key_down_callback (const MyGlib::Event::KeyDown::Type& event)
 	{
 		case SDLK_SPACE: {
 			std::cout << "Playing audio " << audio_explosion.id << std::endl;
-			audio_manager->play_audio(audio_explosion, Mylib::Trigger::make_callback_function<MyGlib::Audio::Manager::Event>(&my_sound_callback));
+			audio_manager->play_audio(audio_explosion, Mylib::Event::make_callback_function<MyGlib::Audio::Manager::Event>(&my_sound_callback));
 			}
 			break;
 	
@@ -122,7 +124,7 @@ TextureDescriptor box_texture;
 void setup ()
 {
 	light = renderer->add_light_point_source(
-		Point(-10, 10, -10), Color::white()
+		Point(-10, 10, -10), Colors::white
 	);
 
 	std::cout << "Light id: " << light << std::endl;
@@ -238,7 +240,7 @@ void render ()
 		} );
 	
 	const Vector far_cube_pos = Vector(2, -3, -100);
-	const Color far_cube_color = Color::yellow();
+	const Color far_cube_color = Colors::yellow;
 
 	renderer->draw_cube3D(far_cube, far_cube_pos, far_cube_color);
 
@@ -260,16 +262,16 @@ void render ()
 			} );
 		
 		renderer->draw_cube3D(cube, cube_pos, { .desc = box_texture });
-		renderer->draw_cube3D(cube_color, Vector(3, -3, -1), Color::red());
-		renderer->draw_wire_cube3D(WireCube3D(1), cube_pos+Vector(2, 0, 0), Color::white());
-		renderer->draw_sphere3D(sphere, Vector(2.5, 1.5, 0), Color::green());
+		renderer->draw_cube3D(cube_color, Vector(3, -3, -1), Colors::red);
+		renderer->draw_wire_cube3D(WireCube3D(1), cube_pos+Vector(2, 0, 0), Colors::white);
+		renderer->draw_sphere3D(sphere, Vector(2.5, 1.5, 0), Colors::green);
 		renderer->draw_sphere3D(earth, Vector(-4, 0, 0), { .desc = earth_medium_texture });
 
 		// we render the far cube twice because part of it is
 		// in the first frustum and part of it is in the second frustum
 		renderer->draw_cube3D(far_cube, far_cube_pos, far_cube_color);
 
-		renderer->draw_line3D(Line3D(Vector(5, 0, 1)), Vector(-1, 0, 2), Color::blue());
+		renderer->draw_line3D(Line3D(Vector(5, 0, 1)), Vector(-1, 0, 2), Colors::blue);
 
 		auto rect_samus = Rect2D(1, 1);
 		rect_samus.set_scale_y(-1);
@@ -334,10 +336,10 @@ int main (int argc, char **argv)
 	music = audio_manager->load_music("tests-assets/music.mp3", MyGlib::Audio::Format::MP3);
 	audio_explosion = audio_manager->load_sound("tests-assets/hq-explosion-6288.wav", MyGlib::Audio::Format::Wav);
 
-	audio_manager->play_audio(music, Mylib::Trigger::make_callback_function<MyGlib::Audio::Manager::Event>(&my_music_callback));
+	audio_manager->play_audio(music, Mylib::Event::make_callback_function<MyGlib::Audio::Manager::Event>(&my_music_callback));
 
-	event_manager->key_down().subscribe( Mylib::Trigger::make_callback_function<MyGlib::Event::KeyDown::Type>(&key_down_callback) );
-	event_manager->quit().subscribe( Mylib::Trigger::make_callback_function<MyGlib::Event::Quit::Type>(&quit_callback) );
+	event_manager->key_down().subscribe( Mylib::Event::make_callback_function<MyGlib::Event::KeyDown::Type>(&key_down_callback) );
+	event_manager->quit().subscribe( Mylib::Event::make_callback_function<MyGlib::Event::Quit::Type>(&quit_callback) );
 
 	constexpr fp_t dt = 1.0 / 60.0;
 	int frame = 0;

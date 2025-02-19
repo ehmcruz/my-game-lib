@@ -7,7 +7,7 @@
 #include <my-game-lib/sdl/sdl-driver.h>
 
 #include <my-lib/macros.h>
-#include <my-lib/trigger.h>
+#include <my-lib/event.h>
 #include <my-lib/std.h>
 
 #include <SDL.h>

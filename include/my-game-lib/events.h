@@ -9,7 +9,7 @@
 
 #include <my-lib/macros.h>
 #include <my-lib/std.h>
-#include <my-lib/trigger.h>
+#include <my-lib/event.h>
 #include <my-lib/any.h>
 #include <my-lib/memory.h>
 
@@ -25,7 +25,7 @@ namespace Event
 struct EmptyEvent_Data__ {
 };
 
-using EmptyEvent = Mylib::Trigger::EventHandler<EmptyEvent_Data__>;
+using EmptyEvent = Mylib::Event::Handler<EmptyEvent_Data__>;
 
 // ---------------------------------------------------
 
@@ -35,7 +35,7 @@ struct KeyDown_Data__ {
 	Uint16 modifiers;
 };
 
-using KeyDown = Mylib::Trigger::EventHandler<KeyDown_Data__>;
+using KeyDown = Mylib::Event::Handler<KeyDown_Data__>;
 
 // ---------------------------------------------------
 
@@ -63,7 +63,7 @@ inline std::ostream& operator << (std::ostream& out, const TouchScreenMove_Data_
 	return out;
 }
 
-using TouchScreenMove = Mylib::Trigger::EventHandler<TouchScreenMove_Data__>;
+using TouchScreenMove = Mylib::Event::Handler<TouchScreenMove_Data__>;
 
 // ---------------------------------------------------
 
@@ -79,7 +79,7 @@ protected:
 	KeyDown event_key_down;
 	TouchScreenMove event_touch_screen_move;
 	Quit event_quit;
-	Mylib::Trigger::EventHandler<SDL_Event> event_sdl;
+	Mylib::Event::Handler<SDL_Event> event_sdl;
 	
 public:
 	Manager (Mylib::Memory::Manager& memory_manager_)
@@ -109,7 +109,7 @@ public:
 		return this->event_quit;
 	}
 
-	Mylib::Trigger::EventHandler<SDL_Event>& sdl ()
+	Mylib::Event::Handler<SDL_Event>& sdl ()
 	{
 		return this->event_sdl;
 	}
