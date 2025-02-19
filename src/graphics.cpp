@@ -41,14 +41,6 @@ const char* Manager::get_type_str (const Type value)
 
 // ---------------------------------------------------
 
-std::ostream& operator << (std::ostream& out, const Color& color)
-{
-	out << "[" << color.r << ", " << color.g << ", " << color.b << ", " << color.a << "]";
-	return out;
-}
-
-// ---------------------------------------------------
-
 void Shape::calculate_rotation ()
 {
 	static constexpr bool rotate_using_quaternion = true;

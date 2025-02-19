@@ -83,60 +83,26 @@ consteval fp_t fp (const auto v) noexcept
 
 // ---------------------------------------------------
 
-struct Color {
-	float r;
-	float g;
-	float b;
-	float a; // alpha
+using Color = Vector4f;
 
-	float* get_raw () noexcept
-	{
-		return &this->r;
-	}
+// Using struct instead of namespace to allow importing
+// using xxx = MyGlib::Graphics::Colors;
 
-	const float* get_raw () const noexcept
-	{
-		return &this->r;
-	}
-
-	static consteval Color black () noexcept
-	{
-		return Color {0.0f, 0.0f, 0.0f, 1.0f};
-	}
-
-	static consteval Color white () noexcept
-	{
-		return Color {1.0f, 1.0f, 1.0f, 1.0f};
-	}
-
-	static consteval Color red () noexcept
-	{
-		return Color {1.0f, 0.0f, 0.0f, 1.0f};
-	}
-
-	static consteval Color green () noexcept
-	{
-		return Color {0.0f, 1.0f, 0.0f, 1.0f};
-	}
-
-	static consteval Color blue () noexcept
-	{
-		return Color {0.0f, 0.0f, 1.0f, 1.0f};
-	}
-
-	static consteval Color yellow () noexcept
-	{
-		return Color {1.0f, 1.0f, 0.0f, 1.0f};
-	}
+struct Colors
+{
+	static inline constexpr Color black = Color(0.0f, 0.0f, 0.0f, 1.0f);
+	static inline constexpr Color white = Color(1.0f, 1.0f, 1.0f, 1.0f);
+	static inline constexpr Color red = Color(1.0f, 0.0f, 0.0f, 1.0f);
+	static inline constexpr Color green = Color(0.0f, 1.0f, 0.0f, 1.0f);
+	static inline constexpr Color blue = Color(0.0f, 0.0f, 1.0f, 1.0f);
+	static inline constexpr Color yellow = Color(1.0f, 1.0f, 0.0f, 1.0f);
 
 	static constexpr Color random (auto& gen)
 	{
 		std::uniform_real_distribution<float> dis(0.0f, 1.0f);
-		return Color { dis(gen), dis(gen), dis(gen), 1.0f };
+		return Color( dis(gen), dis(gen), dis(gen), 1.0f );
 	}
 };
-
-std::ostream& operator << (std::ostream& out, const Color& color);
 
 // ---------------------------------------------------
 
@@ -898,7 +864,7 @@ protected:
 	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(uint32_t, window_height_px)
 	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(bool, fullscreen)
 	
-	MYLIB_OO_ENCAPSULATE_OBJ_INIT(Color, background_color, Color::black())
+	MYLIB_OO_ENCAPSULATE_OBJ_INIT(Color, background_color, Colors::black)
 
 	struct LightPointSource {
 		Point pos;
