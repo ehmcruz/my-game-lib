@@ -28,6 +28,7 @@ struct SDL_AudioDescriptor {
 
 	Type type;
 	Format format;
+	float volume;
 	std::string fname;
 	std::variant<Mix_Music*, Mix_Chunk*> ptr;
 };
@@ -52,11 +53,11 @@ static std::mutex music_channel_mutex;
 
 // ---------------------------------------------------
 
-inline constexpr Uint16 default_audio_format = MIX_DEFAULT_FORMAT;
-inline constexpr int default_audio_channels = 2;
-inline constexpr int default_audio_buffers = 4096;
-inline constexpr int default_audio_volume = MIX_MAX_VOLUME;
-inline constexpr int default_audio_rate = 44100;
+static constexpr Uint16 default_audio_format = MIX_DEFAULT_FORMAT;
+static constexpr int default_audio_channels = 2;
+static constexpr int default_audio_buffers = 4096;
+static constexpr int default_audio_volume = MIX_MAX_VOLUME;
+static constexpr int default_audio_rate = 44100;
 
 // ---------------------------------------------------
 
@@ -152,6 +153,8 @@ Descriptor SDL_AudioDriver::load_sound (const std::string_view fname, const Form
 			mylib_throw_exception_msg("SDL Audio Driver requires sound effects in Wav file format!");
 	}
 
+	desc->volume = 1.0f;
+
 	dprintln("loaded sound ", fname);
 
 	return Descriptor {
@@ -190,6 +193,8 @@ Descriptor SDL_AudioDriver::load_music (const std::string_view fname, const Form
 		default:
 			mylib_throw_exception_msg("SDL Audio Driver: unsupported audio format for music");
 	}
+
+	desc->volume = 1.0f;
 
 	dprintln("loaded music ", fname);
 
@@ -307,11 +312,12 @@ void SDL_AudioDriver::driver_play_audio (Descriptor& audio, Callback *callback)
 
 		channels_mutex.unlock();
 
-		dprintln("playing sound ", desc->fname, " at channel ", channel->id);
+		//dprintln("playing sound ", desc->fname, " at channel ", channel->id);
 	}
 	else { // music
 		music_channel_mutex.lock();
 
+		Mix_VolumeMusic(static_cast<int>(desc->volume * static_cast<float>(MIX_MAX_VOLUME)));
 		Mix_PlayMusic(std::get<Mix_Music*>(desc->ptr), 0);
 
 		music_channel.busy = true;
@@ -328,10 +334,13 @@ void SDL_AudioDriver::set_volume (Descriptor& audio, const float volume)
 {
 	SDL_AudioDescriptor *desc = audio.data.get_value<SDL_AudioDescriptor*>();
 
-	mylib_assert_exception(false)  // not finished implementation
+	desc->volume = volume;
 
 	if (desc->type == SDL_AudioDescriptor::Type::Chunk) {
-		//Mix_VolumeChunk(desc->chunk, static_cast<int>(volume * static_cast<float>(MIX_MAX_VOLUME)));
+		Mix_VolumeChunk(std::get<Mix_Chunk*>(desc->ptr), static_cast<int>(volume * static_cast<float>(MIX_MAX_VOLUME)));
+	}
+	else { // music
+
 	}
 }
 
