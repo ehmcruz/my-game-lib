@@ -43,7 +43,7 @@ namespace Audio
 		Descriptor load_sound (const std::string_view fname, const Format format) override final;
 		Descriptor load_music (const std::string_view fname, const Format format) override final;
 		void unload_audio (Descriptor& audio) override final;
-		void driver_play_audio (Descriptor& audio, Callback *callback) override final;
+		void driver_play_audio (Descriptor& audio, Mylib::Memory::unique_ptr<Callback> callback) override final;
 		void set_volume (Descriptor& audio, const float volume) override final;
 	};
 } // end namespace Audio

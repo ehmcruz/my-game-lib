@@ -88,25 +88,17 @@ public:
 	}
 
 	template <typename Tcallback>
-	void play_audio (Descriptor& audio, const Tcallback& callback);
+	void play_audio (Descriptor& audio, const Tcallback& callback)
+	{
+		auto persistent_callback = Mylib::Memory::make_unique<Tcallback>(this->memory_manager, callback);
+		this->driver_play_audio(audio, std::move(persistent_callback));
+	}
 
 	virtual void set_volume (Descriptor& audio, const float volume) = 0;
 
 protected:
-	virtual void driver_play_audio (Descriptor& audio, Callback *callback) = 0;
+	virtual void driver_play_audio (Descriptor& audio, Mylib::Memory::unique_ptr<Callback> callback) = 0;
 };
-
-// ---------------------------------------------------
-
-template <typename Tcallback>
-void Manager::play_audio (Descriptor& audio, const Tcallback& callback)
-{
-	using Tc = Tcallback;
-
-	Tc *persistent_callback = new (this->memory_manager.allocate( sizeof(Tc), 1 )) Tc(callback);
-
-	this->driver_play_audio(audio, persistent_callback);
-}
 
 // ---------------------------------------------------
 

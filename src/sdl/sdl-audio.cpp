@@ -37,7 +37,7 @@ struct ChannelDescriptor {
 	int id;
 	bool busy;
 	Descriptor audio_descriptor;
-	Manager::Callback *callback;
+	Mylib::Memory::unique_ptr<Manager::Callback> callback;
 };
 
 // ---------------------------------------------------
@@ -219,9 +219,9 @@ void SDL_AudioDriver::unload_audio (Descriptor& audio)
 
 // ---------------------------------------------------
 
-static void call_callback (Descriptor audio_descriptor, Manager::Callback *ptr_callback)
+static void call_callback (Descriptor audio_descriptor, Mylib::Memory::unique_ptr<Manager::Callback> ptr_callback)
 {
-	if (ptr_callback != nullptr) {
+	if (ptr_callback) {
 		SDL_AudioDescriptor *desc = audio_descriptor.data.get_value<SDL_AudioDescriptor*>();
 
 		Manager::Event event {
@@ -232,7 +232,7 @@ static void call_callback (Descriptor audio_descriptor, Manager::Callback *ptr_c
 		auto& c = *ptr_callback;
 		c(event);
 
-		audio_driver->get_memory_manager().deallocate(ptr_callback, c.get_size(), 1);
+		// ptr_callback will automatically be deallocated when going out of scope
 	}
 }
 
@@ -247,17 +247,15 @@ static void sdl_channel_finished_callback (int id)
 	// backup so we can:
 	// - call the callback after unlocking the mutex
 	// - deallocate the memory after unlocking the mutex
-	auto *ptr_callback = channel.callback;
+	auto ptr_callback = std::move(channel.callback);
 	Descriptor audio_descriptor = channel.audio_descriptor;
-
-	channel.callback = nullptr;
 	channel.busy = false;
 
 	channels_mutex.unlock();
 
 	//dprintln("channel ", id, " finished playing ", desc->fname, ", calling callback");
 
-	call_callback(audio_descriptor, ptr_callback);
+	call_callback(audio_descriptor, std::move(ptr_callback));
 }
 
 // ---------------------------------------------------
@@ -269,22 +267,20 @@ static void sdl_music_finished_callback ()
 	// backup so we can:
 	// - call the callback after unlocking the mutex
 	// - deallocate the memory after unlocking the mutex
-	auto *ptr_callback = music_channel.callback;
+	auto ptr_callback = std::move(music_channel.callback);
 	Descriptor audio_descriptor = music_channel.audio_descriptor;
-
-	music_channel.callback = nullptr;
 	music_channel.busy = false;
 
 	music_channel_mutex.unlock();
 
 	//dprintln("channel ", id, " finished playing ", desc->fname, ", calling callback");
 
-	call_callback(audio_descriptor, ptr_callback);
+	call_callback(audio_descriptor, std::move(ptr_callback));
 }
 
 // ---------------------------------------------------
 
-void SDL_AudioDriver::driver_play_audio (Descriptor& audio, Callback *callback)
+void SDL_AudioDriver::driver_play_audio (Descriptor& audio, Mylib::Memory::unique_ptr<Callback> callback)
 {
 	SDL_AudioDescriptor *desc = audio.data.get_value<SDL_AudioDescriptor*>();
 
@@ -308,7 +304,7 @@ void SDL_AudioDriver::driver_play_audio (Descriptor& audio, Callback *callback)
 
 		channel->busy = true;
 		channel->audio_descriptor = audio;
-		channel->callback = callback;
+		channel->callback = std::move(callback);
 
 		channels_mutex.unlock();
 
@@ -322,7 +318,7 @@ void SDL_AudioDriver::driver_play_audio (Descriptor& audio, Callback *callback)
 
 		music_channel.busy = true;
 		music_channel.audio_descriptor = audio;
-		music_channel.callback = callback;
+		music_channel.callback = std::move(callback);
 
 		music_channel_mutex.unlock();
 	}
