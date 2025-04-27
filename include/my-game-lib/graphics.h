@@ -131,6 +131,11 @@ struct Vertex {
 		Vector normal; // normal vector used for lighting
 		Vector direction; // line direction vector
 	};
+
+	Vertex () noexcept
+		: pos(Point::zero()), normal(Vector::zero())
+	{
+	}
 };
 
 // ---------------------------------------------------
