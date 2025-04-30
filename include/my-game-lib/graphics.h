@@ -34,6 +34,7 @@
 #include <my-lib/utils.h>
 
 #include <my-game-lib/debug.h>
+#include <my-game-lib/exception.h>
 
 // ---------------------------------------------------
 
@@ -671,7 +672,7 @@ public:
 
 	Rect2D& operator= (const Rect2D& other)
 	{
-		mylib_assert_exception(this->type == Type::Rect2D)
+		//mylib_assert_exception(this->type == Type::Rect2D)
 		this->w = other.w;
 		this->h = other.h;
 		this->shape_copy(other);
@@ -748,7 +749,7 @@ public:
 
 	Line3D& operator= (const Line3D& other)
 	{
-		mylib_assert_exception(this->type == Type::Line3D)
+		//mylib_assert_exception(this->type == Type::Line3D)
 		this->shape_copy(other);
 		this->vertices = other.vertices;
 
@@ -1024,7 +1025,7 @@ public:
 	TextureDescriptor find_texture (const std::string_view id)
 	{
 		auto it = this->textures.find(id);
-		mylib_assert_exception_msg(it != this->textures.end(), "texture not found: ", id);
+		mylib_assert_exception_args(it != this->textures.end(), TextureNotFoundException, id);
 		return TextureDescriptor { .info = &it->second };
 	}
 

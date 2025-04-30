@@ -3,6 +3,10 @@
 #include <utility>
 
 #include <my-game-lib/events.h>
+#include <my-game-lib/exception.h>
+
+#include <my-lib/std.h>
+
 
 namespace MyGlib
 {
@@ -19,7 +23,11 @@ const char* enum_class_to_str (const TouchScreenMove_Data__::Direction value)
 		#undef _MYGLIB_ENUM_CLASS_DIRECTION_VALUE_
 	});
 
-	mylib_assert_exception_msg(std::to_underlying(value) < strs.size(), "invalid enum class value ", std::to_underlying(value))
+	using EnumType = typename Mylib::remove_type_qualifiers<decltype(value)>::type;
+	using ExceptionType = typename Mylib::InvalidEnumClassValueException<EnumType>;
+	//using ExceptionType = typename Mylib::InvalidEnumClassValueException<TouchScreenMove_Data__::Direction>;
+
+	mylib_assert_exception_args(std::to_underlying(value) < strs.size(), ExceptionType, value)
 
 	return strs[ std::to_underlying(value) ];
 }

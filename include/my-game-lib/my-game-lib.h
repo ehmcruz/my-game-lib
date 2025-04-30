@@ -12,6 +12,7 @@
 #include <my-game-lib/events.h>
 #include <my-game-lib/audio.h>
 #include <my-game-lib/graphics.h>
+#include <my-game-lib/exception.h>
 
 // ---------------------------------------------------
 
@@ -53,25 +54,25 @@ public:
 	
 	static Lib& get_instance ()
 	{
-		mylib_assert_exception(instance != nullptr)
+		mylib_assert_exception(instance != nullptr, NoMyGameLibException)
 		return *instance;
 	}
 
 	Audio::Manager& get_audio_manager ()
 	{
-		mylib_assert_exception(this->audio_manager != nullptr)
+		mylib_assert_exception(this->audio_manager != nullptr, NoMyGameLibAudioException)
 		return *this->audio_manager;
 	}
 
 	Event::Manager& get_event_manager ()
 	{
-		mylib_assert_exception(this->event_manager != nullptr)
+		mylib_assert_exception(this->event_manager != nullptr, NoMyGameLibEventException)
 		return *this->event_manager;
 	}
 
 	Graphics::Manager& get_graphics_manager ()
 	{
-		mylib_assert_exception(this->graphics_manager != nullptr)
+		mylib_assert_exception(this->graphics_manager != nullptr, NoMyGameLibGraphicsException)
 		return *this->graphics_manager;
 	}
 };
