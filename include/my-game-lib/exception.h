@@ -15,6 +15,10 @@ namespace MyGlib
 
 // ---------------------------------------------------
 
+inline constexpr std::size_t fname_max_length = 128;
+
+// ---------------------------------------------------
+
 class Exception : public Mylib::Exception
 {
 public:
@@ -39,11 +43,28 @@ protected:
 
 // ---------------------------------------------------
 
+class LightLimitException : public Exception
+{
+public:
+	LightLimitException (const std::source_location& location_, const char *assert_str_)
+		: Exception(location_, assert_str_)
+	{
+	}
+
+protected:
+	void build_mygamelib_exception_msg (std::ostringstream& str_stream) const override final
+	{
+		str_stream << "Light limit exception";
+	}
+};
+
+// ---------------------------------------------------
+
 class TextureNotFoundException : public Exception
 {
 private:
 	// we use a static string to avoid dynamic memory allocation
-	boost::static_string<128> texture_id;
+	boost::static_string<fname_max_length> texture_id;
 
 public:
 	TextureNotFoundException (const std::source_location& location_, const char *assert_str_, const std::string_view texture_id_)
@@ -54,7 +75,65 @@ public:
 protected:
 	void build_mygamelib_exception_msg (std::ostringstream& str_stream) const override final
 	{
-		str_stream << "Texture not found: " << this->texture_id << std::endl;
+		str_stream << "Texture not found: \"" << this->texture_id << "\".";
+	}
+};
+
+// ---------------------------------------------------
+
+class UnableToAddTextureException : public Exception
+{
+private:
+	// we use a static string to avoid dynamic memory allocation
+	boost::static_string<fname_max_length> texture_id;
+
+public:
+	UnableToAddTextureException (const std::source_location& location_, const char *assert_str_, const std::string_view texture_id_)
+		: Exception(location_, assert_str_), texture_id(texture_id_)
+	{
+	}
+
+protected:
+	void build_mygamelib_exception_msg (std::ostringstream& str_stream) const override final
+	{
+		str_stream << "Unable to add texture \"" << this->texture_id << "\"." << std::endl;
+	}
+};
+
+// ---------------------------------------------------
+
+class SplitTextureNotDivisibleException : public Exception
+{
+private:
+	// we use a static string to avoid dynamic memory allocation
+	boost::static_string<fname_max_length> texture_id;
+	uint32_t n_rows;
+	uint32_t n_cols;
+	uint32_t width_px;
+	uint32_t height_px;
+
+public:
+	SplitTextureNotDivisibleException (const std::source_location& location_,
+	                                   const char *assert_str_,
+									   const std::string_view texture_id_,
+									   const uint32_t n_rows_,
+									   const uint32_t n_cols_,
+									   const uint32_t width_px_,
+									   const uint32_t height_px_)
+		: Exception(location_, assert_str_), texture_id(texture_id_),
+		  n_rows(n_rows_), n_cols(n_cols_), width_px(width_px_), height_px(height_px_)
+	{
+	}
+
+protected:
+	void build_mygamelib_exception_msg (std::ostringstream& str_stream) const override final
+	{
+		str_stream << "Split texture not divisible exception." << std::endl
+			<< "Texture id: \"" << this->texture_id << "\"." << std::endl
+			<< "n_rows: " << this->n_rows << std::endl
+			<< "n_cols: " << this->n_cols << std::endl
+			<< "width_px: " << this->width_px << std::endl
+			<< "height_px: " << this->height_px << std::endl;
 	}
 };
 

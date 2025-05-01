@@ -525,7 +525,7 @@ CircleFactoryManager::CircleFactoryManager (const uint32_t n_cats, const uint32_
 TextureInfo& Manager::add_texture (std::string id, const TextureInfo& texture__)
 {
 	auto [it, success] = this->textures.insert({id, texture__});
-	mylib_assert_exception_msg(success, "unable to add texture ", id);
+	mylib_assert_exception_args(success, UnableToAddTextureException, id)
 
 	TextureInfo& texture = it->second;
 	texture.id = std::move(id);
@@ -550,7 +550,7 @@ TextureDescriptor Manager::load_texture (std::string id, SDL_Surface *surface)
 TextureDescriptor Manager::load_texture (std::string id, const std::string_view fname)
 {
 	SDL_Surface *surface = IMG_Load(fname.data());
-	mylib_assert_exception_msg(surface != nullptr, "unable to load image ", fname, '\n', IMG_GetError());
+	mylib_assert_exception_args(surface != nullptr, UnableToAddTextureException, fname)
 
 	TextureDescriptor d = this->load_texture(std::move(id), surface);
 	SDL_FreeSurface(surface);
@@ -605,8 +605,8 @@ TextureDescriptor Manager::create_sub_texture (std::string id, const TextureDesc
 Mylib::Matrix<TextureDescriptor> Manager::split_texture (const TextureDescriptor& texture__, const uint32_t n_rows, const uint32_t n_cols)
 {
 	const TextureInfo& texture = *texture__.info;
-	mylib_assert_exception_msg((texture.width_px % n_cols) == 0, "texture width is not divisible by n_cols id: ", texture.id, " n_cols: ", n_cols, " width: ", texture.width_px);
-	mylib_assert_exception_msg((texture.height_px % n_rows) == 0, "texture height is not divisible by n_rows id: ", texture.id, " n_rows: ", n_rows, " height: ", texture.height_px);
+	mylib_assert_exception_args((texture.width_px % n_cols) == 0, SplitTextureNotDivisibleException, texture.id, n_rows, n_cols, texture.width_px, texture.height_px)
+	mylib_assert_exception_args((texture.height_px % n_rows) == 0, SplitTextureNotDivisibleException, texture.id, n_rows, n_cols, texture.width_px, texture.height_px)
 
 	const uint32_t w = texture.width_px / n_cols;
 	const uint32_t h = texture.height_px / n_rows;
@@ -641,7 +641,7 @@ LightPointDescriptor Manager::add_light_point_source (const Point& pos, const Co
 		id++;
 	}
 
-	mylib_throw_exception_msg("no more light point sources available");
+	mylib_throw(LightLimitException);
 }
 
 // ---------------------------------------------------
