@@ -54,9 +54,9 @@ namespace Graphics
 #endif
 
 using fp_t = MYGLIB_FP_TYPE;
-using Vector2 = Mylib::Math::Vector<fp_t, 2>;
-using Vector3 = Mylib::Math::Vector<fp_t, 3>;
-using Vector4 = Mylib::Math::Vector<fp_t, 4>;
+using Vector2 = Mylib::Math::Vector<typename Mylib::Math::VectorStorage__<fp_t, 2>>;
+using Vector3 = Mylib::Math::Vector<typename Mylib::Math::VectorStorage__<fp_t, 3>>;
+using Vector4 = Mylib::Math::Vector<typename Mylib::Math::VectorStorage__<fp_t, 4>>;
 using Line = Mylib::Math::Line<fp_t, 3>;
 using Matrix3 = Mylib::Math::Matrix<fp_t, 3, 3>;
 using Matrix4 = Mylib::Math::Matrix<fp_t, 4, 4>;
@@ -67,9 +67,9 @@ using Vector = Vector3;
 using Point = Vector;
 using Quaternion = Mylib::Math::Quaternion<fp_t>;
 
-using Vector2f = Mylib::Math::Vector<float, 2>;
-using Vector3f = Mylib::Math::Vector<float, 3>;
-using Vector4f = Mylib::Math::Vector<float, 4>;
+using Vector2f = Vector2;
+using Vector3f = Vector3;
+using Vector4f = Vector4;
 
 using Point2f = Vector2f;
 using Point3f = Vector3f;
@@ -84,7 +84,69 @@ consteval fp_t fp (const auto v) noexcept
 
 // ---------------------------------------------------
 
-using Color = Vector4f;
+class ColorStorage__
+{
+public:
+	using Type = float;
+	inline static constexpr uint32_t dim = 4;
+
+	Type r;
+	Type g;
+	Type b;
+	Type a;
+
+	constexpr ColorStorage__ () noexcept = default;
+
+	constexpr ColorStorage__ (const Type r_, const Type g_, const Type b_, const Type a_) noexcept
+		: r(r_), g(g_), b(b_), a(a_)
+	{
+	}
+
+	constexpr void set (const Type r, const Type g, const Type b, const Type a) noexcept
+	{
+		this->r = r;
+		this->g = g;
+		this->b = b;
+		this->a = a;
+	}
+
+	constexpr Type* get_raw () noexcept { return &this->r; }
+	constexpr const Type* get_raw () const noexcept { return &this->r; }
+
+	constexpr Type& get (const uint32_t i) noexcept
+	{
+		if consteval {
+			switch (i) {
+				case 0: return this->r;
+				case 1: return this->g;
+				case 2: return this->b;
+				case 3: return this->a;
+			}
+		}
+		else {
+			return this->get_raw()[i];
+		}
+	}
+
+	constexpr Type get (const uint32_t i) const noexcept
+	{
+		if consteval {
+			switch (i) {
+				case 0: return this->r;
+				case 1: return this->g;
+				case 2: return this->b;
+				case 3: return this->a;
+			}
+		}
+		else {
+			return this->get_raw()[i];
+		}
+	}
+};
+
+// ---------------------------------------------------
+
+using Color = Mylib::Math::Vector<ColorStorage__>;
 
 // Using struct instead of namespace to allow importing
 // using xxx = MyGlib::Graphics::Colors;

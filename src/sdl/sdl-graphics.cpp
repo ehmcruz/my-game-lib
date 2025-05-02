@@ -326,9 +326,9 @@ void SDL_GraphicsDriver::setup_render_2D (const RenderArgs2D& args)
 //exit(1);
 #endif
 
-	const Matrix4 translate_to_clip_init = Matrix4::translate<2>(clip_init);
-	const Matrix4 scale = Matrix4::scale<2>(Vector(this->scale_factor, this->scale_factor));
-	const Matrix4 translate_camera = Matrix4::translate<2>(-world_camera);
+	const Matrix4 translate_to_clip_init = Matrix4::translate(clip_init);
+	const Matrix4 scale = Matrix4::scale(Vector(this->scale_factor, this->scale_factor));
+	const Matrix4 translate_camera = Matrix4::translate(-world_camera);
 
 //	dprintln( "translation matrix:" ); dprintln( translate_camera );
 
