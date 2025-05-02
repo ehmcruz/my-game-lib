@@ -50,8 +50,11 @@ Renderer::Renderer (const InitParams& params)
 		SDL_DisplayMode display_mode;
 
 		const auto error = SDL_GetCurrentDisplayMode(0, &display_mode);
-		
-		mylib_assert_exception_msg(error == 0, "error getting display mode\n", SDL_GetError())
+
+		if (error != 0) [[unlikely]] {
+			dprintln("error getting display mode", '\n', SDL_GetError());
+			mylib_throw_msg(NoMyGameLibGraphicsException, "error getting display mode");
+		}
 
 		this->window_width_px = display_mode.w;
 		this->window_height_px = display_mode.h;
@@ -72,12 +75,20 @@ Renderer::Renderer (const InitParams& params)
 			this->window_width_px, this->window_height_px,
 			SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
+	if (this->sdl_window == nullptr) [[unlikely]] {
+		dprintln("error creating SDL window", '\n', SDL_GetError());
+		mylib_throw_msg(NoMyGameLibGraphicsException, "error creating SDL window");
+	}
+
 	this->sdl_gl_context = SDL_GL_CreateContext(this->sdl_window);
 
 #ifndef __ANDROID__
 	GLenum err = glewInit();
 
-	mylib_assert_exception_msg(err == GLEW_OK, "Error: ", glewGetErrorString(err))
+	if (err != GLEW_OK) [[unlikely]] {
+		dprintln("Error initializing GLEW: ", glewGetErrorString(err));
+		mylib_throw_msg(NoMyGameLibGraphicsException, "error initializing GLEW.");
+	}
 
 	dprintln("Status: Using GLEW ", glewGetString(GLEW_VERSION));
 #endif
@@ -157,7 +168,7 @@ void Renderer::draw_line3D (Line3D& line, const Vector& offset, const Color& col
 		//dprintln("\tvertex.normal: ", v.normal);
 		}*/
 
-	mylib_assert_exception(shape_vertices.size() == n_vertices)
+	mylib_assert(shape_vertices.size() == n_vertices)
 
 	for (uint32_t i = 0; i < n_vertices; i++) {
 		vertices[i].gvertex = shape_vertices[i];
@@ -191,7 +202,7 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const Color& col
 		//dprintln("\tvertex.normal: ", v.normal);
 		}*/
 
-	mylib_assert_exception(shape_vertices.size() == n_vertices)
+	mylib_assert(shape_vertices.size() == n_vertices)
 
 	for (uint32_t i=0; i<n_vertices; i++) {
 		vertices[i].gvertex = shape_vertices[i];
@@ -208,7 +219,7 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const std::array
 	std::span<ProgramTriangleTexture::Vertex> vertices = this->program_triangle_texture->alloc_vertices(n_vertices);
 	std::span<Vertex> shape_vertices = cube.get_local_rotated_vertices();
 
-	mylib_assert_exception(shape_vertices.size() == n_vertices)
+	mylib_assert(shape_vertices.size() == n_vertices)
 
 	for (uint32_t i=0; i<n_vertices; i++) {
 		vertices[i].gvertex = shape_vertices[i];
@@ -274,7 +285,7 @@ void Renderer::draw_wire_cube3D (WireCube3D& cube, const Vector& offset, const C
 	std::span<ProgramLineColor::Vertex> vertices = this->program_line_color->alloc_vertices(n_vertices);
 	std::span<Vertex> shape_vertices = cube.get_local_rotated_vertices();
 
-	mylib_assert_exception(shape_vertices.size() == n_vertices)
+	mylib_assert(shape_vertices.size() == n_vertices)
 
 	for (uint32_t i=0; i<n_vertices; i++) {
 		vertices[i].gvertex = shape_vertices[i];
@@ -290,7 +301,7 @@ void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Colo
 	const uint32_t n_vertices = sphere.get_n_vertices();
 	std::span<Vertex> shape_vertices = sphere.get_local_rotated_vertices();
 
-	mylib_assert_exception(shape_vertices.size() == n_vertices)
+	mylib_assert(shape_vertices.size() == n_vertices)
 
 	//dprintln("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen, " n_triangles: ", n_vertices / 3);
 
@@ -310,7 +321,7 @@ void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Text
 	const uint32_t n_vertices = sphere.get_n_vertices();
 	std::span<Vertex> shape_vertices = sphere.get_local_vertices();
 
-	mylib_assert_exception(shape_vertices.size() == n_vertices)
+	mylib_assert(shape_vertices.size() == n_vertices)
 
 	const Opengl_TextureDescriptor *desc = texture_options.desc.info->data.get_value<Opengl_TextureDescriptor*>();
 	const Opengl_AtlasDescriptor *atlas = desc->atlas;
@@ -398,7 +409,7 @@ void Renderer::draw_circle2D (Circle2D& circle, const Vector& offset, const Colo
 	const uint32_t n_vertices = circle.get_n_vertices();
 	std::span<Vertex> shape_vertices = circle.get_local_rotated_vertices();
 
-	mylib_assert_exception(shape_vertices.size() == n_vertices)
+	mylib_assert(shape_vertices.size() == n_vertices)
 
 	//dprintln("circle_size_per_cent_of_screen: ", circle_size_per_cent_of_screen, " n_triangles: ", n_vertices / 3);
 
@@ -430,7 +441,7 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& col
 	std::span<ProgramTriangleColor::Vertex> vertices = this->program_triangle_color->alloc_vertices(n_vertices);
 	std::span<Vertex> shape_vertices = rect.get_local_rotated_vertices();
 
-	mylib_assert_exception(shape_vertices.size() == n_vertices)
+	mylib_assert(shape_vertices.size() == n_vertices)
 
 	for (uint32_t i=0; i<n_vertices; i++) {
 		vertices[i].gvertex = shape_vertices[i];
@@ -449,7 +460,7 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRen
 	std::span<Vertex> shape_vertices = rect.get_local_rotated_vertices();
 
 	static_assert(n_vertices == 6);
-	mylib_assert_exception(shape_vertices.size() == n_vertices)
+	mylib_assert(shape_vertices.size() == n_vertices)
 
 	for (uint32_t i=0; i<n_vertices; i++) {
 		vertices[i].gvertex = shape_vertices[i];
@@ -720,7 +731,7 @@ void Renderer::clear_buffers (const uint32_t flags)
 
 void Renderer::begin_texture_loading ()
 {
-	mylib_assert_exception(this->textures.empty())
+	mylib_assert(this->textures.empty())
 }
 
 // ---------------------------------------------------
@@ -856,7 +867,7 @@ TextureInfo Renderer::load_texture__ (SDL_Surface *surface)
 	Opengl_TextureDescriptor *desc = new(this->memory_manager.allocate_type<Opengl_TextureDescriptor>(1)) Opengl_TextureDescriptor;
 
 	SDL_Surface *treated_surface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ABGR8888, 0);
-	mylib_assert_exception_msg(treated_surface != nullptr, "error converting surface format", '\n', SDL_GetError())
+	mylib_assert_msg(treated_surface != nullptr, "error converting surface format", '\n', SDL_GetError())
 
 	desc->surface = treated_surface;
 	desc->atlas = nullptr;
@@ -898,7 +909,7 @@ TextureInfo Renderer::load_texture__ (SDL_Surface *surface)
 
 void Renderer::destroy_texture__ (TextureInfo& texture)
 {
-	mylib_throw_exception_msg("OpenGl Renderer does not support texture destruction");
+	mylib_throw_msg(GraphicsUnsupportedException, "OpenGl Renderer does not support texture destruction");
 }
 
 // ---------------------------------------------------
@@ -915,9 +926,9 @@ TextureInfo Renderer::create_sub_texture__ (const TextureInfo& parent, const uin
 	desc->width_px = w;
 	desc->height_px = h;
 
-	mylib_assert_exception(parent_desc->atlas != nullptr)
-	mylib_assert_exception((desc->x_init_px + desc->width_px) <= parent_desc->atlas->width_px)
-	mylib_assert_exception((desc->y_init_px + desc->height_px) <= parent_desc->atlas->height_px)
+	mylib_assert(parent_desc->atlas != nullptr)
+	mylib_assert((desc->x_init_px + desc->width_px) <= parent_desc->atlas->width_px)
+	mylib_assert((desc->y_init_px + desc->height_px) <= parent_desc->atlas->height_px)
 
 	using enum Rect2D::VertexPositionIndex;
 

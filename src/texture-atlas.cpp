@@ -3,6 +3,7 @@
 
 #include <my-game-lib/texture-atlas.h>
 #include <my-game-lib/debug.h>
+#include <my-game-lib/exception.h>
 
 #include <my-lib/math.h>
 
@@ -72,8 +73,9 @@ std::vector<TextureAtlasCreator::AtlasTexture> TextureAtlasCreator::create_atlas
 
 	std::list<EmptyArea> empty_areas;
 
+	// check if all textures fit in the atlas
 	for (auto *tex_desc : this->textures)
-		mylib_assert_exception_msg((tex_desc->width_px <= atlas_size) && (tex_desc->height_px <= atlas_size), "A texture size is bigger than max size.")
+		mylib_assert_exception_msg_args((tex_desc->width_px <= atlas_size) && (tex_desc->height_px <= atlas_size), UnableToLoadTextureException, "Some textures do not fit in the Atlas", tex_desc->id)
 
 	empty_areas.push_back( EmptyArea {
 		.x_ini = 0,

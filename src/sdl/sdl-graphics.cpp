@@ -104,8 +104,11 @@ SDL_GraphicsDriver::SDL_GraphicsDriver (const InitParams& params)
 		SDL_DisplayMode display_mode;
 
 		const auto error = SDL_GetCurrentDisplayMode(0, &display_mode);
-		
-		mylib_assert_exception_msg(error == 0, "error getting display mode\n", SDL_GetError())
+
+		if (error != 0) [[unlikely]] {
+			dprintln("error getting display mode", '\n', SDL_GetError());
+			mylib_throw_msg(NoMyGameLibGraphicsException, "error getting display mode");
+		}
 
 		this->window_width_px = display_mode.w;
 		this->window_height_px = display_mode.h;
@@ -125,14 +128,23 @@ SDL_GraphicsDriver::SDL_GraphicsDriver (const InitParams& params)
 			SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			this->window_width_px, this->window_height_px,
 			SDL_WINDOW_SHOWN);
-		
-	mylib_assert_exception_msg(this->sdl_window != nullptr, "error creating SDL window", '\n', SDL_GetError())
+	
+	if (this->sdl_window == nullptr) [[unlikely]] {
+		dprintln("error creating SDL window", '\n', SDL_GetError());
+		mylib_throw_msg(NoMyGameLibGraphicsException, "error creating SDL window");
+	}
 	
 	this->renderer = SDL_CreateRenderer(this->sdl_window, -1, SDL_RENDERER_ACCELERATED);
-	mylib_assert_exception_msg(this->renderer != nullptr, "error creating SDL renderer", '\n', SDL_GetError())
 
-	if (SDL_GetRendererInfo(this->renderer, &this->renderer_info) < 0)
-		mylib_throw_exception_msg("error getting SDL renderer info", '\n', SDL_GetError());
+	if (this->renderer == nullptr) [[unlikely]] {
+		dprintln("error creating SDL renderer", '\n', SDL_GetError());
+		mylib_throw_msg(NoMyGameLibGraphicsException, "error creating SDL renderer");
+	}
+
+	if (SDL_GetRendererInfo(this->renderer, &this->renderer_info) < 0) [[unlikely]] {
+		dprintln("error getting SDL renderer info", '\n', SDL_GetError());
+		mylib_throw_msg(NoMyGameLibGraphicsException, "error getting SDL renderer info");
+	}
 
 	dprintln("SDL renderer created");
 
@@ -160,34 +172,34 @@ void SDL_GraphicsDriver::wait_next_frame ()
 
 void SDL_GraphicsDriver::draw_line3D (Line3D& line, const Vector& offset, const Color& color)
 {
-	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
+	mylib_throw_msg(GraphicsUnsupportedException, "SDL Renderer does not support 3D rendering");
 }
 
 void SDL_GraphicsDriver::draw_cube3D (Cube3D& cube, const Vector& offset, const Color& color)
 {
-	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
+	mylib_throw_msg(GraphicsUnsupportedException, "SDL Renderer does not support 3D rendering");
 }
 
 void SDL_GraphicsDriver::draw_cube3D (Cube3D& cube, const Vector& offset, const std::array<TextureRenderOptions, 6>& texture_options)
 {
-	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
+	mylib_throw_msg(GraphicsUnsupportedException, "SDL Renderer does not support 3D rendering");
 }
 
 void SDL_GraphicsDriver::draw_wire_cube3D (WireCube3D& cube, const Vector& offset, const Color& color)
 {
-	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
+	mylib_throw_msg(GraphicsUnsupportedException, "SDL Renderer does not support 3D rendering");
 }
 
 // ---------------------------------------------------
 
 void SDL_GraphicsDriver::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Color& color)
 {
-	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
+	mylib_throw_msg(GraphicsUnsupportedException, "SDL Renderer does not support 3D rendering");
 }
 
 void SDL_GraphicsDriver::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const TextureRenderOptions& texture_options)
 {
-	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
+	mylib_throw_msg(GraphicsUnsupportedException, "SDL Renderer does not support 3D rendering");
 }
 
 // ---------------------------------------------------
@@ -258,7 +270,7 @@ void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const 
 
 void SDL_GraphicsDriver::setup_render_3D (const RenderArgs3D& args)
 {
-	mylib_throw_exception_msg("SDL Renderer does not support 3D rendering");
+	mylib_throw_msg(GraphicsUnsupportedException, "SDL Renderer does not support 3D rendering");
 }
 
 // ---------------------------------------------------
@@ -378,7 +390,7 @@ TextureInfo SDL_GraphicsDriver::load_texture__ (SDL_Surface *surface)
 //	mylib_assert_exception_msg(desc->surface != nullptr, "error converting surface format", '\n', SDL_GetError())
 
 	desc->texture = SDL_CreateTextureFromSurface(this->renderer, surface);
-	mylib_assert_exception_msg(desc->texture != nullptr, "error converting surface to texture", '\n', SDL_GetError())
+	mylib_assert_msg(desc->texture != nullptr, "error converting surface to texture", '\n', SDL_GetError())
 
 	return TextureInfo {
 		.data = desc,
@@ -392,14 +404,14 @@ TextureInfo SDL_GraphicsDriver::load_texture__ (SDL_Surface *surface)
 
 void SDL_GraphicsDriver::destroy_texture__ (TextureInfo& texture)
 {
-	mylib_throw_exception_msg("SDL Renderer does not support texture destruction");
+	mylib_throw_msg(GraphicsUnsupportedException, "SDL Renderer does not support texture destruction");
 }
 
 // ---------------------------------------------------
 
 TextureInfo SDL_GraphicsDriver::create_sub_texture__ (const TextureInfo& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h)
 {
-	mylib_throw_exception_msg("SDL Renderer does not support the creation of sub textures");
+	mylib_throw_msg(GraphicsUnsupportedException, "SDL Renderer does not support the creation of sub textures");
 }
 
 // ---------------------------------------------------

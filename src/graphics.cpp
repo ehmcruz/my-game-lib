@@ -525,7 +525,7 @@ CircleFactoryManager::CircleFactoryManager (const uint32_t n_cats, const uint32_
 TextureInfo& Manager::add_texture (std::string id, const TextureInfo& texture__)
 {
 	auto [it, success] = this->textures.insert({id, texture__});
-	mylib_assert_exception_args(success, UnableToAddTextureException, id)
+	mylib_assert_exception_args(success, UnableToLoadTextureException, id)
 
 	TextureInfo& texture = it->second;
 	texture.id = std::move(id);
@@ -550,7 +550,7 @@ TextureDescriptor Manager::load_texture (std::string id, SDL_Surface *surface)
 TextureDescriptor Manager::load_texture (std::string id, const std::string_view fname)
 {
 	SDL_Surface *surface = IMG_Load(fname.data());
-	mylib_assert_exception_args(surface != nullptr, UnableToAddTextureException, fname)
+	mylib_assert_exception_args(surface != nullptr, UnableToLoadTextureException, fname)
 
 	TextureDescriptor d = this->load_texture(std::move(id), surface);
 	SDL_FreeSurface(surface);

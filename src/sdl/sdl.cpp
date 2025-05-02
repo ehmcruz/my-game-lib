@@ -28,8 +28,10 @@ void SDL_Driver_Init ()
 
 	dprintln("Initializing SDL Video and Audio ...");
 
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
-		mylib_throw_exception_msg("SDL Video and Audio could not initialize! SDL_Error: ", SDL_GetError());
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) [[unlikely]] {
+		dprintln("SDL_Error: ", SDL_GetError());
+		mylib_throw_msg(NoMyGameLibException, "SDL could not initialize!");
+	}
 
 	dprintln("SDL Video and Audio Initialized");
 
@@ -42,8 +44,10 @@ void SDL_Driver_Init ()
 	const int img_result = IMG_Init(mounted_img_flags);
 
 	for (int i = 0; const int flag : img_flags) {
-		if (! (img_result & flag))
-			mylib_throw_exception_msg("SDL Image could not initialize! error flag_i ", i, '\n', IMG_GetError());
+		if (! (img_result & flag)) [[unlikely]] {
+			dprintln("SDL Image could not initialize! error flag_i ", i, '\n', IMG_GetError());
+			mylib_throw_msg(NoMyGameLibException, "SDL Image could not initialize!");
+		}
 		i++;
 	}
 
@@ -126,7 +130,7 @@ static FingerEvent& find_finger_event (const SDL_TouchID touch_id, const SDL_Fin
 			return event;
 	}
 
-	mylib_throw_exception_msg("finger event not found: touch_id=", touch_id, " finger_id=", finger_id);
+	mylib_throw_msg(InputException, "Finger event not found.");
 }
 
 // ---------------------------------------------------

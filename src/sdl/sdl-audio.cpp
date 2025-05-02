@@ -5,6 +5,7 @@
 #include <my-game-lib/debug.h>
 #include <my-game-lib/audio.h>
 #include <my-game-lib/sdl/sdl-driver.h>
+#include <my-game-lib/exception.h>
 
 #include <my-lib/macros.h>
 #include <my-lib/event.h>
@@ -85,7 +86,7 @@ SDL_AudioDriver::SDL_AudioDriver (Mylib::Memory::Manager& memory_manager_)
 	int audio_rate = default_audio_rate;
 
 	if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers) < 0) {
-		mylib_throw_exception_msg("Couldn't open audio", '\n', SDL_GetError());
+		mylib_throw_msg(NoMyGameLibAudioException, "Couldn't open audio driver");
 	}
 	else {
 		Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);
@@ -145,12 +146,11 @@ Descriptor SDL_AudioDriver::load_sound (const std::string_view fname, const Form
 			desc->format = Wav;
 			desc->ptr = Mix_LoadWAV(fname.data());
 
-			if (std::get<Mix_Chunk*>(desc->ptr) == nullptr)
-				mylib_throw_exception_msg("SDL Audio Driver: couldn't load sound effect file ", fname);
+			mylib_assert_exception_args(std::get<Mix_Chunk*>(desc->ptr) != nullptr, UnableToLoadAudioException, fname)
 		break;
 
 		default:
-			mylib_throw_exception_msg("SDL Audio Driver requires sound effects in Wav file format!");
+			mylib_throw_msg_args(UnableToLoadAudioException, "SDL Audio Driver requires sound effects in Wav file format!", fname);
 	}
 
 	desc->volume = 1.0f;
@@ -177,8 +177,7 @@ Descriptor SDL_AudioDriver::load_music (const std::string_view fname, const Form
 			desc->format = Wav;
 			desc->ptr = Mix_LoadWAV(fname.data());
 
-			if (std::get<Mix_Chunk*>(desc->ptr) == nullptr)
-				mylib_throw_exception_msg("SDL Audio Driver: couldn't load music file ", fname);
+			mylib_assert_exception_args(std::get<Mix_Chunk*>(desc->ptr) != nullptr, UnableToLoadAudioException, fname)
 		break;
 
 		case MP3:
@@ -186,12 +185,11 @@ Descriptor SDL_AudioDriver::load_music (const std::string_view fname, const Form
 			desc->format = MP3;
 			desc->ptr = Mix_LoadMUS(fname.data());
 
-			if (std::get<Mix_Music*>(desc->ptr) == nullptr)
-				mylib_throw_exception_msg("SDL Audio Driver: couldn't load music file ", fname);
+			mylib_assert_exception_args(std::get<Mix_Music*>(desc->ptr) != nullptr, UnableToLoadAudioException, fname)
 		break;
 
 		default:
-			mylib_throw_exception_msg("SDL Audio Driver: unsupported audio format for music");
+			mylib_throw_msg_args(UnableToLoadAudioException, "SDL Audio Driver: unsupported audio format for music.", fname);
 	}
 
 	desc->volume = 1.0f;
@@ -212,7 +210,7 @@ void SDL_AudioDriver::unload_audio (Descriptor& audio)
 
 	// check if audio not running
 
-	mylib_assert_exception(false)  // not finished implementation
+	mylib_assert(false)  // not finished implementation
 
 	this->memory_manager.deallocate_type(desc, 1);
 }
@@ -296,11 +294,11 @@ void SDL_AudioDriver::driver_play_audio (Descriptor& audio, Mylib::Memory::uniqu
 			}
 		}
 
-		mylib_assert_exception_msg(channel != nullptr, "SDL Audio Driver: no free channel available to play sound effect")
+		mylib_assert_exception_msg_args(channel != nullptr, UnableToPlayAudioException, "SDL Audio Driver: no free channel available to play sound effect", desc->fname)
 
 		const int channel_playing = Mix_PlayChannel(channel->id, std::get<Mix_Chunk*>(desc->ptr), 0);
 
-		mylib_assert_exception_msg(channel_playing == channel->id, "something really bad happenned")
+		mylib_assert_exception_msg_args(channel_playing == channel->id, UnableToPlayAudioException, "SDL Audio Driver: something really bad happenned.", desc->fname)
 
 		channel->busy = true;
 		channel->audio_descriptor = audio;

@@ -22,8 +22,8 @@ inline constexpr std::size_t fname_max_length = 128;
 class Exception : public Mylib::Exception
 {
 public:
-	Exception (const std::source_location& location_, const char *assert_str_)
-		: Mylib::Exception(location_, assert_str_)
+	Exception (const std::source_location& location_, const char *assert_str_, const char *extra_msg_)
+		: Mylib::Exception(location_, assert_str_, extra_msg_)
 	{
 	}
 
@@ -46,8 +46,8 @@ protected:
 class LightLimitException : public Exception
 {
 public:
-	LightLimitException (const std::source_location& location_, const char *assert_str_)
-		: Exception(location_, assert_str_)
+	LightLimitException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_)
+		: Exception(location_, assert_str_, extra_msg_)
 	{
 	}
 
@@ -67,8 +67,8 @@ private:
 	boost::static_string<fname_max_length> texture_id;
 
 public:
-	TextureNotFoundException (const std::source_location& location_, const char *assert_str_, const std::string_view texture_id_)
-		: Exception(location_, assert_str_), texture_id(texture_id_)
+	TextureNotFoundException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_, const std::string_view texture_id_)
+		: Exception(location_, assert_str_, extra_msg_), texture_id(texture_id_)
 	{
 	}
 
@@ -81,22 +81,22 @@ protected:
 
 // ---------------------------------------------------
 
-class UnableToAddTextureException : public Exception
+class UnableToLoadTextureException : public Exception
 {
 private:
 	// we use a static string to avoid dynamic memory allocation
 	boost::static_string<fname_max_length> texture_id;
 
 public:
-	UnableToAddTextureException (const std::source_location& location_, const char *assert_str_, const std::string_view texture_id_)
-		: Exception(location_, assert_str_), texture_id(texture_id_)
+	UnableToLoadTextureException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_, const std::string_view texture_id_)
+		: Exception(location_, assert_str_, extra_msg_), texture_id(texture_id_)
 	{
 	}
 
 protected:
 	void build_mygamelib_exception_msg (std::ostringstream& str_stream) const override final
 	{
-		str_stream << "Unable to add texture \"" << this->texture_id << "\"." << std::endl;
+		str_stream << "Unable to load texture \"" << this->texture_id << "\"." << std::endl;
 	}
 };
 
@@ -115,12 +115,13 @@ private:
 public:
 	SplitTextureNotDivisibleException (const std::source_location& location_,
 	                                   const char *assert_str_,
+									   const char *extra_msg_,
 									   const std::string_view texture_id_,
 									   const uint32_t n_rows_,
 									   const uint32_t n_cols_,
 									   const uint32_t width_px_,
 									   const uint32_t height_px_)
-		: Exception(location_, assert_str_), texture_id(texture_id_),
+		: Exception(location_, assert_str_, extra_msg_), texture_id(texture_id_),
 		  n_rows(n_rows_), n_cols(n_cols_), width_px(width_px_), height_px(height_px_)
 	{
 	}
@@ -139,11 +140,87 @@ protected:
 
 // ---------------------------------------------------
 
+class UnableToLoadAudioException : public Exception
+{
+private:
+	// we use a static string to avoid dynamic memory allocation
+	boost::static_string<fname_max_length> audio;
+
+public:
+	UnableToLoadAudioException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_, const std::string_view audio_)
+		: Exception(location_, assert_str_, extra_msg_), audio(audio_)
+	{
+	}
+
+protected:
+	void build_mygamelib_exception_msg (std::ostringstream& str_stream) const override final
+	{
+		str_stream << "Unable to load audio \"" << this->audio << "\"." << std::endl;
+	}
+};
+
+// ---------------------------------------------------
+
+class UnableToPlayAudioException : public Exception
+{
+private:
+	// we use a static string to avoid dynamic memory allocation
+	boost::static_string<fname_max_length> audio;
+
+public:
+	UnableToPlayAudioException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_, const std::string_view audio_)
+		: Exception(location_, assert_str_, extra_msg_), audio(audio_)
+	{
+	}
+
+protected:
+	void build_mygamelib_exception_msg (std::ostringstream& str_stream) const override final
+	{
+		str_stream << "Unable to play audio \"" << this->audio << "\".";
+	}
+};
+
+// ---------------------------------------------------
+
+class InputException : public Exception
+{
+public:
+	InputException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_)
+		: Exception(location_, assert_str_, extra_msg_)
+	{
+	}
+
+protected:
+	void build_mygamelib_exception_msg (std::ostringstream& str_stream) const override final
+	{
+		str_stream << "Input exception.";
+	}
+};
+
+// ---------------------------------------------------
+
+class GraphicsUnsupportedException : public Exception
+{
+public:
+	GraphicsUnsupportedException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_)
+		: Exception(location_, assert_str_, extra_msg_)
+	{
+	}
+
+protected:
+	void build_mygamelib_exception_msg (std::ostringstream& str_stream) const override final
+	{
+		str_stream << "Graphics unsupported exception.";
+	}
+};
+
+// ---------------------------------------------------
+
 class NoMyGameLibException : public Exception
 {
 public:
-	NoMyGameLibException (const std::source_location& location_, const char *assert_str_)
-		: Exception(location_, assert_str_)
+	NoMyGameLibException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_)
+		: Exception(location_, assert_str_, extra_msg_)
 	{
 	}
 
@@ -159,8 +236,8 @@ protected:
 class NoMyGameLibAudioException : public Exception
 {
 public:
-	NoMyGameLibAudioException (const std::source_location& location_, const char *assert_str_)
-		: Exception(location_, assert_str_)
+	NoMyGameLibAudioException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_)
+		: Exception(location_, assert_str_, extra_msg_)
 	{
 	}
 
@@ -176,8 +253,8 @@ protected:
 class NoMyGameLibGraphicsException : public Exception
 {
 public:
-	NoMyGameLibGraphicsException (const std::source_location& location_, const char *assert_str_)
-		: Exception(location_, assert_str_)
+	NoMyGameLibGraphicsException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_)
+		: Exception(location_, assert_str_, extra_msg_)
 	{
 	}
 
@@ -193,8 +270,8 @@ protected:
 class NoMyGameLibEventException : public Exception
 {
 public:
-	NoMyGameLibEventException (const std::source_location& location_, const char *assert_str_)
-		: Exception(location_, assert_str_)
+	NoMyGameLibEventException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_)
+		: Exception(location_, assert_str_, extra_msg_)
 	{
 	}
 

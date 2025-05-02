@@ -26,7 +26,7 @@ namespace Opengl
 void ensure_no_error ()
 {
 	const GLenum error = glGetError();
-	mylib_assert_exception_msg(error == GL_NO_ERROR, "\tglGetError() returned ", error);
+	mylib_assert_msg(error == GL_NO_ERROR, "\tglGetError() returned ", error);
 }
 
 // ---------------------------------------------------
@@ -36,7 +36,7 @@ Shader::Shader (const GLenum shader_type_, const std::string_view fname_)
   fname(fname_)
 {
 	this->shader_id = glCreateShader(this->shader_type);
-	mylib_assert_exception_msg(this->shader_id != 0, "\tglCreateShader failed");
+	mylib_assert_msg(this->shader_id != 0, "\tglCreateShader failed");
 }
 
 Shader::~Shader ()
@@ -50,18 +50,18 @@ void Shader::compile ()
 	// handles platform-specific file paths, specially on Android.
 
 	SDL_RWops *fp = SDL_RWFromFile(this->fname.data(), "rb");
-	mylib_assert_exception_msg(fp != nullptr, "\tSDL_RWFromFile failed");
+	mylib_assert_msg(fp != nullptr, "\tSDL_RWFromFile failed");
 
 	const Sint64 fsize = SDL_RWseek(fp, 0, RW_SEEK_END);
-	mylib_assert_exception_msg(fsize != -1, "\tSDL_RWseek failed");
+	mylib_assert_msg(fsize != -1, "\tSDL_RWseek failed");
 
 	const Sint64 fseekerror = SDL_RWseek(fp, 0, RW_SEEK_SET);
-	mylib_assert_exception_msg(fseekerror != -1, "\tSDL_RWseek failed on returnign to start of file");
+	mylib_assert_msg(fseekerror != -1, "\tSDL_RWseek failed on returnign to start of file");
 
 	std::vector<char> buffer(fsize + 1);
 
 	const size_t nread = SDL_RWread(fp, buffer.data(), sizeof(char), fsize);
-	mylib_assert_exception_msg(static_cast<Sint64>(nread) == fsize, "\tSDL_RWread failed nread=", nread, " fsize=", fsize);
+	mylib_assert_msg(static_cast<Sint64>(nread) == fsize, "\tSDL_RWread failed nread=", nread, " fsize=", fsize);
 
 	buffer[fsize] = 0;
 
@@ -93,7 +93,8 @@ void Shader::compile ()
 
 		std::vector<char> berror(log_size);
 		glGetShaderInfoLog(this->shader_id, log_size, nullptr, berror.data());
-		mylib_throw_exception_msg("\t", this->fname, " shader compilation failed", '\n', berror.data());
+		dprintln("\t", this->fname, " shader compilation failed", '\n', berror.data());
+		mylib_throw_msg(NoMyGameLibGraphicsException, "shader compilation failed");
 	}
 }
 
@@ -104,7 +105,7 @@ Program::Program ()
 	this->vs = nullptr;
 	this->fs = nullptr;
 	this->program_id = glCreateProgram();
-	mylib_assert_exception_msg(this->program_id != 0, "\tglCreateProgram failed");
+	mylib_assert_msg(this->program_id != 0, "\tglCreateProgram failed");
 }
 
 Program::~Program ()
@@ -140,7 +141,7 @@ void Program::use_program ()
 GLint Program::get_uniform_location (const std::string_view name) const
 {
 	const GLint location = glGetUniformLocation(this->program_id, name.data());
-	mylib_assert_exception_msg(location != -1, "\tuniform ", name, " not found");
+	mylib_assert_msg(location != -1, "\tuniform ", name, " not found");
 	return location;
 }
 

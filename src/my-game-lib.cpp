@@ -1,4 +1,5 @@
 #include <my-game-lib/my-game-lib.h>
+#include <my-game-lib/exception.h>
 
 #ifdef MYGLIB_SUPPORT_SDL
 	#include <my-game-lib/sdl/sdl-driver.h>
@@ -77,9 +78,9 @@ void Lib::lib_init (const InitParams& params)
 			.fullscreen = params.fullscreen
 		});
 
-	mylib_assert_exception(this->audio_manager != nullptr)
-	mylib_assert_exception(this->event_manager != nullptr)
-	mylib_assert_exception(this->graphics_manager != nullptr)
+	mylib_assert_exception(this->audio_manager != nullptr, NoMyGameLibAudioException)
+	mylib_assert_exception(this->event_manager != nullptr, NoMyGameLibEventException)
+	mylib_assert_exception(this->graphics_manager != nullptr, NoMyGameLibGraphicsException)
 }
 
 // ---------------------------------------------------
