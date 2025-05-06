@@ -10,14 +10,21 @@
 #include <memory>
 #include <list>
 #include <utility>
+#include <type_traits>
+#include <chrono>
 
 #include <cmath>
 #include <cstdlib>
 
+#include <my-game-lib/my-game-lib.h>
 #include <my-game-lib/graphics.h>
+#include <my-game-lib/events.h>
 
 #include <my-lib/std.h>
 #include <my-lib/macros.h>
+#include <my-lib/event.h>
+#include <my-lib/event-timer.h>
+#include <my-lib/interpolation.h>
 
 // ---------------------------------------------------
 
@@ -41,67 +48,129 @@ namespace Game
 template <typename T>
 using unique_ptr = typename Mylib::Memory::unique_ptr<T>;
 
-// Prototype for the function that converts a subtype to a type.
-template <typename Type_, typename SubType_>
-using FuncSubtypeToType = Type_ (*)(const SubType_);
+using Clock = std::chrono::steady_clock;
+using ClockDuration = Clock::duration;
+using ClockTime = Clock::time_point;
+
+using Coroutine = Mylib::Coroutine<1024>;
 
 // ---------------------------------------------------
 
-template <typename Tentity>
+inline MyGlib::Lib *game_lib = nullptr;
+inline MyGlib::Event::Manager *event_manager = nullptr;
+inline MyGlib::Audio::Manager *audio_manager = nullptr;
+inline MyGlib::Graphics::Manager *renderer = nullptr;
+
+inline std::mt19937_64 random_generator;
+
+inline auto timer = Mylib::Event::make_timer<Coroutine>(Clock::now);
+using Timer = decltype(timer);
+
+inline Mylib::InterpolationManager<Coroutine, float> interpolation_manager;
+
+// ---------------------------------------------------
+
+class Entity;
+
 class Component
 {
 protected:
-	MYLIB_OO_ENCAPSULATE_PTR(Tentity*, owner)
+	MYLIB_OO_ENCAPSULATE_PTR(Entity*, parent)
 
 public:
+	Component (Entity *parent_)
+		: parent(parent_)
+	{
+	}
+
+	virtual ~Component () { };
+
 	// called for each rendered frame
-	virtual void process_render (const float dt) {};
+	virtual void process_render (const float dt) { };
 
 	// called for each physics frame, before process_physics
 	virtual void process_update (const float dt) { };
 
 	// called for each physics frame
 	virtual void process_physics (const float dt) { };
+
+	virtual void frame_finished () { };
 };
 
 // ---------------------------------------------------
 
-template <typename Tentity, uint32_t dim_>
-class SpatialComponent : virtual public Component<Tentity>
+template <uint32_t dim_>
+class SpatialComponent : virtual public Component
 {
 public:
-	static constexpr uint32_t dim = dim_;
+	inline static constexpr uint32_t dim = dim_;
 	using Vector = typename Mylib::Math::Vector<typename Mylib::Math::VectorStorage__<float, dim>>;
 	using Point = Vector;
 
+private:
+	SpatialComponent *anchor;
+
 protected:
-	MYLIB_OO_ENCAPSULATE_OBJ(Point, position)  // relative to the owner entity
+	MYLIB_OO_ENCAPSULATE_OBJ(Point, position)  // relative to the anchor
+
+public:
+	SpatialComponent (Entity *parent_, SpatialComponent *anchor_, const Point& position_)
+		: Component(parent_),
+		  anchor(anchor_),
+		  position(position_)
+	{
+	}
+
+	SpatialComponent (Entity *parent_, const Point& position_)
+		: Component(parent_),
+		  anchor(nullptr),
+		  position(position_)
+	{
+	}
+
+	Point get_global_position () const
+	{
+		if (this->anchor) [[likely]] // most objects have an anchor
+			return this->anchor->get_global_position() + this->position;
+		else
+			return this->position;
+	}
 };
+
+using SpatialComponent2D = SpatialComponent<2>;
+using SpatialComponent3D = SpatialComponent<3>;
 
 // ---------------------------------------------------
 
-template <typename Tentity, uint32_t dim_>
-class RectCollider__ : public SpatialComponent<Tentity, dim_>
+template <uint32_t dim_>
+class RectCollider__ : public SpatialComponent<dim_>
 {
 public:
-	static constexpr uint32_t dim = dim_;
+	inline static constexpr uint32_t dim = dim_;
+	using SpatialComponent = Game::SpatialComponent<dim_>;
+	using Vector = SpatialComponent::Vector;
+	using Point = SpatialComponent::Point;
 	
 protected:
 	MYLIB_OO_ENCAPSULATE_OBJ(Vector, size)
 
 public:
+	RectCollider__ (Entity *parent_, SpatialComponent *anchor_, const Point& position_, const Vector& size_)
+		: SpatialComponent(parent_, anchor_, position_),
+		  size(size_)
+	{
+	}
+
 	// Returns a pair where:
 	// 1st element: true if there is a collision, false otherwise
 	// 2nd element: the collision resolution vector (how much obj_b should move to resolve the collision)
 
-	static std::pair<bool, Vector> check_collision (const RectCollider& collider_a,
-	                                                const Point& owner_pos_a,
-													const RectCollider& collider_b,
-	                                                const Point& owner_pos_b) noexcept
+	static std::pair<bool, Vector> check_collision (const RectCollider__& collider_a,
+													const RectCollider__& collider_b) noexcept
 	{
 		Vector collision_vector;
 	
-		const Vector distance = owner_b_pos - owner_a_pos;
+		const Vector distance = collider_b.get_global_position() - collider_a.get_global_position();
 		const Vector target_distance = (collider_a.size + collider_b.size) / 2.0f;
 	
 		/*
@@ -154,41 +223,43 @@ public:
 	}
 };
 
-template <typename Tentity>
-using Rect2dCollider = RectCollider__<Tentity, 2>;
-
-template <typename Tentity>
-using Rect3dCollider = RectCollider__<Tentity, 3>;
+using RectCollider2D = RectCollider__<2>;
+using RectCollider3D = RectCollider__<3>;
 
 // ---------------------------------------------------
 
-template <typename Type_, typename SubType_, FuncSubtypeToType<Type_, SubType_> subtype_to_type>
-class Entity : virtual public Component<Entity<Type_, SubType_, FuncSubtypeToType<Type_, SubType_>>>
+class Entity : virtual public Component
 {
 public:
-	using Type = Type_;
-	using SubType = SubType_;
-	using Component = typename Game::Component<Entity<Type_, SubType_, FuncSubtypeToType<Type_, SubType_>>>;
+	using UserData = uint64_t;
+	UserData user_data;
 
 protected:
-	MYLIB_OO_ENCAPSULATE_SCALAR(SubType, subtype)
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<unique_ptr<Component>>, components)
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<unique_ptr<Entity>>, entities)
 
 public:
-	void get_type () const noexcept
+	Entity (Entity *parent_, const UserData& user_data_)
+		: Component(parent_),
+		  user_data(user_data_)
 	{
-		return subtype_to_type(this->subtype);
 	}
 
-	void add_component (unique_ptr<Component> component)
+	Entity (const UserData& user_data_)
+		: Component(nullptr),
+		  user_data(user_data_)
 	{
-		this->components.push_back(std::move(component));
 	}
 
-	void add_entity (unique_ptr<Entity> entity)
+	template <typename T>
+	void add_child (unique_ptr<T> child)
 	{
-		this->entities.push_back(std::move(entity));
+		if constexpr (std::is_base_of_v<Entity, T>)
+			this->entities.push_back(std::move(child));
+		else if constexpr (std::is_base_of_v<Component, T>)
+			this->components.push_back(std::move(child));
+		else
+			static_assert(0);
 	}
 
 	void loop_render (const float dt)
@@ -233,33 +304,132 @@ public:
 
 // ---------------------------------------------------
 
-template <typename Type_, typename SubType_, FuncSubtypeToType<Type_, SubType_> subtype_to_type, uint32_t dim_>
+template <uint32_t dim_>
 class SpatialEntity :
-	public Entity<Type_, SubType_, FuncSubtypeToType<Type_, SubType_>>,
-	public SpatialComponent<Entity<Type_, SubType_, FuncSubtypeToType<Type_, SubType_>>, dim_>
+	public SpatialComponent<dim_>,
+	public Entity
 {
 public:
-	static constexpr uint32_t dim = dim_;
+	inline static constexpr uint32_t dim = dim_;
+	using SpatialComponent = Game::SpatialComponent<dim_>;
+	using Vector = SpatialComponent::Vector;
+	using Point = SpatialComponent::Point;
+	using UserData = Entity::UserData;
 
-
-protected:
-
+public:
+	SpatialEntity (Entity *parent_, SpatialComponent *anchor_, const Point& position_, const UserData& user_data_)
+		: Component(parent_),  // fix diamond problem
+		  SpatialComponent(parent_, anchor_, position_),
+		  Entity(parent_, user_data_)
+	{
+	}
 };
 
 // ---------------------------------------------------
 
-template <typename Type_, typename SubType_, FuncSubtypeToType<Type_, SubType_> subtype_to_type, uint32_t dim_>
-class DynamicEntity : public StaticEntity<Type_, SubType_, FuncSubtypeToType<Type_, SubType_>, dim_>
+template <uint32_t dim_>
+class DynamicEntity : public SpatialEntity<dim_>
 {
+public:
+	inline static constexpr uint32_t dim = dim_;
+	using SpatialComponent = Game::SpatialComponent<dim_>;
+	using SpatialEntity = Game::SpatialEntity<dim_>;
+	using Vector = SpatialComponent::Vector;
+	using Point = SpatialComponent::Point;
+	using UserData = SpatialEntity::UserData;
+
 protected:
 	MYLIB_OO_ENCAPSULATE_OBJ(Vector, velocity)
 
 public:
+	DynamicEntity (Entity *parent_, SpatialComponent *anchor_, const Point& position_, const UserData& user_data_, const Vector& velocity_)
+		: SpatialEntity(parent_, anchor_, position_, user_data_),
+		  velocity(velocity_)
+	{
+	}
+
+	DynamicEntity (Entity *parent_, SpatialComponent *anchor_, const Point& position_, const UserData& user_data_)
+		: DynamicEntity(parent_, anchor_, position_, user_data_, Vector::zero())
+	{
+	}
+
 	void process_physics (const float dt) override
 	{
 		this->position += this->velocity * dt;
 	}
 };
+
+// ---------------------------------------------------
+
+class Main
+{
+public:
+	struct InitConfig {
+		const char *window_name;
+		uint32_t window_width_px;
+		uint32_t window_height_px;
+		bool fullscreen;
+		float target_dt;
+		float max_dt;
+		bool sleep_to_save_cpu;
+		float sleep_threshold;
+		bool busy_wait_to_ensure_fps;
+	};
+
+	enum class State {
+		Initializing,
+		Playing
+	};
+
+protected:
+	const InitConfig config;
+	MYLIB_OO_ENCAPSULATE_PTR(Entity*, entity)
+	MYLIB_OO_ENCAPSULATE_SCALAR(bool, alive)
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(State, state)
+
+	MyGlib::Event::Quit::Descriptor event_quit_d;
+	MyGlib::Event::KeyDown::Descriptor event_key_down_d;
+
+private:
+	static inline Main *instance = nullptr;
+
+	Main (const InitConfig& config_, Entity *entity_);
+	~Main ();
+
+public:
+	// delete default constructor
+	Main () = delete;
+
+	// delete copy/move constructor and assignment operator
+	Main (const Main&) = delete;
+	Main (Main&&) = delete;
+	Main& operator= (const Main&) = delete;
+	Main& operator= (Main&&) = delete;
+
+	void run ();
+	void event_quit (const MyGlib::Event::Quit::Type);
+	void event_key_down_callback (const MyGlib::Event::KeyDown::Type& event);
+
+	static inline Main& get () noexcept
+	{
+		return *instance;
+	}
+
+	static Main* load (const InitConfig& config_, Entity *entity_);
+	static void unload ();
+};
+
+// ---------------------------------------------------
+
+constexpr ClockDuration float_to_ClockDuration (const float t)
+{
+	return std::chrono::duration_cast<ClockDuration>(std::chrono::duration<float>(t));
+}
+
+constexpr float ClockDuration_to_float (const ClockDuration& d)
+{
+	return std::chrono::duration_cast<std::chrono::duration<float>>(d).count();
+}
 
 // ---------------------------------------------------
 
