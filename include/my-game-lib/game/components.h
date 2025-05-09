@@ -94,8 +94,8 @@ public:
 	}
 };
 
-using RectCollider2D = RectCollider__<2>;
-using RectCollider3D = RectCollider__<3>;
+using Rect2DCollider = RectCollider__<2>;
+using RectCube3DCollider = RectCollider__<3>;
 
 // ---------------------------------------------------
 

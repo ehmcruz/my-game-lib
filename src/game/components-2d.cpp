@@ -12,10 +12,16 @@ namespace Game
 
 // ---------------------------------------------------
 
-void GraphicsRect2D::process_render (const float dt)
+void Rect2DRenderer::process_render (const float dt)
 {
-	Graphics::Rect2D rect(this->size.x, this->size.y);
-	renderer->draw_rect2D(rect, this->get_global_position(), this->color);
+	renderer->draw_rect2D(this->rect, this->get_global_position(), this->color);
+}
+
+// ---------------------------------------------------
+
+void Sprite2DRenderer::process_render (const float dt)
+{
+	renderer->draw_rect2D(this->rect, this->get_global_position(), { .desc = this->texture });
 }
 
 // ---------------------------------------------------

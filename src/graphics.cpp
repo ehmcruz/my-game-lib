@@ -378,8 +378,8 @@ void Circle2D::calculate_vertices ()
 
 void Rect2D::calculate_vertices () noexcept
 {
-	const fp_t half_w = this->get_w() * fp(0.5) * this->scale.x;
-	const fp_t half_h = this->get_h() * fp(0.5) * this->scale.y;
+	const fp_t half_w = this->size.x * fp(0.5) * this->scale.x;
+	const fp_t half_h = this->size.y * fp(0.5) * this->scale.y;
 	constexpr fp_t z = 0;
 
 	// draw first triangle

@@ -691,15 +691,14 @@ public:
 		RightBottom
 	};
 
-	static consteval uint32_t get_n_vertices ()
+	static consteval uint32_t get_n_vertices () noexcept
 	{
 		return 6; // 2 triangles
 	}
 
 protected:
 	// write functions of these 2 variables are written bellow the constructor
-	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, w)
-	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(fp_t, h)
+	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(Vector2, size)
 	//OO_ENCAPSULATE_SCALAR_INIT(fp_t, z, 0)
 
 private:
@@ -709,8 +708,8 @@ private:
 public:
 	// constructors
 
-	Rect2D (const fp_t w_, const fp_t h_) noexcept
-		: Shape (Type::Rect2D), w(w_), h(h_)
+	Rect2D (const Vector2 size_) noexcept
+		: Shape (Type::Rect2D), size(size_)
 	{
 		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
 		this->calculate_vertices();
@@ -723,7 +722,7 @@ public:
 	}
 
 	Rect2D (const Rect2D& other)
-		: Shape(Type::Rect2D), w(other.w), h(other.h)
+		: Shape(Type::Rect2D), size(other.size)
 	{
 		this->shape_copy(other);
 		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
@@ -735,30 +734,38 @@ public:
 	Rect2D& operator= (const Rect2D& other)
 	{
 		//mylib_assert_exception(this->type == Type::Rect2D)
-		this->w = other.w;
-		this->h = other.h;
+		this->size = other.size;
 		this->shape_copy(other);
 		this->calculate_vertices();
 
 		return *this;
 	}
 
+	fp_t get_w () const noexcept
+	{
+		return this->size.x;
+	}
+
+	fp_t get_h () const noexcept
+	{
+		return this->size.y;
+	}
+
 	inline void set_w (const fp_t w) noexcept
 	{
-		this->w = w;
+		this->size.x = w;
 		this->calculate_vertices();
 	}
 
 	inline void set_h (const fp_t h) noexcept
 	{
-		this->h = h;
+		this->size.y = h;
 		this->calculate_vertices();
 	}
 
-	void set_size (const fp_t w, const fp_t h) noexcept
+	void set_size (const Vector2 size) noexcept
 	{
-		this->w = w;
-		this->h = h;
+		this->size = size;
 		this->calculate_vertices();
 	}
 

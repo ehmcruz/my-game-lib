@@ -15,8 +15,8 @@ namespace Game
 
 // ---------------------------------------------------
 
-Main::Main (const InitConfig& config_, Entity *entity_)
-	: config(config_), entity(entity_)
+Main::Main (const InitConfig& config_, Scene *scene_)
+	: config(config_), scene(scene_)
 {
 	this->state = State::Initializing;
 
@@ -54,9 +54,9 @@ Main::~Main ()
 
 // ---------------------------------------------------
 
-Game::Main* Main::load (const InitConfig& config_, Entity *entity_)
+Game::Main* Main::load (const InitConfig& config_, Scene *scene_)
 {
-	instance = new Main(config_, entity_);
+	instance = new Main(config_, scene_);
 	return instance;
 }
 
@@ -134,9 +134,10 @@ void Main::run ()
 
 		switch (this->state) {
 			case State::Playing:
-				this->entity->loop_update(virtual_dt);
-				this->entity->loop_physics(virtual_dt);
-				this->entity->loop_render(virtual_dt);
+				this->scene->setup_render();
+				this->scene->loop_update(virtual_dt);
+				this->scene->loop_physics(virtual_dt);
+				this->scene->loop_render(virtual_dt);
 			break;
 			
 			default:
@@ -148,7 +149,7 @@ void Main::run ()
 
 		switch (this->state) {
 			case State::Playing:
-				this->entity->frame_finished();
+				this->scene->frame_finished();
 			break;
 			
 			default:

@@ -97,6 +97,7 @@ public:
 	// called for each physics frame
 	virtual void process_physics (const float dt) { };
 
+	// called after all the components have been processed and rendered
 	virtual void frame_finished () { };
 };
 
@@ -224,7 +225,11 @@ public:
 class Scene : public Entity
 {
 public:
-	using Entity::Entity;
+	Scene (const UserData& user_data_)
+		: Component(nullptr),
+		  Entity(nullptr, user_data_)
+	{
+	}
 
 	virtual void setup_render () = 0;
 };
@@ -240,13 +245,12 @@ public:
 	using Point = SpatialComponent::Point;
 	using UserData = Entity::UserData;
 
-protected:
-	MYLIB_OO_ENCAPSULATE_OBJ_INIT_WITH_COPY_MOVE(Vector, camera_pos, Vector::zero())
-
 public:
-	using Scene::Scene;
-
-	void setup_render () override final;
+	Scene2D (const UserData& user_data_)
+		: Component(nullptr),
+		  Scene(user_data_)
+	{
+	}
 };
 
 // ---------------------------------------------------
@@ -268,6 +272,11 @@ public:
 		: Component(parent_),  // fix diamond problem
 		  SpatialComponent(parent_, anchor_, position_),
 		  Entity(parent_, user_data_)
+	{
+	}
+
+	SpatialEntity (Entity *parent_, const Point& position_, const UserData& user_data_)
+		: SpatialEntity(parent_, nullptr, position_, user_data_)
 	{
 	}
 };
@@ -295,8 +304,18 @@ public:
 	{
 	}
 
+	DynamicEntity (Entity *parent_, const Point& position_, const UserData& user_data_, const Vector& velocity_)
+		: DynamicEntity(parent_, nullptr, position_, user_data_, velocity_)
+	{
+	}
+
 	DynamicEntity (Entity *parent_, SpatialComponent *anchor_, const Point& position_, const UserData& user_data_)
 		: DynamicEntity(parent_, anchor_, position_, user_data_, Vector::zero())
+	{
+	}
+
+	DynamicEntity (Entity *parent_, const Point& position_, const UserData& user_data_)
+		: DynamicEntity(parent_, nullptr, position_, user_data_, Vector::zero())
 	{
 	}
 
@@ -305,6 +324,9 @@ public:
 		this->position += this->velocity * dt;
 	}
 };
+
+using DynamicEntity2D = DynamicEntity<2>;
+using DynamicEntity3D = DynamicEntity<3>;
 
 // ---------------------------------------------------
 
@@ -330,7 +352,7 @@ public:
 
 protected:
 	const InitConfig config;
-	MYLIB_OO_ENCAPSULATE_PTR(Entity*, entity)
+	MYLIB_OO_ENCAPSULATE_PTR(Scene*, scene)
 	MYLIB_OO_ENCAPSULATE_SCALAR(bool, alive)
 	MYLIB_OO_ENCAPSULATE_SCALAR_READONLY(State, state)
 
@@ -340,7 +362,7 @@ protected:
 private:
 	static inline Main *instance = nullptr;
 
-	Main (const InitConfig& config_, Entity *entity_);
+	Main (const InitConfig& config_, Scene *scene_);
 	~Main ();
 
 public:
@@ -362,7 +384,7 @@ public:
 		return *instance;
 	}
 
-	static Main* load (const InitConfig& config_, Entity *entity_);
+	static Main* load (const InitConfig& config_, Scene *scene_ = nullptr);
 	static void unload ();
 };
 
