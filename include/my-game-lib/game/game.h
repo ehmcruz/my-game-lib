@@ -78,7 +78,7 @@ class Entity;
 class Component
 {
 protected:
-	MYLIB_OO_ENCAPSULATE_PTR(Entity*, parent)
+	MYLIB_OO_ENCAPSULATE_PTR_READONLY(Entity*, parent)
 
 public:
 	Component (Entity *parent_)
@@ -103,53 +103,12 @@ public:
 
 // ---------------------------------------------------
 
-template <uint32_t dim_>
-class SpatialComponent : virtual public Component
-{
-public:
-	inline static constexpr uint32_t dim = dim_;
-	using Vector = typename Mylib::Math::Vector<typename Mylib::Math::VectorStorage__<float, dim>>;
-	using Point = Vector;
-
-private:
-	SpatialComponent *anchor;
-
-protected:
-	MYLIB_OO_ENCAPSULATE_OBJ(Point, position)  // relative to the anchor
-
-public:
-	SpatialComponent (Entity *parent_, SpatialComponent *anchor_, const Point& position_)
-		: Component(parent_),
-		  anchor(anchor_),
-		  position(position_)
-	{
-	}
-
-	SpatialComponent (Entity *parent_, const Point& position_)
-		: Component(parent_),
-		  anchor(nullptr),
-		  position(position_)
-	{
-	}
-
-	Point get_global_position () const
-	{
-		if (this->anchor) [[likely]] // most objects have an anchor
-			return this->anchor->get_global_position() + this->position;
-		else
-			return this->position;
-	}
-};
-
-using SpatialComponent2D = SpatialComponent<2>;
-using SpatialComponent3D = SpatialComponent<3>;
-
-// ---------------------------------------------------
-
-class Entity : virtual public Component
+class Entity : public Component
 {
 public:
 	using UserData = uint64_t;
+
+public:
 	UserData user_data;
 
 protected:
@@ -163,11 +122,7 @@ public:
 	{
 	}
 
-	Entity (const UserData& user_data_)
-		: Component(nullptr),
-		  user_data(user_data_)
-	{
-	}
+	virtual ~Entity () { };
 
 	template <typename T>
 	void add_child (unique_ptr<T> child)
@@ -222,12 +177,52 @@ public:
 
 // ---------------------------------------------------
 
+template <uint32_t dim_>
+class Spatial
+{
+public:
+	inline static constexpr uint32_t dim = dim_;
+	using Vector = typename Mylib::Math::Vector<typename Mylib::Math::VectorStorage__<float, dim>>;
+	using Point = Vector;
+
+private:
+	Spatial *anchor;
+
+protected:
+	MYLIB_OO_ENCAPSULATE_OBJ(Point, position)  // relative to the anchor
+
+public:
+	Spatial (Spatial *anchor_, const Point& position_)
+		: anchor(anchor_),
+		  position(position_)
+	{
+	}
+
+	Spatial (const Point& position_)
+		: anchor(nullptr),
+		  position(position_)
+	{
+	}
+
+	Point get_global_position () const
+	{
+		if (this->anchor) [[likely]] // most objects have an anchor
+			return this->anchor->get_global_position() + this->position;
+		else
+			return this->position;
+	}
+};
+
+using Spatial2D = Spatial<2>;
+using Spatial3D = Spatial<3>;
+
+// ---------------------------------------------------
+
 class Scene : public Entity
 {
 public:
 	Scene (const UserData& user_data_)
-		: Component(nullptr),
-		  Entity(nullptr, user_data_)
+		: Entity(nullptr, user_data_)
 	{
 	}
 
@@ -240,15 +235,14 @@ class Scene2D : public Scene
 {
 public:
 	inline static constexpr uint32_t dim = 2;
-	using SpatialComponent = Game::SpatialComponent<dim>;
-	using Vector = SpatialComponent::Vector;
-	using Point = SpatialComponent::Point;
+	using Spatial = Game::Spatial<dim>;
+	using Vector = Spatial::Vector;
+	using Point = Spatial::Point;
 	using UserData = Entity::UserData;
 
 public:
 	Scene2D (const UserData& user_data_)
-		: Component(nullptr),
-		  Scene(user_data_)
+		: Scene(user_data_)
 	{
 	}
 };
@@ -256,30 +250,59 @@ public:
 // ---------------------------------------------------
 
 template <uint32_t dim_>
-class SpatialEntity :
-	public SpatialComponent<dim_>,
-	public Entity
+class SpatialComponent : public Component, public Spatial<dim_>
 {
 public:
 	inline static constexpr uint32_t dim = dim_;
-	using SpatialComponent = Game::SpatialComponent<dim_>;
-	using Vector = SpatialComponent::Vector;
-	using Point = SpatialComponent::Point;
-	using UserData = Entity::UserData;
+	using Spatial = Game::Spatial<dim>;
+	using Vector = Spatial::Vector;
+	using Point = Spatial::Point;
 
 public:
-	SpatialEntity (Entity *parent_, SpatialComponent *anchor_, const Point& position_, const UserData& user_data_)
-		: Component(parent_),  // fix diamond problem
-		  SpatialComponent(parent_, anchor_, position_),
-		  Entity(parent_, user_data_)
+	SpatialComponent (Entity *parent_, Spatial *anchor_, const Point& position_)
+		: Component(parent_),
+		  Spatial(anchor_, position_)
 	{
 	}
 
-	SpatialEntity (Entity *parent_, const Point& position_, const UserData& user_data_)
-		: SpatialEntity(parent_, nullptr, position_, user_data_)
+	SpatialComponent (Entity *parent_, const Point& position_)
+		: Component(parent_),
+		  Spatial(position_)
 	{
 	}
 };
+
+using SpatialComponent2D = SpatialComponent<2>;
+using SpatialComponent3D = SpatialComponent<3>;
+
+// ---------------------------------------------------
+
+template <uint32_t dim_>
+class SpatialEntity : public Entity, public Spatial<dim_>
+{
+public:
+	inline static constexpr uint32_t dim = dim_;
+	using Spatial = Game::Spatial<dim>;
+	using Vector = Spatial::Vector;
+	using Point = Spatial::Point;
+	using UserData = Entity::UserData;
+
+public:
+	SpatialEntity (Entity *parent_, const UserData& user_data_, Spatial *anchor_, const Point& position_)
+		: Entity(parent_, user_data_),
+		  Spatial(anchor_, position_)
+	{
+	}
+
+	SpatialEntity (Entity *parent_, const UserData& user_data_, const Point& position_)
+		: Entity(parent_, user_data_),
+		  Spatial(position_)
+	{
+	}
+};
+
+using SpatialEntity2D = SpatialEntity<2>;
+using SpatialEntity3D = SpatialEntity<3>;
 
 // ---------------------------------------------------
 
@@ -288,34 +311,35 @@ class DynamicEntity : public SpatialEntity<dim_>
 {
 public:
 	inline static constexpr uint32_t dim = dim_;
-	using SpatialComponent = Game::SpatialComponent<dim_>;
-	using SpatialEntity = Game::SpatialEntity<dim_>;
-	using Vector = SpatialComponent::Vector;
-	using Point = SpatialComponent::Point;
+	using Spatial = Game::Spatial<dim>;
+	using SpatialEntity = Game::SpatialEntity<dim>;
+	using Vector = SpatialEntity::Vector;
+	using Point = SpatialEntity::Point;
 	using UserData = SpatialEntity::UserData;
 
 protected:
-	MYLIB_OO_ENCAPSULATE_OBJ(Vector, velocity)
+	MYLIB_OO_ENCAPSULATE_OBJ_INIT_WITH_COPY_MOVE(Vector, velocity, Vector::zero())
 
 public:
-	DynamicEntity (Entity *parent_, SpatialComponent *anchor_, const Point& position_, const UserData& user_data_, const Vector& velocity_)
-		: SpatialEntity(parent_, anchor_, position_, user_data_),
+	DynamicEntity (Entity *parent_, const UserData& user_data_, Spatial *anchor_, const Point& position_, const Vector& velocity_)
+		: SpatialEntity(parent_, user_data_, anchor_, position_),
 		  velocity(velocity_)
 	{
 	}
 
-	DynamicEntity (Entity *parent_, const Point& position_, const UserData& user_data_, const Vector& velocity_)
-		: DynamicEntity(parent_, nullptr, position_, user_data_, velocity_)
+	DynamicEntity (Entity *parent_, const UserData& user_data_, const Point& position_, const Vector& velocity_)
+		: SpatialEntity(parent_, user_data_, position_),
+		  velocity(velocity_)
 	{
 	}
 
-	DynamicEntity (Entity *parent_, SpatialComponent *anchor_, const Point& position_, const UserData& user_data_)
-		: DynamicEntity(parent_, anchor_, position_, user_data_, Vector::zero())
+	DynamicEntity (Entity *parent_, const UserData& user_data_, Spatial *anchor_, const Point& position_)
+		: SpatialEntity(parent_, user_data_, anchor_, position_)
 	{
 	}
 
-	DynamicEntity (Entity *parent_, const Point& position_, const UserData& user_data_)
-		: DynamicEntity(parent_, nullptr, position_, user_data_, Vector::zero())
+	DynamicEntity (Entity *parent_, const UserData& user_data_, const Point& position_)
+		: SpatialEntity(parent_, user_data_, position_)
 	{
 	}
 

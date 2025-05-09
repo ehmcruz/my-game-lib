@@ -18,6 +18,7 @@ class RectCollider__ : public SpatialComponent<dim_>
 {
 public:
 	inline static constexpr uint32_t dim = dim_;
+	using Spatial = Game::Spatial<dim>;
 	using SpatialComponent = Game::SpatialComponent<dim_>;
 	using Vector = SpatialComponent::Vector;
 	using Point = SpatialComponent::Point;
@@ -26,8 +27,14 @@ protected:
 	MYLIB_OO_ENCAPSULATE_OBJ(Vector, size)
 
 public:
-	RectCollider__ (Entity *parent_, SpatialComponent *anchor_, const Point& position_, const Vector& size_)
+	RectCollider__ (Entity *parent_, Spatial *anchor_, const Point& position_, const Vector& size_)
 		: SpatialComponent(parent_, anchor_, position_),
+		  size(size_)
+	{
+	}
+
+	RectCollider__ (Entity *parent_, const Point& position_, const Vector& size_)
+		: SpatialComponent(parent_, position_),
 		  size(size_)
 	{
 	}
