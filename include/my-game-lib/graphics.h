@@ -715,6 +715,13 @@ public:
 		this->calculate_vertices();
 	}
 
+	Rect2D (const fp_t w, const fp_t h) noexcept
+		: Shape (Type::Rect2D), size(w, h)
+	{
+		this->set_vertices_buffer(this->vertices, this->rotated_vertices);
+		this->calculate_vertices();
+	}
+	
 	Rect2D () noexcept
 		: Shape (Type::Rect2D)
 	{
@@ -766,6 +773,13 @@ public:
 	void set_size (const Vector2 size) noexcept
 	{
 		this->size = size;
+		this->calculate_vertices();
+	}
+
+	void set_size (const fp_t w, const fp_t h) noexcept
+	{
+		this->size.x = w;
+		this->size.y = h;
 		this->calculate_vertices();
 	}
 
