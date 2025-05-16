@@ -67,12 +67,22 @@ inline MyGlib::Event::Manager *event_manager = nullptr;
 inline MyGlib::Audio::Manager *audio_manager = nullptr;
 inline MyGlib::Graphics::Manager *renderer = nullptr;
 
+inline Mylib::Memory::Manager *memory_manager = &Mylib::Memory::default_manager;
+
 inline std::mt19937_64 random_generator;
 
 inline auto timer = Mylib::Event::make_timer<Coroutine>(Clock::now);
 using Timer = decltype(timer);
 
 inline Mylib::InterpolationManager<Coroutine, float> interpolation_manager;
+
+// ---------------------------------------------------
+
+template <typename T, typename... Types>
+[[nodiscard]] unique_ptr<T> make_unique (Types&&... vars)
+{
+	return Mylib::Memory::make_unique<T>(*memory_manager, std::forward<Types>(vars)...);
+}
 
 // ---------------------------------------------------
 
@@ -129,12 +139,18 @@ public:
 	using Point = Vector;
 
 protected:
-	MYLIB_OO_ENCAPSULATE_OBJ(Vector, position)
+	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Vector, position)
 
 public:
 	TransformInterface (const Point& position_)
 		: position(position_)
 	{
+	}
+
+	void set_position (const float x, const float y) noexcept
+	{
+		this->position.x = x;
+		this->position.y = y;
 	}
 };
 
@@ -158,11 +174,10 @@ public:
 
 	Point get_global_position () const
 	{
-		static const auto zero = TransformComponent(Vector::zero());
-		const TransformComponent *parent[2] = { &zero, static_cast<TransformComponent*>(this->parent) };
-		const bool has_parent = (this->parent != nullptr);
-
-		return this->position + parent[has_parent]->position;
+		if (this->parent != nullptr) [[likely]]
+			return this->position + static_cast<TransformComponent*>(this->parent)->get_global_position();
+		else
+			return this->position;
 	}
 };
 

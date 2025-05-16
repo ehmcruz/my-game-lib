@@ -3,6 +3,8 @@
 
 #include <my-game-lib/game/game.h>
 
+#include <my-lib/matrix.h>
+
 
 // ---------------------------------------------------
 
@@ -57,6 +59,54 @@ public:
 	}
 
 	void process_render (const float dt) override final;
+};
+
+// ---------------------------------------------------
+
+class TileMap : public Entity2D
+{
+public:
+	using Entity = Game::Entity2D;
+	using Vector = Entity2D::Vector;
+	using Point = Entity2D::Point;
+
+protected:
+	Mylib::Matrix<Entity*> matrix;
+	Vector tile_size;
+
+protected:
+	using Entity2D::add_child;
+
+public:
+	TileMap (const Point& position_, const UserData& user_data_, const uint32_t nrows, const uint32_t ncols, const Vector& tile_size_)
+		: Entity(position_, user_data_),
+		  matrix(nrows, ncols, nullptr),
+		  tile_size(tile_size_)
+	{
+	}
+
+	template <typename T>
+	void set (const uint32_t row, const uint32_t col, unique_ptr<T> entity)
+		requires (std::is_base_of_v<Entity, T>)
+	{
+		entity->set_position((static_cast<float>(row) + 0.5f) * this->tile_size.x,
+							(static_cast<float>(col) + 0.5f) * this->tile_size.y);
+		this->matrix[row, col] = entity.get();
+		this->add_child(std::move(entity));
+	}
+
+	void set (const uint32_t row, const uint32_t col, unique_ptr<Sprite2DRenderer> sprite);
+	void set (const uint32_t row, const uint32_t col, TextureDescriptor texture);
+
+	Entity& operator[] (const uint32_t row, const uint32_t col)
+	{
+		return *this->matrix[row, col];
+	}
+
+	const Entity& operator[] (const uint32_t row, const uint32_t col) const
+	{
+		return *this->matrix[row, col];
+	}
 };
 
 // ---------------------------------------------------
