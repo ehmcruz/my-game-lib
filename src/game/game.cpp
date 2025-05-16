@@ -15,6 +15,14 @@ namespace Game
 
 // ---------------------------------------------------
 
+void Scene2D::setup_render ()
+{
+	const MyGlib::Graphics::RenderArgs2D render_args = this->setup_render_args();
+	renderer->setup_render_2D(render_args);
+}
+
+// ---------------------------------------------------
+
 Main::Main (const InitConfig& config_, Scene *scene_)
 	: config(config_), scene(scene_)
 {
@@ -134,10 +142,7 @@ void Main::run ()
 
 		switch (this->state) {
 			case State::Playing:
-				this->scene->setup_render();
-				this->scene->loop_update(virtual_dt);
-				this->scene->loop_physics(virtual_dt);
-				this->scene->loop_render(virtual_dt);
+				this->scene->process(virtual_dt);
 			break;
 			
 			default:

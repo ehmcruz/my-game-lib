@@ -16,9 +16,12 @@
 #include <cmath>
 #include <cstdlib>
 
+#include <boost/static_string.hpp>
+
 #include <my-game-lib/my-game-lib.h>
 #include <my-game-lib/graphics.h>
 #include <my-game-lib/events.h>
+#include <my-game-lib/exception.h>
 
 #include <my-lib/std.h>
 #include <my-lib/macros.h>
@@ -73,18 +76,14 @@ inline Mylib::InterpolationManager<Coroutine, float> interpolation_manager;
 
 // ---------------------------------------------------
 
-class Entity;
-
 class Component
 {
 protected:
-	MYLIB_OO_ENCAPSULATE_PTR_READONLY(Entity*, parent)
+	MYLIB_OO_ENCAPSULATE_PTR_INIT(Component*, parent, nullptr)
+	MYLIB_OO_ENCAPSULATE_OBJ(boost::static_string<16>, name)
 
 public:
-	Component (Entity *parent_)
-		: parent(parent_)
-	{
-	}
+	Component () = default;
 
 	virtual ~Component () { };
 
@@ -103,9 +102,90 @@ public:
 
 // ---------------------------------------------------
 
-class Entity : public Component
+template <uint32_t dim_>
+class Transform
 {
 public:
+	inline static constexpr uint32_t dim = dim_;
+	using Vector = typename Mylib::Math::Vector<typename Mylib::Math::VectorStorage__<float, dim>>;
+	using Point = Vector;
+
+protected:
+	MYLIB_OO_ENCAPSULATE_OBJ(Vector, position)
+
+public:
+	Transform (const Point& position_)
+		: position(position_)
+	{
+	}
+};
+
+using Transform2D = Transform<2>;
+using Transform3D = Transform<3>;
+
+// ---------------------------------------------------
+
+template <uint32_t dim_>
+class TransformComponent : public Component, public Transform<dim_>
+{
+public:
+	inline static constexpr uint32_t dim = dim_;
+	using Transform = Game::Transform<dim>;
+	using Vector = Transform::Vector;
+	using Point = Transform::Point;
+
+public:
+	TransformComponent (const Point& position_)
+		: Component(),
+		  Transform(position_)
+	{
+	}
+
+	Point get_global_position () const
+	{
+		static const auto zero = TransformComponent(Vector::zero());
+		const TransformComponent *parent[2] = { &zero, static_cast<TransformComponent*>(this->parent) };
+		const bool has_parent = (this->parent != nullptr);
+
+		return this->position + parent[has_parent]->position;
+	}
+};
+
+using TransformComponent2D = TransformComponent<2>;
+using TransformComponent3D = TransformComponent<3>;
+
+// ---------------------------------------------------
+
+class ComponentWithParentException : public Exception
+{
+private:
+	Component *component = nullptr;
+
+public:
+	ComponentWithParentException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_, Component *component_)
+		: Exception(location_, assert_str_, extra_msg_),
+		  component(component_)
+	{
+	}
+
+protected:
+	void build_mygamelib_exception_msg (std::ostringstream& str_stream) const override final
+	{
+		str_stream << "Component with parent exception" << std::endl
+			<< "Component name: " << this->component->get_ref_name() << std::endl;
+	}
+};
+
+// ---------------------------------------------------
+
+template <uint32_t dim_>
+class Entity : public TransformComponent<dim_>
+{
+public:
+	inline static constexpr uint32_t dim = dim_;
+	using TransformComponent = Game::TransformComponent<dim>;
+	using Vector = TransformComponent::Vector;
+	using Point = TransformComponent::Point;
 	using UserData = uint64_t;
 
 public:
@@ -116,8 +196,8 @@ protected:
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<unique_ptr<Entity>>, entities)
 
 public:
-	Entity (Entity *parent_, const UserData& user_data_)
-		: Component(parent_),
+	Entity (const Point& position_, const UserData& user_data_)
+		: TransformComponent(position_),
 		  user_data(user_data_)
 	{
 	}
@@ -127,12 +207,23 @@ public:
 	template <typename T>
 	void add_child (unique_ptr<T> child)
 	{
-		if constexpr (std::is_base_of_v<Entity, T>)
+		static_assert(std::is_base_of_v<Component, T>);
+		constexpr uint32_t other_dim = (dim == 2) ? 3 : 2;
+
+		T *child_ptr = child.get();
+
+		mylib_assert_exception_args(child->get_parent() == nullptr, ComponentWithParentException, child_ptr)
+
+		if constexpr (std::is_base_of_v<Entity<dim>, T>)
 			this->entities.push_back(std::move(child));
+		else if constexpr (std::is_base_of_v<Entity<other_dim>, T>)
+			static_assert(0, "Cannot add a child of a different dimension");
 		else if constexpr (std::is_base_of_v<Component, T>)
 			this->components.push_back(std::move(child));
 		else
-			static_assert(0);
+			static_assert(0, "Cannot add a child of this type");
+		
+		child_ptr->set_parent(this);
 	}
 
 	void loop_render (const float dt)
@@ -175,171 +266,92 @@ public:
 	}
 };
 
+using Entity2D = Entity<2>;
+using Entity3D = Entity<3>;
+
+// ---------------------------------------------------
+
+class Scene
+{
+public:
+	virtual void process (const float dt) = 0;
+	virtual void setup_render () = 0;
+	virtual void frame_finished () = 0;
+};
+
 // ---------------------------------------------------
 
 template <uint32_t dim_>
-class Spatial
+class Scene__ : public Entity<dim_>, public Scene
 {
 public:
 	inline static constexpr uint32_t dim = dim_;
-	using Vector = typename Mylib::Math::Vector<typename Mylib::Math::VectorStorage__<float, dim>>;
-	using Point = Vector;
-
-private:
-	Spatial *anchor;
-
-protected:
-	MYLIB_OO_ENCAPSULATE_OBJ(Point, position)  // relative to the anchor
+	using Entity = Game::Entity<dim>;
+	using Vector = Entity::Vector;
+	using Point = Entity::Point;
+	using UserData = Entity::UserData;
 
 public:
-	Spatial (Spatial *anchor_, const Point& position_)
-		: anchor(anchor_),
-		  position(position_)
+	Scene__ (const UserData& user_data_)
+		: Entity(Vector::zero(), user_data_),
+		  Scene()
 	{
 	}
 
-	Spatial (const Point& position_)
-		: anchor(nullptr),
-		  position(position_)
+	void process (const float dt) override final
 	{
+		this->loop_update(dt);
+		this->loop_physics(dt);
+		this->setup_render();
+		this->loop_render(dt);
 	}
 
-	Point get_global_position () const
-	{
-		if (this->anchor) [[likely]] // most objects have an anchor
-			return this->anchor->get_global_position() + this->position;
-		else
-			return this->position;
-	}
-};
-
-using Spatial2D = Spatial<2>;
-using Spatial3D = Spatial<3>;
-
-// ---------------------------------------------------
-
-class Scene : public Entity
-{
-public:
-	Scene (const UserData& user_data_)
-		: Entity(nullptr, user_data_)
+	void frame_finished () override final
 	{
 	}
-
-	virtual void setup_render () = 0;
 };
 
 // ---------------------------------------------------
 
-class Scene2D : public Scene
+class Scene2D : public Scene__<2>
 {
 public:
 	inline static constexpr uint32_t dim = 2;
-	using Spatial = Game::Spatial<dim>;
-	using Vector = Spatial::Vector;
-	using Point = Spatial::Point;
-	using UserData = Entity::UserData;
+	using Scene = Game::Scene__<dim>;
+	using Vector = Scene::Vector;
+	using Point = Scene::Point;
+	using UserData = Scene::UserData;
 
 public:
 	Scene2D (const UserData& user_data_)
 		: Scene(user_data_)
 	{
 	}
+
+	void setup_render () override final;
+	virtual MyGlib::Graphics::RenderArgs2D setup_render_args () = 0;
 };
+
 
 // ---------------------------------------------------
 
 template <uint32_t dim_>
-class SpatialComponent : public Component, public Spatial<dim_>
+class DynamicEntity : public Entity<dim_>
 {
 public:
 	inline static constexpr uint32_t dim = dim_;
-	using Spatial = Game::Spatial<dim>;
-	using Vector = Spatial::Vector;
-	using Point = Spatial::Point;
-
-public:
-	SpatialComponent (Entity *parent_, Spatial *anchor_, const Point& position_)
-		: Component(parent_),
-		  Spatial(anchor_, position_)
-	{
-	}
-
-	SpatialComponent (Entity *parent_, const Point& position_)
-		: Component(parent_),
-		  Spatial(position_)
-	{
-	}
-};
-
-using SpatialComponent2D = SpatialComponent<2>;
-using SpatialComponent3D = SpatialComponent<3>;
-
-// ---------------------------------------------------
-
-template <uint32_t dim_>
-class SpatialEntity : public Entity, public Spatial<dim_>
-{
-public:
-	inline static constexpr uint32_t dim = dim_;
-	using Spatial = Game::Spatial<dim>;
-	using Vector = Spatial::Vector;
-	using Point = Spatial::Point;
+	using Entity = Game::Entity<dim>;
+	using Vector = Entity::Vector;
+	using Point = Entity::Point;
 	using UserData = Entity::UserData;
-
-public:
-	SpatialEntity (Entity *parent_, const UserData& user_data_, Spatial *anchor_, const Point& position_)
-		: Entity(parent_, user_data_),
-		  Spatial(anchor_, position_)
-	{
-	}
-
-	SpatialEntity (Entity *parent_, const UserData& user_data_, const Point& position_)
-		: Entity(parent_, user_data_),
-		  Spatial(position_)
-	{
-	}
-};
-
-using SpatialEntity2D = SpatialEntity<2>;
-using SpatialEntity3D = SpatialEntity<3>;
-
-// ---------------------------------------------------
-
-template <uint32_t dim_>
-class DynamicEntity : public SpatialEntity<dim_>
-{
-public:
-	inline static constexpr uint32_t dim = dim_;
-	using Spatial = Game::Spatial<dim>;
-	using SpatialEntity = Game::SpatialEntity<dim>;
-	using Vector = SpatialEntity::Vector;
-	using Point = SpatialEntity::Point;
-	using UserData = SpatialEntity::UserData;
 
 protected:
 	MYLIB_OO_ENCAPSULATE_OBJ_INIT_WITH_COPY_MOVE(Vector, velocity, Vector::zero())
 
 public:
-	DynamicEntity (Entity *parent_, const UserData& user_data_, Spatial *anchor_, const Point& position_, const Vector& velocity_)
-		: SpatialEntity(parent_, user_data_, anchor_, position_),
+	DynamicEntity (const Point& position_, const UserData& user_data_, const Vector& velocity_)
+		: Entity(position_, user_data_),
 		  velocity(velocity_)
-	{
-	}
-
-	DynamicEntity (Entity *parent_, const UserData& user_data_, const Point& position_, const Vector& velocity_)
-		: SpatialEntity(parent_, user_data_, position_),
-		  velocity(velocity_)
-	{
-	}
-
-	DynamicEntity (Entity *parent_, const UserData& user_data_, Spatial *anchor_, const Point& position_)
-		: SpatialEntity(parent_, user_data_, anchor_, position_)
-	{
-	}
-
-	DynamicEntity (Entity *parent_, const UserData& user_data_, const Point& position_)
-		: SpatialEntity(parent_, user_data_, position_)
 	{
 	}
 

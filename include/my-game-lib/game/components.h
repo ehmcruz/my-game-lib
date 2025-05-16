@@ -14,27 +14,20 @@ namespace Game
 // ---------------------------------------------------
 
 template <uint32_t dim_>
-class RectCollider__ : public SpatialComponent<dim_>
+class RectCollider__ : public TransformComponent<dim_>
 {
 public:
 	inline static constexpr uint32_t dim = dim_;
-	using Spatial = Game::Spatial<dim>;
-	using SpatialComponent = Game::SpatialComponent<dim_>;
-	using Vector = SpatialComponent::Vector;
-	using Point = SpatialComponent::Point;
+	using TransformComponent = Game::TransformComponent<dim_>;
+	using Vector = TransformComponent::Vector;
+	using Point = TransformComponent::Point;
 	
 protected:
 	MYLIB_OO_ENCAPSULATE_OBJ(Vector, size)
 
 public:
-	RectCollider__ (Entity *parent_, Spatial *anchor_, const Point& position_, const Vector& size_)
-		: SpatialComponent(parent_, anchor_, position_),
-		  size(size_)
-	{
-	}
-
-	RectCollider__ (Entity *parent_, const Point& position_, const Vector& size_)
-		: SpatialComponent(parent_, position_),
+	RectCollider__ (const Point& position_, const Vector& size_)
+		: TransformComponent(position_),
 		  size(size_)
 	{
 	}

@@ -13,28 +13,20 @@ namespace Game
 
 // ---------------------------------------------------
 
-class Rect2DRenderer : public SpatialComponent2D
+class Rect2DRenderer : public TransformComponent2D
 {
 public:
-	using Spatial = Spatial2D;
-	using SpatialComponent = SpatialComponent2D;
-	using Vector = SpatialComponent::Vector;
-	using Point = SpatialComponent::Point;
+	using TransformComponent = TransformComponent2D;
+	using Vector = TransformComponent::Vector;
+	using Point = TransformComponent::Point;
 
 private:
 	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Graphics::Rect2D, rect)
 	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Color, color)
 
 public:
-	Rect2DRenderer (Entity *parent_, Spatial *anchor_, const Point& position_, const Vector& size_, const Color& color_)
-		: SpatialComponent2D(parent_, anchor_, position_),
-		  rect(size_),
-		  color(color_)
-	{
-	}
-
-	Rect2DRenderer (Entity *parent_, const Point& position_, const Vector& size_, const Color& color_)
-		: SpatialComponent2D(parent_, position_),
+	Rect2DRenderer (const Point& position_, const Vector& size_, const Color& color_)
+		: TransformComponent2D(position_),
 		  rect(size_),
 		  color(color_)
 	{
@@ -45,28 +37,20 @@ public:
 
 // ---------------------------------------------------
 
-class Sprite2DRenderer : public SpatialComponent2D
+class Sprite2DRenderer : public TransformComponent2D
 {
 public:
-	using Spatial = Spatial2D;
-	using SpatialComponent = SpatialComponent2D;
-	using Vector = SpatialComponent::Vector;
-	using Point = SpatialComponent::Point;
+	using TransformComponent = TransformComponent2D;
+	using Vector = TransformComponent::Vector;
+	using Point = TransformComponent::Point;
 
 private:
 	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Graphics::Rect2D, rect)
 	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(TextureDescriptor, texture)
 
 public:
-	Sprite2DRenderer (Entity *parent_, Spatial *anchor_, const Point& position_, const Vector& size_, const TextureDescriptor& texture_)
-		: SpatialComponent2D(parent_, anchor_, position_),
-		  rect(size_),
-		  texture(texture_)
-	{
-	}
-
-	Sprite2DRenderer (Entity *parent_, const Point& position_, const Vector& size_, const TextureDescriptor& texture_)
-		: SpatialComponent2D(parent_, position_),
+	Sprite2DRenderer (const Point& position_, const Vector& size_, const TextureDescriptor& texture_)
+		: TransformComponent2D(position_),
 		  rect(size_),
 		  texture(texture_)
 	{
