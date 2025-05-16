@@ -87,23 +87,41 @@ public:
 
 	virtual ~Component () { };
 
-	// called for each rendered frame
-	virtual void process_render (const float dt) { };
-
-	// called for each physics frame, before process_physics
-	virtual void process_update (const float dt) { };
-
-	// called for each physics frame
-	virtual void process_physics (const float dt) { };
-
 	// called after all the components have been processed and rendered
 	virtual void frame_finished () { };
 };
 
 // ---------------------------------------------------
 
+class UpdateInterface
+{
+public:
+	// called for each update frame
+	virtual void process_update (const float dt) = 0;
+};
+
+// ---------------------------------------------------
+
+class PhysicsInterface
+{
+public:
+	// called for each update frame
+	virtual void process_physics (const float dt) = 0;
+};
+
+// ---------------------------------------------------
+
+class RenderInterface
+{
+public:
+	// called for each rendered frame
+	virtual void process_render (const float dt) = 0;
+};
+
+// ---------------------------------------------------
+
 template <uint32_t dim_>
-class Transform
+class TransformInterface
 {
 public:
 	inline static constexpr uint32_t dim = dim_;
@@ -114,30 +132,27 @@ protected:
 	MYLIB_OO_ENCAPSULATE_OBJ(Vector, position)
 
 public:
-	Transform (const Point& position_)
+	TransformInterface (const Point& position_)
 		: position(position_)
 	{
 	}
 };
 
-using Transform2D = Transform<2>;
-using Transform3D = Transform<3>;
-
 // ---------------------------------------------------
 
 template <uint32_t dim_>
-class TransformComponent : public Component, public Transform<dim_>
+class TransformComponent : public Component, public TransformInterface<dim_>
 {
 public:
 	inline static constexpr uint32_t dim = dim_;
-	using Transform = Game::Transform<dim>;
-	using Vector = Transform::Vector;
-	using Point = Transform::Point;
+	using TransformInterface = Game::TransformInterface<dim>;
+	using Vector = TransformInterface::Vector;
+	using Point = TransformInterface::Point;
 
 public:
 	TransformComponent (const Point& position_)
 		: Component(),
-		  Transform(position_)
+		  TransformInterface(position_)
 	{
 	}
 
@@ -194,6 +209,9 @@ public:
 protected:
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<unique_ptr<Component>>, components)
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<unique_ptr<Entity>>, entities)
+	MYLIB_OO_ENCAPSULATE_OBJ(std::list<UpdateInterface*>, updatables)
+	MYLIB_OO_ENCAPSULATE_OBJ(std::list<PhysicsInterface*>, physicsables)
+	MYLIB_OO_ENCAPSULATE_OBJ(std::list<RenderInterface*>, renderables)
 
 public:
 	Entity (const Point& position_, const UserData& user_data_)
@@ -201,8 +219,6 @@ public:
 		  user_data(user_data_)
 	{
 	}
-
-	virtual ~Entity () { };
 
 	template <typename T>
 	void add_child (unique_ptr<T> child)
@@ -223,46 +239,38 @@ public:
 		else
 			static_assert(0, "Cannot add a child of this type");
 		
+		if constexpr (std::is_base_of_v<UpdateInterface, T>)
+			this->updatables.push_back(child_ptr);
+		if constexpr (std::is_base_of_v<PhysicsInterface, T>)
+			this->physicsables.push_back(child_ptr);
+		if constexpr (std::is_base_of_v<RenderInterface, T>)
+			this->renderables.push_back(child_ptr);
+		
 		child_ptr->set_parent(this);
-	}
-
-	void loop_render (const float dt)
-	{
-		for (auto& component : this->components) {
-			component->process_render(dt);
-		}
-
-		for (auto& entity : this->entities) {
-			entity->loop_render(dt);
-		}
-
-		this->process_render(dt);
 	}
 
 	void loop_update (const float dt)
 	{
-		for (auto& component : this->components) {
-			component->process_update(dt);
-		}
-
-		for (auto& entity : this->entities) {
+		for (auto& entity : this->entities)
 			entity->loop_update(dt);
-		}
-
-		this->process_update(dt);
+		for (auto& component : this->updatables)
+			component->process_update(dt);
 	}
 
 	void loop_physics (const float dt)
 	{
-		for (auto& component : this->components) {
-			component->process_physics(dt);
-		}
-
-		for (auto& entity : this->entities) {
+		for (auto& entity : this->entities)
 			entity->loop_physics(dt);
-		}
+		for (auto& component : this->physicsables)
+			component->process_physics(dt);
+	}
 
-		this->process_physics(dt);
+	void loop_render (const float dt)
+	{
+		for (auto& entity : this->entities)
+			entity->loop_render(dt);
+		for (auto& component : this->renderables)
+			component->process_render(dt);
 	}
 };
 
@@ -276,7 +284,6 @@ class Scene
 public:
 	virtual void process (const float dt) = 0;
 	virtual void setup_render () = 0;
-	virtual void frame_finished () = 0;
 };
 
 // ---------------------------------------------------
@@ -301,13 +308,21 @@ public:
 	void process (const float dt) override final
 	{
 		this->loop_update(dt);
-		this->loop_physics(dt);
-		this->setup_render();
-		this->loop_render(dt);
-	}
 
-	void frame_finished () override final
-	{
+		if (UpdateInterface *component = dynamic_cast<UpdateInterface*>(this))
+			component->process_update(dt);
+
+		this->loop_physics(dt);
+
+		if (PhysicsInterface *component = dynamic_cast<PhysicsInterface*>(this))
+			component->process_physics(dt);
+
+		this->setup_render();
+
+		this->loop_render(dt);
+
+		if (RenderInterface *component = dynamic_cast<RenderInterface*>(this))
+			component->process_render(dt);
 	}
 };
 
@@ -336,7 +351,7 @@ public:
 // ---------------------------------------------------
 
 template <uint32_t dim_>
-class DynamicEntity : public Entity<dim_>
+class DynamicEntity : public Entity<dim_>, public PhysicsInterface
 {
 public:
 	inline static constexpr uint32_t dim = dim_;

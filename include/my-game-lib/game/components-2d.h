@@ -13,7 +13,7 @@ namespace Game
 
 // ---------------------------------------------------
 
-class Rect2DRenderer : public TransformComponent2D
+class Rect2DRenderer : public TransformComponent2D, public RenderInterface
 {
 public:
 	using TransformComponent = TransformComponent2D;
@@ -37,7 +37,7 @@ public:
 
 // ---------------------------------------------------
 
-class Sprite2DRenderer : public TransformComponent2D
+class Sprite2DRenderer : public TransformComponent2D, public RenderInterface
 {
 public:
 	using TransformComponent = TransformComponent2D;

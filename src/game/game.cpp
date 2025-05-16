@@ -152,15 +152,6 @@ void Main::run ()
 		renderer->render();
 		renderer->update_screen();
 
-		switch (this->state) {
-			case State::Playing:
-				this->scene->frame_finished();
-			break;
-			
-			default:
-				mylib_assert(0)
-		}
-
 		const ClockTime trequired = Clock::now();
 		elapsed = trequired - tbegin;
 		required_dt = ClockDuration_to_float(elapsed);
