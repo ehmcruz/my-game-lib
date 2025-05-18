@@ -29,6 +29,8 @@ Then, to compile:
 
 Future addition.
 
+---
+
 # Downloading assets - TEST software
 
 I don't like to store assets in GitHub.
