@@ -28,6 +28,8 @@
 #include <my-lib/event.h>
 #include <my-lib/event-timer.h>
 #include <my-lib/interpolation.h>
+#include <my-lib/math-matrix.h>
+#include <my-lib/math-quaternion.h>
 
 // ---------------------------------------------------
 
@@ -137,9 +139,15 @@ public:
 	inline static constexpr uint32_t dim = dim_;
 	using Vector = typename Mylib::Math::Vector<typename Mylib::Math::VectorStorage__<float, dim>>;
 	using Point = Vector;
+	using TransformMatrix = Mylib::Math::Matrix<float, dim+1, dim+1>;
+
+private:
+	using Rotation = typename std::conditional<dim == 2, float, Mylib::Math::Quaternion<float>>::type;
 
 protected:
 	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Vector, position)
+	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Vector, scale)
+	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Rotation, rotation)
 
 public:
 	TransformInterface (const Point& position_)
@@ -151,6 +159,28 @@ public:
 	{
 		this->position.x = x;
 		this->position.y = y;
+	}
+
+	TransformMatrix get_translate_matrix () const noexcept
+	{
+		return TransformMatrix::translate(this->position);
+	}
+
+	TransformMatrix get_scale_matrix () const noexcept
+	{
+		return TransformMatrix::scale(this->scale);
+	}
+
+	TransformMatrix get_rotation_matrix () const noexcept
+		requires (dim == 2)
+	{
+		return TransformMatrix::rotation(this->rotation);
+	}
+
+	TransformMatrix get_rotation_matrix () const noexcept
+		requires (dim == 3)
+	{
+		return this->rotation.to_rotation_matrix<4>();
 	}
 };
 
