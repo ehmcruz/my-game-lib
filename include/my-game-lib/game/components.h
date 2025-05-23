@@ -26,8 +26,8 @@ protected:
 	MYLIB_OO_ENCAPSULATE_OBJ(Vector, size)
 
 public:
-	RectCollider__ (const Point& position_, const Vector& size_)
-		: TransformComponent(position_),
+	RectCollider__ (const Vector& size_)
+		: TransformComponent(),
 		  size(size_)
 	{
 	}

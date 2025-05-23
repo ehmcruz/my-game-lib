@@ -27,8 +27,8 @@ private:
 	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Color, color)
 
 public:
-	Rect2DRenderer (const Point& position_, const Vector& size_, const Color& color_)
-		: TransformComponent2D(position_),
+	Rect2DRenderer (const Vector& size_, const Color& color_)
+		: TransformComponent2D(),
 		  rect(size_),
 		  color(color_)
 	{
@@ -51,8 +51,8 @@ private:
 	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(TextureDescriptor, texture)
 
 public:
-	Sprite2DRenderer (const Point& position_, const Vector& size_, const TextureDescriptor& texture_)
-		: TransformComponent2D(position_),
+	Sprite2DRenderer (const Vector& size_, const TextureDescriptor& texture_)
+		: TransformComponent2D(),
 		  rect(size_),
 		  texture(texture_)
 	{
@@ -78,8 +78,8 @@ protected:
 	using Entity2D::add_child;
 
 public:
-	TileMap (const Point& position_, const UserData& user_data_, const uint32_t nrows, const uint32_t ncols, const Vector& tile_size_)
-		: Entity(position_, user_data_),
+	TileMap (const UserData& user_data_, const uint32_t nrows, const uint32_t ncols, const Vector& tile_size_)
+		: Entity(user_data_),
 		  matrix(nrows, ncols, nullptr),
 		  tile_size(tile_size_)
 	{

@@ -108,6 +108,8 @@ public:
 class UpdateInterface
 {
 public:
+	virtual ~UpdateInterface () = default;
+
 	// called for each update frame
 	virtual void process_update (const float dt) = 0;
 };
@@ -117,6 +119,8 @@ public:
 class PhysicsInterface
 {
 public:
+	virtual ~PhysicsInterface () = default;
+
 	// called for each update frame
 	virtual void process_physics (const float dt) = 0;
 };
@@ -126,6 +130,8 @@ public:
 class RenderInterface
 {
 public:
+	virtual ~RenderInterface () = default;
+
 	// called for each rendered frame
 	virtual void process_render (const float dt) = 0;
 };
@@ -144,43 +150,129 @@ public:
 private:
 	using Rotation = typename std::conditional<dim == 2, float, Mylib::Math::Quaternion<float>>::type;
 
-protected:
-	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Vector, position)
-	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Vector, scale)
-	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Rotation, rotation)
+	consteval static Rotation init_rotation__ () noexcept
+	{
+		if constexpr (dim == 2)
+			return 0;
+		else
+			return Rotation::identity();
+	}
+
+private:
+	Vector translation = Vector::zero();
+	Rotation rotation = init_rotation__();
+	Vector scale = Vector::uniform(1);
+	TransformMatrix transform_matrix = TransformMatrix::identity();
 
 public:
-	TransformInterface (const Point& position_)
-		: position(position_)
+	constexpr TransformInterface () noexcept = default;
+
+	// getters
+
+	constexpr const Vector& get_translation () const noexcept
 	{
+		return this->translation;
 	}
 
-	void set_position (const float x, const float y) noexcept
+	constexpr Rotation get_rotation () const noexcept
+		requires (dim == 2)
 	{
-		this->position.x = x;
-		this->position.y = y;
+		return this->rotation;
 	}
 
-	TransformMatrix get_translate_matrix () const noexcept
+	constexpr const Rotation& get_rotation () const noexcept
+		requires (dim == 3)
 	{
-		return TransformMatrix::translate(this->position);
+		return this->rotation;
 	}
 
-	TransformMatrix get_scale_matrix () const noexcept
+	constexpr const Vector& get_scale () const noexcept
 	{
-		return TransformMatrix::scale(this->scale);
+		return this->scale;
 	}
 
-	TransformMatrix get_rotation_matrix () const noexcept
+	constexpr TransformMatrix get_translation_matrix () const noexcept
+	{
+		return TransformMatrix::translate(this->translation);
+	}
+
+	constexpr TransformMatrix get_rotation_matrix () const noexcept
 		requires (dim == 2)
 	{
 		return TransformMatrix::rotation(this->rotation);
 	}
 
-	TransformMatrix get_rotation_matrix () const noexcept
+	constexpr TransformMatrix get_rotation_matrix () const noexcept
 		requires (dim == 3)
 	{
-		return this->rotation.to_rotation_matrix<4>();
+		return this->rotation.template to_rotation_matrix<4>();
+	}
+
+	constexpr TransformMatrix get_scale_matrix () const noexcept
+	{
+		return TransformMatrix::scale(this->scale);
+	}
+
+	constexpr TransformMatrix get_transform () const noexcept
+	{
+		return this->transform_matrix;
+	}
+
+private:
+	constexpr void update_transform_matrix () noexcept
+	{
+		this->transform_matrix = this->get_translation_matrix() * this->get_rotation_matrix() * this->get_scale_matrix();
+	}
+
+public:
+	constexpr void set_translation (const Vector& translation) noexcept
+	{
+		this->translation = translation;
+		this->update_transform_matrix();
+	}
+
+	constexpr void set_translation (const float x, const float y) noexcept
+		requires (dim == 2)
+	{
+		this->set_translation(Vector(x, y));
+	}
+
+	constexpr void set_translation (const float x, const float y, const float z) noexcept
+		requires (dim == 3)
+	{
+		this->set_translation(Vector(x, y, z));
+	}
+
+	constexpr void set_rotation (const Rotation& rotation) noexcept
+	{
+		this->rotation = rotation;
+		this->update_transform_matrix();
+	}
+
+	constexpr void set_scale (const Vector& scale) noexcept
+	{
+		this->scale = scale;
+		this->update_transform_matrix();
+	}
+
+	constexpr void set_scale (const float x, const float y) noexcept
+		requires (dim == 2)
+	{
+		this->set_scale(Vector(x, y));
+	}
+
+	constexpr void set_scale (const float x, const float y, const float z) noexcept
+		requires (dim == 3)
+	{
+		this->set_scale(Vector(x, y, z));
+	}
+
+	constexpr void set_transform (const Vector& translation, const Rotation& rotation, const Vector& scale) noexcept
+	{
+		this->translation = translation;
+		this->rotation = rotation;
+		this->scale = scale;
+		this->update_transform_matrix();
 	}
 };
 
@@ -192,22 +284,23 @@ class TransformComponent : public Component, public TransformInterface<dim_>
 public:
 	inline static constexpr uint32_t dim = dim_;
 	using TransformInterface = Game::TransformInterface<dim>;
+	using TransformMatrix = TransformInterface::TransformMatrix;
 	using Vector = TransformInterface::Vector;
 	using Point = TransformInterface::Point;
 
 public:
-	TransformComponent (const Point& position_)
+	TransformComponent ()
 		: Component(),
-		  TransformInterface(position_)
+		  TransformInterface()
 	{
 	}
 
-	Point get_global_position () const
+	TransformMatrix get_global_transform () const noexcept
 	{
 		if (this->parent != nullptr) [[likely]]
-			return this->position + static_cast<TransformComponent*>(this->parent)->get_global_position();
+			return static_cast<TransformComponent*>(this->parent)->get_global_transform() * this->get_transform();
 		else
-			return this->position;
+			return this->get_transform();
 	}
 };
 
@@ -259,8 +352,8 @@ protected:
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<RenderInterface*>, renderables)
 
 public:
-	Entity (const Point& position_, const UserData& user_data_)
-		: TransformComponent(position_),
+	Entity (const UserData& user_data_)
+		: TransformComponent(),
 		  user_data(user_data_)
 	{
 	}
@@ -345,7 +438,7 @@ public:
 
 public:
 	Scene__ (const UserData& user_data_)
-		: Entity(Vector::zero(), user_data_),
+		: Entity(user_data_),
 		  Scene()
 	{
 	}
@@ -409,15 +502,15 @@ protected:
 	MYLIB_OO_ENCAPSULATE_OBJ_INIT_WITH_COPY_MOVE(Vector, velocity, Vector::zero())
 
 public:
-	DynamicEntity (const Point& position_, const UserData& user_data_, const Vector& velocity_)
-		: Entity(position_, user_data_),
+	DynamicEntity (const UserData& user_data_, const Vector& velocity_)
+		: Entity(user_data_),
 		  velocity(velocity_)
 	{
 	}
 
 	void process_physics (const float dt) override
 	{
-		this->position += this->velocity * dt;
+		this->set_translation(this->get_translation() + this->velocity * dt);
 	}
 };
 
