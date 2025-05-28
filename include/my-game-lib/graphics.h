@@ -195,10 +195,7 @@ struct Vertex {
 		Vector direction; // line direction vector
 	};
 
-	Vertex () noexcept
-		: pos(Point::zero()), normal(Vector::zero())
-	{
-	}
+	Vertex () noexcept = default;
 };
 
 // ---------------------------------------------------

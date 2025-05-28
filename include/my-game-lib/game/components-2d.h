@@ -23,13 +23,14 @@ public:
 	using Point = TransformComponent::Point;
 
 private:
-	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Graphics::Rect2D, rect)
+	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Vector, size)
 	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Color, color)
+	MYLIB_OO_ENCAPSULATE_SCALAR_INIT(float, z, 0.0f)
 
 public:
 	Rect2DRenderer (const Vector& size_, const Color& color_)
 		: TransformComponent2D(),
-		  rect(size_),
+		  size(size_),
 		  color(color_)
 	{
 	}
@@ -89,7 +90,7 @@ public:
 	void set (const uint32_t row, const uint32_t col, unique_ptr<T> entity)
 		requires (std::is_base_of_v<Entity, T>)
 	{
-		entity->set_position((static_cast<float>(row) + 0.5f) * this->tile_size.x,
+		entity->set_translation((static_cast<float>(row) + 0.5f) * this->tile_size.x,
 							(static_cast<float>(col) + 0.5f) * this->tile_size.y);
 		this->matrix[row, col] = entity.get();
 		this->add_child(std::move(entity));

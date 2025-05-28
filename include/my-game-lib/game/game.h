@@ -62,6 +62,15 @@ using Coroutine = Mylib::Coroutine<1024>;
 using Graphics::Color;
 using Graphics::TextureDescriptor;
 
+using Vector2 = Mylib::Math::Vector<Mylib::Math::VectorStorage__<float, 2>>;
+using Vector3 = Mylib::Math::Vector<Mylib::Math::VectorStorage__<float, 3>>;
+using Point2 = Vector2;
+using Point3 = Vector3;
+
+using Matrix2 = Mylib::Math::Matrix<float, 2, 2>;
+using Matrix3 = Mylib::Math::Matrix<float, 3, 3>;
+using Matrix4 = Mylib::Math::Matrix<float, 4, 4>;
+
 // ---------------------------------------------------
 
 inline MyGlib::Lib *game_lib = nullptr;
@@ -84,6 +93,23 @@ template <typename T, typename... Types>
 [[nodiscard]] unique_ptr<T> make_unique (Types&&... vars)
 {
 	return Mylib::Memory::make_unique<T>(*memory_manager, std::forward<Types>(vars)...);
+}
+
+// ---------------------------------------------------
+
+namespace Enums
+{
+	enum Ancho2D {
+		TopLeft,
+		Top,
+		TopRight,
+		Left,
+		Center,
+		Right,
+		BottomLeft,
+		Bottom,
+		BottomRight
+	};
 }
 
 // ---------------------------------------------------
