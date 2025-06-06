@@ -15,7 +15,7 @@ namespace Game
 
 // ---------------------------------------------------
 
-class Rect2DRenderer : public TransformComponent2D, public RenderInterface
+class Rect2DRenderer : public TransformComponent2D, public MovableInterface2D, public RenderInterface
 {
 public:
 	using TransformComponent = TransformComponent2D;
@@ -30,6 +30,7 @@ private:
 public:
 	Rect2DRenderer (const Vector& size_, const Color& color_)
 		: TransformComponent2D(),
+		  MovableInterface2D(this),
 		  size(size_),
 		  color(color_)
 	{

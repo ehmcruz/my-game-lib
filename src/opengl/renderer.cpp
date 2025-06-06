@@ -564,7 +564,9 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 		opengl_clip_scale_mirror = Vector2(opengl_length/opengl_window_aspect_ratio, opengl_length);
 	
 	// mirror y axis
-	opengl_clip_scale_mirror.y = -opengl_clip_scale_mirror.y;
+	constexpr float invert__[2] = { 1.0f, -1.0f };
+	const float invert_y_axis = invert__[args.invert_y_axis];
+	opengl_clip_scale_mirror.y = opengl_clip_scale_mirror.y * invert_y_axis;
 
 	const Vector2 world_size = args.world_end - args.world_init;
 	
@@ -612,7 +614,7 @@ void Renderer::setup_render_2D (const RenderArgs2D& args)
 #endif
 
 	// translate from (0, 2) to (-1, +1) opengl clip space
-	const Matrix4 translate_subtract_one = Matrix4::translate( Vector2(-1, +1) );
+	const Matrix4 translate_subtract_one = Matrix4::translate( Vector2(-1.0f, -1.0f * invert_y_axis) );
 //	dprintln( "translation to clip init:" ) translate_to_clip_init.println();
 
 	// mirror y axis

@@ -39,14 +39,14 @@ static std::array<Vector2, 6> generate_local_vertices_rect2d (const Vector2 size
 	// draw counter-clockwise
 
 	// first triangle
-	local_vertices[RightBottom].set(hs.x, hs.y);
-	local_vertices[RightTop].set(hs.x, -hs.y);
-	local_vertices[LeftTop].set(-hs.x, -hs.y);
+	local_vertices[RightBottom].set(hs.x, -hs.y);
+	local_vertices[RightTop].set(hs.x, hs.y);
+	local_vertices[LeftTop].set(-hs.x, hs.y);
 
 	// second triangle
-	local_vertices[RightBottomAgain].set(hs.x, hs.y);
-	local_vertices[LeftTopAgain].set(-hs.x, -hs.y);
-	local_vertices[LeftBottom].set(-hs.x, hs.y);
+	local_vertices[RightBottomAgain].set(hs.x, -hs.y);
+	local_vertices[LeftTopAgain].set(-hs.x, hs.y);
+	local_vertices[LeftBottom].set(-hs.x, -hs.y);
 
 	return local_vertices;
 }
@@ -55,6 +55,8 @@ static std::array<Vector2, 6> generate_local_vertices_rect2d (const Vector2 size
 
 void Rect2DRenderer::process_render (const float dt)
 {
+	this->process_movable(dt);
+
 	auto *renderer = static_cast<Graphics::Opengl::Renderer*>(Game::renderer);
 	auto& program = *renderer->get_program_triangle_color();
 

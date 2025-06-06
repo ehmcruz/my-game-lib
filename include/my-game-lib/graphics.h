@@ -896,6 +896,8 @@ struct RenderArgs2D {
 	*/
 	fp_t world_screen_width;
 	// world_screen_height will be calculated automatically from the aspect ratio
+
+	bool invert_y_axis; // if true, the y axis will grown downwards
 };
 
 // ---------------------------------------------------

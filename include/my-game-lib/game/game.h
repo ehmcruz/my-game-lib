@@ -192,6 +192,7 @@ private:
 
 public:
 	constexpr TransformInterface () noexcept = default;
+	virtual ~TransformInterface () = default;
 
 	// getters
 
@@ -275,6 +276,25 @@ public:
 		this->update_transform_matrix();
 	}
 
+	constexpr void set_translation_rotation (const Vector& translation, const Rotation& rotation) noexcept
+	{
+		this->translation = translation;
+		this->rotation = rotation;
+		this->update_transform_matrix();
+	}
+
+	constexpr void set_translation_rotation (const float x, const float y, const Rotation& rotation) noexcept
+		requires (dim == 2)
+	{
+		this->set_translation_rotation(Vector(x, y), rotation);
+	}
+
+	constexpr void set_translation_rotation (const float x, const float y, const float z, const Rotation& rotation) noexcept
+		requires (dim == 3)
+	{
+		this->set_translation(Vector(x, y, z), rotation);
+	}
+
 	constexpr void set_scale (const Vector& scale) noexcept
 	{
 		this->scale = scale;
@@ -301,6 +321,51 @@ public:
 		this->update_transform_matrix();
 	}
 };
+
+using TransformInterface2D = TransformInterface<2>;
+using TransformInterface3D = TransformInterface<3>;
+
+// ---------------------------------------------------
+
+template <uint32_t dim_>
+class MovableInterface
+{
+public:
+	inline static constexpr uint32_t dim = dim_;
+	using TransformInterface = Game::TransformInterface<dim>;
+	using Vector = TransformInterface::Vector;
+	using Point = Vector;
+
+private:
+	TransformInterface *transform;
+
+protected:
+	MYLIB_OO_ENCAPSULATE_OBJ_INIT_WITH_COPY_MOVE(Vector, velocity, Vector::zero())
+	MYLIB_OO_ENCAPSULATE_SCALAR_INIT(float, angular_velocity, 0.0f)
+
+public:
+	template <typename T>
+	MovableInterface (T *transform_) noexcept
+		: transform(static_cast<TransformInterface*>(transform_))
+	{
+	}
+
+	virtual ~MovableInterface () = default;
+
+	void process_movable (const float dt) noexcept
+	{
+		static_assert(dim == 2); // currently only 2D is supported
+
+		if constexpr (dim == 2) {
+			this->transform->set_translation_rotation(
+				this->transform->get_translation() + this->velocity * dt,
+				this->transform->get_rotation() + this->angular_velocity * dt);
+		}
+	}
+};
+
+using MovableInterface2D = MovableInterface<2>;
+using MovableInterface3D = MovableInterface<3>;
 
 // ---------------------------------------------------
 
@@ -515,27 +580,27 @@ public:
 // ---------------------------------------------------
 
 template <uint32_t dim_>
-class DynamicEntity : public Entity<dim_>, public PhysicsInterface
+class DynamicEntity : public Entity<dim_>, public MovableInterface<dim_>, public PhysicsInterface
 {
 public:
 	inline static constexpr uint32_t dim = dim_;
 	using Entity = Game::Entity<dim>;
+	using MovableInterface = Game::MovableInterface<dim>;
 	using Vector = Entity::Vector;
 	using Point = Entity::Point;
 	using UserData = Entity::UserData;
 
 protected:
-	MYLIB_OO_ENCAPSULATE_OBJ_INIT_WITH_COPY_MOVE(Vector, velocity, Vector::zero())
 
 public:
 	DynamicEntity (const UserData& user_data_)
-		: Entity(user_data_)
+		: Entity(user_data_), MovableInterface(this)
 	{
 	}
 
 	void process_physics (const float dt) override
 	{
-		this->set_translation(this->get_translation() + this->velocity * dt);
+		this->process_movable(dt);
 	}
 };
 
