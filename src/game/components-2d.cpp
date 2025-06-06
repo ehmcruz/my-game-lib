@@ -39,14 +39,14 @@ static std::array<Vector2, 6> generate_local_vertices_rect2d (const Vector2 size
 	// draw counter-clockwise
 
 	// first triangle
-	local_vertices[RightBottom] = Point2(hs.x, hs.y);
-	local_vertices[RightTop] = Point2(hs.x, -hs.y);
-	local_vertices[LeftTop] = Point2(-hs.x, -hs.y);
+	local_vertices[RightBottom].set(hs.x, hs.y);
+	local_vertices[RightTop].set(hs.x, -hs.y);
+	local_vertices[LeftTop].set(-hs.x, -hs.y);
 
 	// second triangle
-	local_vertices[RightBottomAgain] = Point2(hs.x, hs.y);
-	local_vertices[LeftTopAgain] = Point2(-hs.x, -hs.y);
-	local_vertices[LeftBottom] = Point2(-hs.x, hs.y);
+	local_vertices[RightBottomAgain].set(hs.x, hs.y);
+	local_vertices[LeftTopAgain].set(-hs.x, -hs.y);
+	local_vertices[LeftBottom].set(-hs.x, hs.y);
 
 	return local_vertices;
 }
