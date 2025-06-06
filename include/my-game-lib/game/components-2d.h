@@ -48,13 +48,14 @@ public:
 	using Point = TransformComponent::Point;
 
 private:
-	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Graphics::Rect2D, rect)
+	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(Vector, size)
 	MYLIB_OO_ENCAPSULATE_OBJ_WITH_COPY_MOVE(TextureDescriptor, texture)
+	MYLIB_OO_ENCAPSULATE_SCALAR_INIT(float, z, 0.0f)
 
 public:
 	Sprite2DRenderer (const Vector& size_, const TextureDescriptor& texture_)
 		: TransformComponent2D(),
-		  rect(size_),
+		  size(size_),
 		  texture(texture_)
 	{
 	}

@@ -99,17 +99,17 @@ template <typename T, typename... Types>
 
 namespace Enums
 {
-	enum Ancho2D {
-		TopLeft,
-		Top,
-		TopRight,
+/*	enum Ancho2D {
+		LeftTop,
 		Left,
+		LeftBottom,
+		Top,
 		Center,
-		Right,
-		BottomLeft,
 		Bottom,
-		BottomRight
-	};
+		RightTop,
+		Right,
+		RightBottom
+	};*/
 }
 
 // ---------------------------------------------------
@@ -528,9 +528,8 @@ protected:
 	MYLIB_OO_ENCAPSULATE_OBJ_INIT_WITH_COPY_MOVE(Vector, velocity, Vector::zero())
 
 public:
-	DynamicEntity (const UserData& user_data_, const Vector& velocity_)
-		: Entity(user_data_),
-		  velocity(velocity_)
+	DynamicEntity (const UserData& user_data_)
+		: Entity(user_data_)
 	{
 	}
 

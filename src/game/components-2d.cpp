@@ -13,6 +13,46 @@ namespace Game
 
 // ---------------------------------------------------
 
+using Graphics::Opengl::Opengl_TextureDescriptor;
+
+namespace Enums {
+	// 6 vertices counter-clockwise
+	enum Rect2DVertexPositionIndex {
+		RightBottom,
+		RightTop,
+		LeftTop,
+		RightBottomAgain,
+		LeftTopAgain,
+		LeftBottom
+	};
+}
+
+// ---------------------------------------------------
+
+static std::array<Vector2, 6> generate_local_vertices_rect2d (const Vector2 size)
+{
+	const auto hs = size * 0.5f; // half size
+	std::array<Vector2, 6> local_vertices;
+
+	using enum Enums::Rect2DVertexPositionIndex;
+
+	// draw counter-clockwise
+
+	// first triangle
+	local_vertices[RightBottom] = Point2(hs.x, hs.y);
+	local_vertices[RightTop] = Point2(hs.x, -hs.y);
+	local_vertices[LeftTop] = Point2(-hs.x, -hs.y);
+
+	// second triangle
+	local_vertices[RightBottomAgain] = Point2(hs.x, hs.y);
+	local_vertices[LeftTopAgain] = Point2(-hs.x, -hs.y);
+	local_vertices[LeftBottom] = Point2(-hs.x, hs.y);
+
+	return local_vertices;
+}
+
+// ---------------------------------------------------
+
 void Rect2DRenderer::process_render (const float dt)
 {
 	auto *renderer = static_cast<Graphics::Opengl::Renderer*>(Game::renderer);
@@ -30,20 +70,7 @@ void Rect2DRenderer::process_render (const float dt)
 //exit(1);
 #endif
 
-	std::array<Vector2, n_vertices> local_vertices;
-	const auto hs = this->size * 0.5f; // half size
-
-	// draw counter-clockwise
-
-	// first triangle
-	local_vertices[0] = Point2(hs.x, hs.y); // right bottom
-	local_vertices[1] = Point2(hs.x, -hs.y); // right top
-	local_vertices[2] = Point2(-hs.x, -hs.y); // left top
-
-	// second triangle
-	local_vertices[3] = Point2(hs.x, hs.y); // right bottom
-	local_vertices[4] = Point2(-hs.x, -hs.y); // left top
-	local_vertices[5] = Point2(-hs.x, hs.y); // left bottom
+	std::array<Vector2, n_vertices> local_vertices = generate_local_vertices_rect2d(this->size);
 
 	auto vertices = program.alloc_vertices(n_vertices);
 
@@ -59,8 +86,32 @@ void Rect2DRenderer::process_render (const float dt)
 
 void Sprite2DRenderer::process_render (const float dt)
 {
-	//const auto global_pos = this->get_global_position();
-	//renderer->draw_rect2D(this->rect, global_pos, { .desc = this->texture });
+	auto *renderer = static_cast<Graphics::Opengl::Renderer*>(Game::renderer);
+	auto& program = *renderer->get_program_triangle_texture();
+
+	const Matrix3 transform = this->get_global_transform();
+	constexpr uint32_t n_vertices = 6;
+	
+	using Rect2DVertexPositionIndex = Enums::Rect2DVertexPositionIndex;
+	using TextureVertexPositionIndex = Graphics::Enums::TextureVertexPositionIndex;
+
+	std::array<Vector2, n_vertices> local_vertices = generate_local_vertices_rect2d(this->size);
+	const Opengl_TextureDescriptor *desc = this->texture.info->data.get_value<Opengl_TextureDescriptor*>();
+
+	auto vertices = program.alloc_vertices(n_vertices);
+
+	for (uint32_t i=0; i<n_vertices; i++) {
+		vertices[i].gvertex.pos = transform * Vector3(local_vertices[i], 1);
+		vertices[i].gvertex.pos.z = this->z;
+		vertices[i].offset.set_zero();
+	}
+
+	vertices[Rect2DVertexPositionIndex::RightBottom].tex_coords = Vector3(desc->tex_coords[TextureVertexPositionIndex::RightBottom].x, desc->tex_coords[TextureVertexPositionIndex::RightBottom].y, desc->atlas->texture_depth);
+	vertices[Rect2DVertexPositionIndex::RightTop].tex_coords = Vector3(desc->tex_coords[TextureVertexPositionIndex::RightTop].x, desc->tex_coords[TextureVertexPositionIndex::RightTop].y, desc->atlas->texture_depth);
+	vertices[Rect2DVertexPositionIndex::LeftTop].tex_coords = Vector3(desc->tex_coords[TextureVertexPositionIndex::LeftTop].x, desc->tex_coords[TextureVertexPositionIndex::LeftTop].y, desc->atlas->texture_depth);
+	vertices[Rect2DVertexPositionIndex::RightBottomAgain].tex_coords = Vector3(desc->tex_coords[TextureVertexPositionIndex::RightBottom].x, desc->tex_coords[TextureVertexPositionIndex::RightBottom].y, desc->atlas->texture_depth);
+	vertices[Rect2DVertexPositionIndex::LeftTopAgain].tex_coords = Vector3(desc->tex_coords[TextureVertexPositionIndex::LeftTop].x, desc->tex_coords[TextureVertexPositionIndex::LeftTop].y, desc->atlas->texture_depth);
+	vertices[Rect2DVertexPositionIndex::LeftBottom].tex_coords = Vector3(desc->tex_coords[TextureVertexPositionIndex::LeftBottom].x, desc->tex_coords[TextureVertexPositionIndex::LeftBottom].y, desc->atlas->texture_depth);
 }
 
 // ---------------------------------------------------

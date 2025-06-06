@@ -234,6 +234,7 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const std::array
 	using VertexPositionIndex = Cube3D::VertexPositionIndex;
 	using enum Cube3D::VertexPositionIndex;
 	using enum Cube3D::SurfacePositionIndex;
+	using TextureVertexPositionIndex = Enums::TextureVertexPositionIndex;
 
 	auto mount = [&i, vertices] (const VertexPositionIndex p, const Vector3f& v, const TextureRenderOptions& texture_options) -> void {
 		const Opengl_TextureDescriptor *desc = texture_options.desc.info->data.get_value<Opengl_TextureDescriptor*>();
@@ -253,8 +254,8 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const std::array
 	auto mount_surface = [&mount_triangle] (const VertexPositionIndex p1, const VertexPositionIndex p2, const VertexPositionIndex p3, const VertexPositionIndex p4, const TextureRenderOptions& texture_options) -> void {
 		const Opengl_TextureDescriptor *desc = texture_options.desc.info->data.get_value<Opengl_TextureDescriptor*>();
 
-		mount_triangle(p1, p2, p3, desc->tex_coords[Rect2D::LeftTop], desc->tex_coords[Rect2D::RightBottom], desc->tex_coords[Rect2D::RightTop], texture_options);
-		mount_triangle(p1, p2, p4, desc->tex_coords[Rect2D::LeftTop], desc->tex_coords[Rect2D::RightBottom], desc->tex_coords[Rect2D::LeftBottom], texture_options);
+		mount_triangle(p1, p2, p3, desc->tex_coords[TextureVertexPositionIndex::LeftTop], desc->tex_coords[TextureVertexPositionIndex::RightBottom], desc->tex_coords[TextureVertexPositionIndex::RightTop], texture_options);
+		mount_triangle(p1, p2, p4, desc->tex_coords[TextureVertexPositionIndex::LeftTop], desc->tex_coords[TextureVertexPositionIndex::RightBottom], desc->tex_coords[TextureVertexPositionIndex::LeftBottom], texture_options);
 	};
 
 	// bottom
@@ -336,7 +337,7 @@ void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Text
 
 		// we have to follow the same order used in Sphere3D::calculate_vertices
 
-		using enum Rect2D::VertexPositionIndex;
+		using enum Enums::TextureVertexPositionIndex;
 
 		const uint32_t u_resolution = sphere.get_u_resolution(); // longitude
 		const uint32_t v_resolution = sphere.get_v_resolution(); // latitude
@@ -469,7 +470,7 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRen
 
 	// we have to follow the same order used in Rect2D::calculate_vertices
 
-	using enum Rect2D::VertexPositionIndex;
+	using enum Enums::TextureVertexPositionIndex;
 
 	vertices[0].tex_coords = Vector3f(desc->tex_coords[LeftTop].x, desc->tex_coords[LeftTop].y, atlas->texture_depth); // upper left
 	vertices[1].tex_coords = Vector3f(desc->tex_coords[RightBottom].x, desc->tex_coords[RightBottom].y, atlas->texture_depth); // down right
@@ -828,7 +829,7 @@ void Renderer::end_texture_loading ()
 			desc->x_init_px = atlas_tex_desc.x_ini;
 			desc->y_init_px = atlas_tex_desc.y_ini;
 
-			using enum Rect2D::VertexPositionIndex;
+			using enum Enums::TextureVertexPositionIndex;
 
 			desc->tex_coords[LeftTop] = Vector2f(static_cast<fp_t>(desc->x_init_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px) / static_cast<fp_t>(max_texture_size));
 			desc->tex_coords[LeftBottom] = Vector2f(static_cast<fp_t>(desc->x_init_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px + desc->height_px) / static_cast<fp_t>(max_texture_size));
@@ -930,7 +931,7 @@ TextureInfo Renderer::create_sub_texture__ (const TextureInfo& parent, const uin
 	mylib_assert((desc->x_init_px + desc->width_px) <= parent_desc->atlas->width_px)
 	mylib_assert((desc->y_init_px + desc->height_px) <= parent_desc->atlas->height_px)
 
-	using enum Rect2D::VertexPositionIndex;
+	using enum Enums::TextureVertexPositionIndex;
 
 	desc->tex_coords[LeftTop] = Vector2f(static_cast<fp_t>(desc->x_init_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px) / static_cast<fp_t>(max_texture_size));
 	desc->tex_coords[LeftBottom] = Vector2f(static_cast<fp_t>(desc->x_init_px) / static_cast<fp_t>(max_texture_size), static_cast<fp_t>(desc->y_init_px + desc->height_px) / static_cast<fp_t>(max_texture_size));

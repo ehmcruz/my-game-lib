@@ -169,6 +169,17 @@ struct Colors
 
 // ---------------------------------------------------
 
+namespace Enums {
+	enum TextureVertexPositionIndex {
+		LeftTop,
+		LeftBottom,
+		RightTop,
+		RightBottom
+	};
+}
+
+// ---------------------------------------------------
+
 struct TextureInfo {
 	// filled by the backend driver
 	Mylib::Any<sizeof(void*), sizeof(void*)> data;
@@ -681,13 +692,6 @@ public:
 class Rect2D : public Shape
 {
 public:
-	enum VertexPositionIndex {
-		LeftTop,
-		LeftBottom,
-		RightTop,
-		RightBottom
-	};
-
 	static consteval uint32_t get_n_vertices () noexcept
 	{
 		return 6; // 2 triangles
