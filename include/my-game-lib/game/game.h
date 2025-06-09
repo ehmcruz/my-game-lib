@@ -12,11 +12,14 @@
 #include <utility>
 #include <type_traits>
 #include <chrono>
+#include <algorithm>
+#include <unordered_map>
 
 #include <cmath>
 #include <cstdlib>
 
 #include <boost/static_string.hpp>
+#include <boost/functional/hash.hpp>
 
 #include <my-game-lib/my-game-lib.h>
 #include <my-game-lib/graphics.h>
@@ -370,6 +373,19 @@ using MovableInterface3D = MovableInterface<3>;
 // ---------------------------------------------------
 
 template <uint32_t dim_>
+class ColliderInterface
+{
+public:
+	inline static constexpr uint32_t dim = dim_;
+	using Vector = TransformInterface<dim>::Vector;
+
+public:
+	virtual ~ColliderInterface () = default;
+};
+
+// ---------------------------------------------------
+
+template <uint32_t dim_>
 class TransformComponent : public Component, public TransformInterface<dim_>
 {
 public:
@@ -423,6 +439,73 @@ protected:
 // ---------------------------------------------------
 
 template <uint32_t dim_>
+class CollisionManager
+{
+public:
+	inline static constexpr uint32_t dim = dim_;
+	using Entity = Game::Entity<dim>;
+
+private:
+	struct ActiveCollision {
+		Entity& entity_a;
+		Entity& entity_b;
+
+		ActiveCollision (Entity& entity_a_, Entity& entity_b_)
+			: entity_a(*std::min(&entity_a_, &entity_b_)),
+			  entity_b(*std::max(&entity_a_, &entity_b_))
+		{
+		}
+	};
+
+	using Key = std::pair<Entity*, Entity*>;
+
+	static Key make_key (Entity& entity_a, Entity& entity_b) noexcept
+	{
+		if (&entity_a < &entity_b)
+			return std::make_pair(&entity_a, &entity_b);
+		else
+			return std::make_pair(&entity_b, &entity_a);
+	}
+
+	Entity& owner;
+	std::unordered_map<Key, ActiveCollision, boost::hash<Key>> active_collisions;
+
+public:
+	CollisionManager (Entity& owner_)
+		: owner(owner_)
+	{
+	}
+
+private:
+	void process_collision (const Entity& entity_a, const Entity& entity_b)
+	{
+		
+
+	}
+
+public:
+	void process_collisions (const float dt)
+	{
+		auto& entities = this->owner.get_ref_entities();
+
+		for (auto it_a = entities.begin(); it_a != entities.end(); ++it_a) {
+			Entity& entity_a = **it_a;
+
+			for (auto it_b = std::next(it_a); it_b != entities.end(); ++it_b) {
+				Entity& entity_b = **it_b;
+
+				if (&entity_a < &entity_b)
+					proccess_collision(entity_a, entity_b);
+				else
+					proccess_collision(entity_b, entity_a);
+			}
+		}
+	}
+};
+
+// ---------------------------------------------------
+
+template <uint32_t dim_>
 class Entity : public TransformComponent<dim_>
 {
 public:
@@ -436,6 +519,7 @@ public:
 	UserData user_data;
 
 protected:
+	CollisionManager<dim> collision_manager;
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<unique_ptr<Component>>, components)
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<unique_ptr<Entity>>, entities)
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<UpdateInterface*>, updatables)
@@ -445,7 +529,8 @@ protected:
 public:
 	Entity (const UserData& user_data_)
 		: TransformComponent(),
-		  user_data(user_data_)
+		  user_data(user_data_),
+		  collision_manager(*this)
 	{
 	}
 

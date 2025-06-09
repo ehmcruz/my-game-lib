@@ -14,7 +14,7 @@ namespace Game
 // ---------------------------------------------------
 
 template <uint32_t dim_>
-class RectCollider__ : public TransformComponent<dim_>
+class RectCollider__ : public TransformComponent<dim_>, public ColliderInterface<dim_>
 {
 public:
 	inline static constexpr uint32_t dim = dim_;
