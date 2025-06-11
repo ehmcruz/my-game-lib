@@ -60,7 +60,7 @@ void Rect2DRenderer::process_render (const float dt)
 	auto *renderer = static_cast<Graphics::Opengl::Renderer*>(Game::renderer);
 	auto& program = *renderer->get_program_triangle_color();
 
-	const Matrix3 transform = this->get_global_transform();
+	const Matrix3& transform = this->get_global_transform();
 	constexpr uint32_t n_vertices = 6;
 	
 #if 0

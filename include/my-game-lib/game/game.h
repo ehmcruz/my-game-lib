@@ -33,6 +33,7 @@
 #include <my-lib/interpolation.h>
 #include <my-lib/math-matrix.h>
 #include <my-lib/math-quaternion.h>
+#include <my-lib/generator.h>
 
 // ---------------------------------------------------
 
@@ -65,8 +66,14 @@ using Coroutine = Mylib::Coroutine<1024>;
 using Graphics::Color;
 using Graphics::TextureDescriptor;
 
-using Vector2 = Mylib::Math::Vector<Mylib::Math::VectorStorage__<float, 2>>;
-using Vector3 = Mylib::Math::Vector<Mylib::Math::VectorStorage__<float, 3>>;
+template <uint32_t dim>
+using Vector = Mylib::Math::Vector<Mylib::Math::VectorStorage__<float, dim>>;
+
+template <uint32_t dim>
+using Point = Vector<dim>;
+
+using Vector2 = Vector<2>;
+using Vector3 = Vector<3>;
 using Point2 = Vector2;
 using Point3 = Vector3;
 
@@ -243,7 +250,7 @@ public:
 		return TransformMatrix::scale(this->scale);
 	}
 
-	constexpr TransformMatrix get_transform () const noexcept
+	constexpr const TransformMatrix& get_transform () const noexcept
 	{
 		return this->transform_matrix;
 	}
@@ -251,7 +258,7 @@ public:
 private:
 	constexpr void update_transform_matrix () noexcept
 	{
-		this->transform_matrix = this->get_translation_matrix() * this->get_rotation_matrix() * this->get_scale_matrix();
+		this->transform_matrix = (this->get_translation_matrix() * this->get_rotation_matrix()) * this->get_scale_matrix();
 	}
 
 public:
@@ -438,70 +445,15 @@ protected:
 
 // ---------------------------------------------------
 
-template <uint32_t dim_>
-class CollisionManager
+} // end namespace Game
+} // end namespace MyGlib
+
+#include <my-game-lib/game/internal/collision.h>
+
+namespace MyGlib
 {
-public:
-	inline static constexpr uint32_t dim = dim_;
-	using Entity = Game::Entity<dim>;
-
-private:
-	struct ActiveCollision {
-		Entity& entity_a;
-		Entity& entity_b;
-
-		ActiveCollision (Entity& entity_a_, Entity& entity_b_)
-			: entity_a(*std::min(&entity_a_, &entity_b_)),
-			  entity_b(*std::max(&entity_a_, &entity_b_))
-		{
-		}
-	};
-
-	using Key = std::pair<Entity*, Entity*>;
-
-	static Key make_key (Entity& entity_a, Entity& entity_b) noexcept
-	{
-		if (&entity_a < &entity_b)
-			return std::make_pair(&entity_a, &entity_b);
-		else
-			return std::make_pair(&entity_b, &entity_a);
-	}
-
-	Entity& owner;
-	std::unordered_map<Key, ActiveCollision, boost::hash<Key>> active_collisions;
-
-public:
-	CollisionManager (Entity& owner_)
-		: owner(owner_)
-	{
-	}
-
-private:
-	void process_collision (const Entity& entity_a, const Entity& entity_b)
-	{
-		
-
-	}
-
-public:
-	void process_collisions (const float dt)
-	{
-		auto& entities = this->owner.get_ref_entities();
-
-		for (auto it_a = entities.begin(); it_a != entities.end(); ++it_a) {
-			Entity& entity_a = **it_a;
-
-			for (auto it_b = std::next(it_a); it_b != entities.end(); ++it_b) {
-				Entity& entity_b = **it_b;
-
-				if (&entity_a < &entity_b)
-					proccess_collision(entity_a, entity_b);
-				else
-					proccess_collision(entity_b, entity_a);
-			}
-		}
-	}
-};
+namespace Game
+{
 
 // ---------------------------------------------------
 
@@ -514,17 +466,20 @@ public:
 	using Vector = TransformComponent::Vector;
 	using Point = TransformComponent::Point;
 	using UserData = uint64_t;
+	using ColliderInterface = Game::ColliderInterface<dim>;
+	using CollisionManager = Game::CollisionManager<dim>;
 
 public:
 	UserData user_data;
 
 protected:
-	CollisionManager<dim> collision_manager;
+	CollisionManager collision_manager;
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<unique_ptr<Component>>, components)
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<unique_ptr<Entity>>, entities)
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<UpdateInterface*>, updatables)
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<PhysicsInterface*>, physicsables)
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<RenderInterface*>, renderables)
+	MYLIB_OO_ENCAPSULATE_OBJ(std::list<ColliderInterface*>, colliders)
 
 public:
 	Entity (const UserData& user_data_)
@@ -559,6 +514,8 @@ public:
 			this->physicsables.push_back(child_ptr);
 		if constexpr (std::is_base_of_v<RenderInterface, T>)
 			this->renderables.push_back(child_ptr);
+		if constexpr (std::is_base_of_v<ColliderInterface, T>)
+			this->colliders.push_back(child_ptr);
 		
 		child_ptr->set_parent(this);
 	}
@@ -577,6 +534,7 @@ public:
 			entity->loop_physics(dt);
 		for (auto& component : this->physicsables)
 			component->process_physics(dt);
+		this->collision_manager.process_collisions(dt);
 	}
 
 	void loop_render (const float dt)
