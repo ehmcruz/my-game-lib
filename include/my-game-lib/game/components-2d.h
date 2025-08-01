@@ -81,8 +81,8 @@ protected:
 	using Entity2D::add_child;
 
 public:
-	TileMap (const UserData& user_data_, const uint32_t nrows, const uint32_t ncols, const Vector& tile_size_)
-		: Entity(user_data_),
+	TileMap (const uint32_t nrows, const uint32_t ncols, const Vector& tile_size_)
+		: Entity(),
 		  matrix(nrows, ncols, nullptr),
 		  tile_size(tile_size_)
 	{

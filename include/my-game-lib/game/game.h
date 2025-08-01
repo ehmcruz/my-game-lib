@@ -14,6 +14,7 @@
 #include <chrono>
 #include <algorithm>
 #include <unordered_map>
+#include <limits>
 
 #include <cmath>
 #include <cstdlib>
@@ -126,6 +127,9 @@ namespace Enums
 
 class Component
 {
+public:
+	uint64_t user_data = std::numeric_limits<uint64_t>::max(); // default value, meaning no user data
+
 protected:
 	MYLIB_OO_ENCAPSULATE_PTR_INIT(Component*, parent, nullptr)
 	MYLIB_OO_ENCAPSULATE_OBJ(boost::static_string<16>, name)
@@ -465,12 +469,8 @@ public:
 	using TransformComponent = Game::TransformComponent<dim>;
 	using Vector = TransformComponent::Vector;
 	using Point = TransformComponent::Point;
-	using UserData = uint64_t;
 	using ColliderInterface = Game::ColliderInterface<dim>;
 	using CollisionManager = Game::CollisionManager<dim>;
-
-public:
-	UserData user_data;
 
 protected:
 	CollisionManager collision_manager;
@@ -482,9 +482,8 @@ protected:
 	MYLIB_OO_ENCAPSULATE_OBJ(std::list<ColliderInterface*>, colliders)
 
 public:
-	Entity (const UserData& user_data_)
+	Entity ()
 		: TransformComponent(),
-		  user_data(user_data_),
 		  collision_manager(*this)
 	{
 	}
@@ -568,11 +567,10 @@ public:
 	using Entity = Game::Entity<dim>;
 	using Vector = Entity::Vector;
 	using Point = Entity::Point;
-	using UserData = Entity::UserData;
 
 public:
-	Scene__ (const UserData& user_data_)
-		: Entity(user_data_),
+	Scene__ ()
+		: Entity(),
 		  Scene()
 	{
 	}
@@ -607,11 +605,10 @@ public:
 	using Scene = Game::Scene__<dim>;
 	using Vector = Scene::Vector;
 	using Point = Scene::Point;
-	using UserData = Scene::UserData;
 
 public:
-	Scene2D (const UserData& user_data_)
-		: Scene(user_data_)
+	Scene2D ()
+		: Scene()
 	{
 	}
 
@@ -631,13 +628,12 @@ public:
 	using MovableInterface = Game::MovableInterface<dim>;
 	using Vector = Entity::Vector;
 	using Point = Entity::Point;
-	using UserData = Entity::UserData;
 
 protected:
 
 public:
-	DynamicEntity (const UserData& user_data_)
-		: Entity(user_data_), MovableInterface(this)
+	DynamicEntity ()
+		: Entity(), MovableInterface(this)
 	{
 	}
 
