@@ -284,6 +284,27 @@ protected:
 
 // ---------------------------------------------------
 
+class FileException : public Exception
+{
+private:
+	// we use a static string to avoid dynamic memory allocation
+	boost::static_string<fname_max_length> file;
+
+public:
+	FileException (const std::source_location& location_, const char *assert_str_, const char *extra_msg_, const std::string_view file_)
+		: Exception(location_, assert_str_, extra_msg_), file(file_)
+	{
+	}
+
+protected:
+	void build_mygamelib_exception_msg (std::ostringstream& str_stream) const override final
+	{
+		str_stream << "File exception \"" << this->file << "\"." << std::endl;
+	}
+};
+
+// ---------------------------------------------------
+
 } // end namespace MyGlib
 
 #endif

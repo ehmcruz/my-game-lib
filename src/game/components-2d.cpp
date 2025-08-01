@@ -1,7 +1,11 @@
+#include <filesystem>
+
 #include <my-game-lib/game/game.h>
 #include <my-game-lib/game/components-2d.h>
 #include <my-game-lib/graphics.h>
 #include <my-game-lib/opengl/opengl.h>
+
+#include <pugixml.hpp>
 
 
 // ---------------------------------------------------
@@ -114,6 +118,61 @@ void Sprite2DRenderer::process_render (const float dt)
 	vertices[Rect2DVertexPositionIndex::RightBottomAgain].tex_coords = Vector3(desc->tex_coords[TextureVertexPositionIndex::RightBottom].x, desc->tex_coords[TextureVertexPositionIndex::RightBottom].y, desc->atlas->texture_depth);
 	vertices[Rect2DVertexPositionIndex::LeftTopAgain].tex_coords = Vector3(desc->tex_coords[TextureVertexPositionIndex::LeftTop].x, desc->tex_coords[TextureVertexPositionIndex::LeftTop].y, desc->atlas->texture_depth);
 	vertices[Rect2DVertexPositionIndex::LeftBottom].tex_coords = Vector3(desc->tex_coords[TextureVertexPositionIndex::LeftBottom].x, desc->tex_coords[TextureVertexPositionIndex::LeftBottom].y, desc->atlas->texture_depth);
+}
+
+// ---------------------------------------------------
+
+TileMap::TileMap (const std::string_view tmx_fname, const Vector& tile_size_)
+	: Entity(),
+	  tile_size(tile_size_)
+{
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_file(tmx_fname.data());
+
+	mylib_assert_exception_msg_args(result, FileException, "Error loading TMX file.", tmx_fname)
+
+	dprintln("TMX file loaded: ", tmx_fname);
+
+	pugi::xml_node map_node = doc.child("map");
+	mylib_assert_exception_msg_args(map_node, FileException, "Map node does not exist.", tmx_fname)
+
+	const uint32_t cols  = map_node.attribute("width").as_uint();
+	const uint32_t rows = map_node.attribute("height").as_uint();
+
+	dprintln("TileMap size rows: ", rows, " cols: ", cols);
+
+	this->matrix = Mylib::Matrix<TransformComponent*>(rows, cols, nullptr);
+
+	for (pugi::xml_node tileset_node = map_node.child("tileset"); tileset_node; tileset_node = tileset_node.next_sibling("tileset")) {
+		const std::string_view tsx_fname = tileset_node.attribute("source").as_string();
+		const uint32_t first_gid = tileset_node.attribute("firstgid").as_uint();
+
+		std::filesystem::path folder = std::filesystem::path(tmx_fname).parent_path();
+		std::filesystem::path tsx_path = folder / tsx_fname;
+		const std::string tsx_fname_str = tsx_path.string();
+
+		pugi::xml_document doc;
+		pugi::xml_parse_result result = doc.load_file(tsx_fname_str.c_str());
+
+		mylib_assert_exception_msg_args(result, FileException, "Error loading TSX file.", tsx_fname)
+
+		pugi::xml_node root_node = doc.child("tileset");
+		mylib_assert_exception_msg_args(root_node, FileException, "Tileset node does not exist in TSX file.", tsx_fname)
+
+		const uint32_t tileset_count = root_node.attribute("tilecount").as_uint();
+		const uint32_t tileset_cols = root_node.attribute("columns").as_uint();
+		const uint32_t tileset_rows = tileset_count / tileset_cols;
+
+		pugi::xml_node image_node = root_node.child("image");
+		mylib_assert_exception_msg_args(image_node, FileException, "Image node does not exist in TSX file.", tsx_fname)
+
+		const std::string_view image_fname = image_node.attribute("source").as_string();
+		const std::filesystem::path image_path = folder / image_fname;
+		const std::string image_fname_str = image_path.string();
+
+		dprintln("Tileset: ", tsx_fname, " firstgid: ", first_gid, " image: ", image_path,
+			" rows: ", tileset_rows, " cols: ", tileset_cols);
+	}
 }
 
 // ---------------------------------------------------

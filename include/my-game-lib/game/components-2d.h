@@ -1,7 +1,10 @@
 #ifndef __MY_GAME_LIB_GAME_COMPONENTS2D_HEADER_H__
 #define __MY_GAME_LIB_GAME_COMPONENTS2D_HEADER_H__
 
+#include <string_view>
+
 #include <my-game-lib/game/game.h>
+#include <my-game-lib/exception.h>
 
 #include <my-lib/matrix.h>
 
@@ -89,6 +92,9 @@ public:
 	{
 	}
 
+	// Tiled TMX interface
+	TileMap (const std::string_view tmx_fname, const Vector& tile_size_);
+
 	template <typename T>
 	void set (const uint32_t row, const uint32_t col, unique_ptr<T> component)
 		requires (std::is_base_of_v<TransformComponent, T>)
@@ -101,12 +107,12 @@ public:
 
 	void set (const uint32_t row, const uint32_t col, TextureDescriptor texture);
 
-	TransformComponent& operator[] (const uint32_t row, const uint32_t col)
+	TransformComponent& get (const uint32_t row, const uint32_t col)
 	{
 		return *this->matrix[row, col];
 	}
 
-	const TransformComponent& operator[] (const uint32_t row, const uint32_t col) const
+	const TransformComponent& get (const uint32_t row, const uint32_t col) const
 	{
 		return *this->matrix[row, col];
 	}

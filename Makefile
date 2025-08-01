@@ -10,7 +10,9 @@ TESTS_SRC := $(wildcard tests/*.cpp)
 # https://github.com/ehmcruz/my-lib
 MYLIB = ../my-lib
 
-CPPFLAGS = -std=c++23 -Wall -g -I$(MYLIB)/include -I./include -DMYGLIB_FP_TYPE=float
+PUGIXML = ../../git-others/pugixml/src
+
+CPPFLAGS = -std=c++23 -Wall -g -I$(MYLIB)/include -I./include -DMYGLIB_FP_TYPE=float -I$(PUGIXML)
 LDFLAGS = -std=c++23
 
 # ----------------------------------
@@ -63,6 +65,8 @@ ifdef MYGLIB_SUPPORT_OPENGL
 	SRCS += $(wildcard src/opengl/*.cpp)
 	HEADERS += $(wildcard include/my-game-lib/opengl/*.h)
 endif
+
+SRCS += $(PUGIXML)/pugixml.cpp
 
 OBJS := $(patsubst %.cpp,%.o,$(SRCS)) $(MYLIB_OBJS)
 
