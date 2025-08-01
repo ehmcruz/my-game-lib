@@ -118,13 +118,6 @@ void Sprite2DRenderer::process_render (const float dt)
 
 // ---------------------------------------------------
 
-void TileMap::set (const uint32_t row, const uint32_t col, unique_ptr<Sprite2DRenderer> sprite)
-{
-	auto entity = make_unique<Entity>();
-	entity->add_child(std::move(sprite));
-	this->set(row, col, std::move(entity));
-}
-
 void TileMap::set (const uint32_t row, const uint32_t col, TextureDescriptor texture)
 {
 	auto sprite = make_unique<Sprite2DRenderer>(this->tile_size, texture);

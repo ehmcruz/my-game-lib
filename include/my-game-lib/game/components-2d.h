@@ -69,12 +69,13 @@ public:
 class TileMap : public Entity2D
 {
 public:
+	using TransformComponent = Game::TransformComponent2D;
 	using Entity = Game::Entity2D;
 	using Vector = Entity2D::Vector;
 	using Point = Entity2D::Point;
 
 protected:
-	Mylib::Matrix<Entity*> matrix;
+	Mylib::Matrix<TransformComponent*> matrix;
 	Vector tile_size;
 
 protected:
@@ -89,24 +90,23 @@ public:
 	}
 
 	template <typename T>
-	void set (const uint32_t row, const uint32_t col, unique_ptr<T> entity)
-		requires (std::is_base_of_v<Entity, T>)
+	void set (const uint32_t row, const uint32_t col, unique_ptr<T> component)
+		requires (std::is_base_of_v<TransformComponent, T>)
 	{
-		entity->set_translation((static_cast<float>(row) + 0.5f) * this->tile_size.x,
+		component->set_translation((static_cast<float>(row) + 0.5f) * this->tile_size.x,
 							(static_cast<float>(col) + 0.5f) * this->tile_size.y);
-		this->matrix[row, col] = entity.get();
-		this->add_child(std::move(entity));
+		this->matrix[row, col] = component.get();
+		this->add_child(std::move(component));
 	}
 
-	void set (const uint32_t row, const uint32_t col, unique_ptr<Sprite2DRenderer> sprite);
 	void set (const uint32_t row, const uint32_t col, TextureDescriptor texture);
 
-	Entity& operator[] (const uint32_t row, const uint32_t col)
+	TransformComponent& operator[] (const uint32_t row, const uint32_t col)
 	{
 		return *this->matrix[row, col];
 	}
 
-	const Entity& operator[] (const uint32_t row, const uint32_t col) const
+	const TransformComponent& operator[] (const uint32_t row, const uint32_t col) const
 	{
 		return *this->matrix[row, col];
 	}
