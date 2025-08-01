@@ -720,6 +720,14 @@ constexpr float ClockDuration_to_float (const ClockDuration& d)
 
 // ---------------------------------------------------
 
+// Preload textures from a TMX file.
+// This function will return a map of texture descriptors, where the key is the GID of the tile and the value is the texture descriptor.
+// The textures will be loaded into the renderer's texture cache.
+
+void preload_textures_from_tmx_file (const std::string_view tmx_fname);
+
+// ---------------------------------------------------
+
 } // end namespace Game
 } // end namespace MyGlib
 

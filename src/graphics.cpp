@@ -555,6 +555,8 @@ TextureDescriptor Manager::load_texture (std::string id, const std::string_view 
 	TextureDescriptor d = this->load_texture(std::move(id), surface);
 	SDL_FreeSurface(surface);
 
+	d.info->fname = fname;
+
 	return d;
 }
 
@@ -625,6 +627,17 @@ Mylib::Matrix<TextureDescriptor> Manager::split_texture (const TextureDescriptor
 	}
 
 	return matrix;
+}
+
+// ---------------------------------------------------
+
+TextureDescriptor Manager::find_texture_by_fname (const std::string_view fname)
+{
+	for (auto& [key, texture] : this->textures) {
+		if (texture.fname.has_value() && texture.fname.value() == fname)
+			return TextureDescriptor { .info = &texture };
+	}
+	mylib_throw_args(TextureNotFoundException, fname);
 }
 
 // ---------------------------------------------------

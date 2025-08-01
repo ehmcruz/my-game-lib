@@ -80,6 +80,7 @@ public:
 protected:
 	Mylib::Matrix<TransformComponent*> matrix;
 	Vector tile_size;
+	std::vector<TextureDescriptor> textures;
 
 protected:
 	using Entity2D::add_child;
@@ -93,7 +94,7 @@ public:
 	}
 
 	// Tiled TMX interface
-	TileMap (const std::string_view tmx_fname, const Vector& tile_size_);
+	TileMap (const std::string_view tmx_fname, const std::string_view layer_name, const Vector& tile_size_);
 
 	template <typename T>
 	void set (const uint32_t row, const uint32_t col, unique_ptr<T> component)

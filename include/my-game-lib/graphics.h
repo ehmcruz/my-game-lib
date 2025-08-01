@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <string>
 #include <variant>
+#include <optional>
 
 #include <my-lib/std.h>
 #include <my-lib/macros.h>
@@ -189,6 +190,7 @@ struct TextureInfo {
 
 	// filled by the frontend
 	std::string id;
+	std::optional<std::string> fname; // file name, if loaded directly from a file
 };
 
 // ---------------------------------------------------
@@ -1108,12 +1110,14 @@ public:
 		return this->create_sub_texture(this->find_unused_texture_id(), parent__, x_ini, y_ini, w, h);
 	}
 
-	TextureDescriptor find_texture (const std::string_view id)
+	TextureDescriptor find_texture_by_id (const std::string_view id)
 	{
 		auto it = this->textures.find(id);
 		mylib_assert_exception_args(it != this->textures.end(), TextureNotFoundException, id);
 		return TextureDescriptor { .info = &it->second };
 	}
+
+	TextureDescriptor find_texture_by_fname (const std::string_view fname);
 
 	// light functions
 

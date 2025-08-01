@@ -1,4 +1,7 @@
 #include <filesystem>
+#include <sstream>
+#include <algorithm>
+#include <cctype>
 
 #include <my-game-lib/game/game.h>
 #include <my-game-lib/game/components-2d.h>
@@ -122,10 +125,12 @@ void Sprite2DRenderer::process_render (const float dt)
 
 // ---------------------------------------------------
 
-TileMap::TileMap (const std::string_view tmx_fname, const Vector& tile_size_)
+TileMap::TileMap (const std::string_view tmx_fname, const std::string_view layer_name, const Vector& tile_size_)
 	: Entity(),
 	  tile_size(tile_size_)
 {
+	std::unordered_map<uint32_t, TextureDescriptor> tile_textures;
+
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_file(tmx_fname.data());
 
@@ -170,9 +175,74 @@ TileMap::TileMap (const std::string_view tmx_fname, const Vector& tile_size_)
 		const std::filesystem::path image_path = folder / image_fname;
 		const std::string image_fname_str = image_path.string();
 
-		dprintln("Tileset: ", tsx_fname, " firstgid: ", first_gid, " image: ", image_path,
+		TextureDescriptor texture = renderer->find_texture_by_fname(image_fname_str);
+		this->textures.push_back(texture);
+		auto matrix = renderer->split_texture(texture, tileset_rows, tileset_cols);
+
+		uint32_t gid = first_gid;
+		for (uint32_t i = 0; i < tileset_rows; i++) {
+			for (uint32_t j = 0; j < tileset_cols; j++) {
+				tile_textures[gid] = matrix[i, j];
+				gid++;
+			}
+		}
+
+		dprintln("Tileset: ", tsx_fname, " firstgid: ", first_gid, " image: ", image_fname_str,
 			" rows: ", tileset_rows, " cols: ", tileset_cols);
 	}
+
+	bool found_layer = false;
+
+	for (pugi::xml_node layer_node = map_node.child("layer"); layer_node; layer_node = layer_node.next_sibling("layer")) {
+		const std::string_view layer_name_attr = layer_node.attribute("name").as_string();
+
+		if (layer_name != layer_name_attr)
+			continue;
+		
+		found_layer = true;
+		pugi::xml_node data_node = layer_node.child("data");
+		mylib_assert_exception_msg_args(data_node, FileException, "Data node does not exist in TMX file.", tmx_fname)
+
+		const std::string_view encoding = data_node.attribute("encoding").as_string();
+		mylib_assert_exception_msg_args(encoding == "csv", FileException, "Unsupported encoding in TMX file.", tmx_fname)
+
+		const std::string data = data_node.text().as_string();
+		dprintln("Layer: ", layer_name, " data:\n", data);
+
+		// Parse the CSV data
+		std::istringstream csv_stream(data);
+		std::string line;
+		uint32_t row = 0;
+
+		while (std::getline(csv_stream, line) && row < rows) {
+			std::istringstream line_stream(line);
+			std::string cell;
+			uint32_t col = 0;
+
+			while (std::getline(line_stream, cell, ',') && col < cols) {
+				// Remove whitespace from cell
+				cell.erase(std::remove_if(cell.begin(), cell.end(), ::isspace), cell.end());
+				
+				if (!cell.empty()) {
+					uint32_t gid = std::stoul(cell);
+					
+					// GID 0 means empty tile, skip it
+					if (gid != 0) {
+						auto texture_it = tile_textures.find(gid);
+						if (texture_it != tile_textures.end()) {
+							this->set(row, col, texture_it->second);
+						} else {
+							dprintln("Warning: GID ", gid, " not found in tilesets at row ", row, " col ", col);
+						}
+					}
+				}
+				col++;
+			}
+			row++;
+		}
+	}
+
+	mylib_assert_exception_msg_args(found_layer, FileException, "Layer not found in TMX file.", tmx_fname);
 }
 
 // ---------------------------------------------------

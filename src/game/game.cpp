@@ -1,6 +1,9 @@
 #include <thread>
+#include <filesystem>
 
 #include <my-game-lib/game/game.h>
+
+#include <pugixml.hpp>
 
 // ---------------------------------------------------
 
@@ -180,6 +183,48 @@ void Main::run ()
 		busy_wait_dt = ClockDuration_to_float(elapsed);
 
 		fps = 1.0f / real_dt;
+	}
+}
+
+// ---------------------------------------------------
+
+void preload_textures_from_tmx_file (const std::string_view tmx_fname)
+{
+	std::unordered_map<uint32_t, TextureDescriptor> tile_textures;
+
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_file(tmx_fname.data());
+
+	mylib_assert_exception_msg_args(result, FileException, "Error loading TMX file.", tmx_fname)
+
+	dprintln("Pre-loading TMX file: ", tmx_fname);
+
+	pugi::xml_node map_node = doc.child("map");
+	mylib_assert_exception_msg_args(map_node, FileException, "Map node does not exist.", tmx_fname)
+
+	for (pugi::xml_node tileset_node = map_node.child("tileset"); tileset_node; tileset_node = tileset_node.next_sibling("tileset")) {
+		const std::string_view tsx_fname = tileset_node.attribute("source").as_string();
+
+		std::filesystem::path folder = std::filesystem::path(tmx_fname).parent_path();
+		std::filesystem::path tsx_path = folder / tsx_fname;
+		const std::string tsx_fname_str = tsx_path.string();
+
+		pugi::xml_document doc;
+		pugi::xml_parse_result result = doc.load_file(tsx_fname_str.c_str());
+
+		mylib_assert_exception_msg_args(result, FileException, "Error loading TSX file.", tsx_fname)
+
+		pugi::xml_node root_node = doc.child("tileset");
+		mylib_assert_exception_msg_args(root_node, FileException, "Tileset node does not exist in TSX file.", tsx_fname)
+
+		pugi::xml_node image_node = root_node.child("image");
+		mylib_assert_exception_msg_args(image_node, FileException, "Image node does not exist in TSX file.", tsx_fname)
+
+		const std::string_view image_fname = image_node.attribute("source").as_string();
+		const std::filesystem::path image_path = folder / image_fname;
+		const std::string image_fname_str = image_path.string();
+
+		renderer->load_texture(image_fname_str);
 	}
 }
 
