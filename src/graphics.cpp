@@ -631,6 +631,15 @@ Mylib::Matrix<TextureDescriptor> Manager::split_texture (const TextureDescriptor
 
 // ---------------------------------------------------
 
+TextureDescriptor Manager::find_texture_by_id (const std::string_view id)
+{
+	auto it = this->textures.find(id);
+	mylib_assert_exception_args(it != this->textures.end(), TextureNotFoundException, id);
+	return TextureDescriptor { .info = &it->second };
+}
+
+// ---------------------------------------------------
+
 TextureDescriptor Manager::find_texture_by_fname (const std::string_view fname)
 {
 	for (auto& [key, texture] : this->textures) {

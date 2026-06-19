@@ -147,7 +147,7 @@ void setup ()
 	moon_low_texture = renderer->load_texture("tests-assets/moon-low.jpg");
 	
 	renderer->load_texture("samus", "tests-assets/samus.png");
-	samus_texture = renderer->find_texture("samus");
+	samus_texture = renderer->find_texture_by_id("samus");
 	
 	tree_texture = renderer->load_texture("tests-assets/tree.png");
 	yoshi_texture = renderer->load_texture("tests-assets/yoshi.jpg");

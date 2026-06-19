@@ -261,7 +261,7 @@ void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const 
 void SDL_GraphicsDriver::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRenderOptions& texture_options)
 {
 	const SDL_Rect sdl_rect = this->helper_calc_sdl_rect(rect, offset);
-	SDL_TextureDescriptor *desc = texture_options.desc.info->data.get_value<SDL_TextureDescriptor*>();
+	SDL_TextureDescriptor *desc = Mylib::any_cast<SDL_TextureDescriptor*>(texture_options.desc.info->data);
 
 	SDL_RenderCopy(this->renderer, desc->texture, nullptr, &sdl_rect);
 }

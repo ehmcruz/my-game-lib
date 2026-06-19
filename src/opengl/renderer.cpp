@@ -237,7 +237,7 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const std::array
 	using TextureVertexPositionIndex = Enums::TextureVertexPositionIndex;
 
 	auto mount = [&i, vertices] (const VertexPositionIndex p, const Vector3f& v, const TextureRenderOptions& texture_options) -> void {
-		const Opengl_TextureDescriptor *desc = texture_options.desc.info->data.get_value<Opengl_TextureDescriptor*>();
+		const Opengl_TextureDescriptor *desc = Mylib::any_cast<Opengl_TextureDescriptor*>(texture_options.desc.info->data);
 		const Opengl_AtlasDescriptor *atlas = desc->atlas;
 
 		vertices[i].tex_coords = Vector3f(v.x, v.y, atlas->texture_depth);
@@ -252,7 +252,7 @@ void Renderer::draw_cube3D (Cube3D& cube, const Vector& offset, const std::array
 
 	// p1 and p2 should be a diagonal of the rectangle
 	auto mount_surface = [&mount_triangle] (const VertexPositionIndex p1, const VertexPositionIndex p2, const VertexPositionIndex p3, const VertexPositionIndex p4, const TextureRenderOptions& texture_options) -> void {
-		const Opengl_TextureDescriptor *desc = texture_options.desc.info->data.get_value<Opengl_TextureDescriptor*>();
+		const Opengl_TextureDescriptor *desc = Mylib::any_cast<Opengl_TextureDescriptor*>(texture_options.desc.info->data);
 
 		mount_triangle(p1, p2, p3, desc->tex_coords[TextureVertexPositionIndex::LeftTop], desc->tex_coords[TextureVertexPositionIndex::RightBottom], desc->tex_coords[TextureVertexPositionIndex::RightTop], texture_options);
 		mount_triangle(p1, p2, p4, desc->tex_coords[TextureVertexPositionIndex::LeftTop], desc->tex_coords[TextureVertexPositionIndex::RightBottom], desc->tex_coords[TextureVertexPositionIndex::LeftBottom], texture_options);
@@ -324,7 +324,7 @@ void Renderer::draw_sphere3D (Sphere3D& sphere, const Vector& offset, const Text
 
 	mylib_assert(shape_vertices.size() == n_vertices)
 
-	const Opengl_TextureDescriptor *desc = texture_options.desc.info->data.get_value<Opengl_TextureDescriptor*>();
+	const Opengl_TextureDescriptor *desc = Mylib::any_cast<Opengl_TextureDescriptor*>(texture_options.desc.info->data);
 	const Opengl_AtlasDescriptor *atlas = desc->atlas;
 
 	auto fill_vertices = [&sphere, &offset, &texture_options, n_vertices, shape_vertices, desc, atlas] (auto& program) -> void {
@@ -453,7 +453,7 @@ void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const Color& col
 
 void Renderer::draw_rect2D (Rect2D& rect, const Vector& offset, const TextureRenderOptions& texture_options)
 {
-	const Opengl_TextureDescriptor *desc = texture_options.desc.info->data.get_value<Opengl_TextureDescriptor*>();
+	const Opengl_TextureDescriptor *desc = Mylib::any_cast<Opengl_TextureDescriptor*>(texture_options.desc.info->data);
 	const Opengl_AtlasDescriptor *atlas = desc->atlas;
 
 	constexpr uint32_t n_vertices = Rect2D::get_n_vertices();
@@ -795,7 +795,7 @@ void Renderer::end_texture_loading ()
 
 		for (auto& atlas_tex_desc : atlas) {
 			TextureInfo& tex_desc = *atlas_tex_desc.texture;
-			Opengl_TextureDescriptor *desc = tex_desc.data.get_value<Opengl_TextureDescriptor*>();
+			Opengl_TextureDescriptor *desc = Mylib::any_cast<Opengl_TextureDescriptor*>(tex_desc.data);
 
 			dprintln("\tTexture of size ", tex_desc.width_px, "x", tex_desc.height_px, " allocated at position ", atlas_tex_desc.x_ini, "x", atlas_tex_desc.y_ini);
 
@@ -920,7 +920,7 @@ void Renderer::destroy_texture__ (TextureInfo& texture)
 TextureInfo Renderer::create_sub_texture__ (const TextureInfo& parent, const uint32_t x_ini, const uint32_t y_ini, const uint32_t w, const uint32_t h)
 {
 	Opengl_TextureDescriptor *desc = new(this->memory_manager.allocate_type<Opengl_TextureDescriptor>(1)) Opengl_TextureDescriptor;
-	const Opengl_TextureDescriptor *parent_desc = parent.data.get_value<Opengl_TextureDescriptor*>();
+	const Opengl_TextureDescriptor *parent_desc = Mylib::any_cast<Opengl_TextureDescriptor*>(parent.data);
 
 	desc->surface = nullptr;
 	desc->atlas = parent_desc->atlas;

@@ -206,7 +206,7 @@ Descriptor SDL_AudioDriver::load_music (const std::string_view fname, const Form
 
 void SDL_AudioDriver::unload_audio (Descriptor& audio)
 {
-	SDL_AudioDescriptor *desc = audio.data.get_value<SDL_AudioDescriptor*>();
+	SDL_AudioDescriptor *desc = Mylib::any_cast<SDL_AudioDescriptor*>(audio.data);
 
 	// check if audio not running
 
@@ -220,7 +220,7 @@ void SDL_AudioDriver::unload_audio (Descriptor& audio)
 static void call_callback (Descriptor audio_descriptor, Mylib::Memory::unique_ptr<Manager::Callback> ptr_callback)
 {
 	if (ptr_callback) {
-		SDL_AudioDescriptor *desc = audio_descriptor.data.get_value<SDL_AudioDescriptor*>();
+		SDL_AudioDescriptor *desc = Mylib::any_cast<SDL_AudioDescriptor*>(audio_descriptor.data);
 
 		Manager::Event event {
 			.type = Manager::Event::Type::AudioFinished,
@@ -280,7 +280,7 @@ static void sdl_music_finished_callback ()
 
 void SDL_AudioDriver::driver_play_audio (Descriptor& audio, Mylib::Memory::unique_ptr<Callback> callback)
 {
-	SDL_AudioDescriptor *desc = audio.data.get_value<SDL_AudioDescriptor*>();
+	SDL_AudioDescriptor *desc = Mylib::any_cast<SDL_AudioDescriptor*>(audio.data);
 
 	if (desc->type == SDL_AudioDescriptor::Type::Chunk) {
 		channels_mutex.lock();
@@ -326,7 +326,7 @@ void SDL_AudioDriver::driver_play_audio (Descriptor& audio, Mylib::Memory::uniqu
 
 void SDL_AudioDriver::set_volume (Descriptor& audio, const float volume)
 {
-	SDL_AudioDescriptor *desc = audio.data.get_value<SDL_AudioDescriptor*>();
+	SDL_AudioDescriptor *desc = Mylib::any_cast<SDL_AudioDescriptor*>(audio.data);
 
 	desc->volume = volume;
 
