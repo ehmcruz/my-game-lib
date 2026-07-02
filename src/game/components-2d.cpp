@@ -105,7 +105,7 @@ void Sprite2DRenderer::process_render (const float dt)
 	using TextureVertexPositionIndex = Graphics::Enums::TextureVertexPositionIndex;
 
 	std::array<Vector2, n_vertices> local_vertices = generate_local_vertices_rect2d(this->size);
-	const Opengl_TextureDescriptor *desc = this->texture.info->data.get_value<Opengl_TextureDescriptor*>();
+	const Opengl_TextureDescriptor *desc = Mylib::any_cast<Opengl_TextureDescriptor*>(this->texture.info->data);
 
 	auto vertices = program.alloc_vertices(n_vertices);
 
